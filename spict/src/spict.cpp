@@ -127,6 +127,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  DATA_SCALAR(seasonalProd);  // If 2 seasonal production is modelled as random effect
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -189,7 +190,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logmre);    // Random effect on m
   PARAMETER_VECTOR(SARvec);    // Autoregressive deviations to seasonal spline
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
-  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations  
+  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
+  PARAMETER(logSdSP);          // Standard deviation of seasonal spline deviations of seasonal production
+  PARAMETER_VECTOR(logSPvec);  // Random effect - seasonal production
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -285,6 +288,7 @@ Type objective_function<Type>::operator() ()
   Type logbeta = log(beta);
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
+  Type sdSP = exp(logSdSP);
 
 
   // Initialise vectors
@@ -299,6 +303,25 @@ Type objective_function<Type>::operator() ()
   vector<Type> logCpred(nobsCp);
   vector<Type> logEpred(nobsE);
 
+
+  // Seasonal production (seasonal component of m)
+  vector<Type> logmsea(ns);
+  for(int i=0; i<ns; i++) logmsea(i) = 0.0; // Initialise  
+  if(seasonalProd == 2.0){
+
+    int indsea;
+    for(int i=0; i<ns; i++){
+      indsea = CppAD::Integer(seasonindex(i));
+      logmsea(i) += logSPvec(indsea);
+    }
+
+    // Constraints
+    for(int i=1; i<logSPvec.size(); i++) ans -= dnorm(logSPvec(i),logSPvec(i-1),sqrt(dt(i-1))*sdSP,true); // RW
+    ans -= dnorm(logSPvec(0),logSPvec(logSPvec.size()-1),Type(1),true); // circular
+    ans -= dnorm(sum(exp(logSPvec))/logSPvec.size(), Type(1), Type(1e-4), true); //mean 1 constraint
+  }
+  
+
   // Covariate for m
   vector<Type> logmc(ns);
   for(int i=0; i < ns; i++){
@@ -309,7 +332,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> mvec(ns);
   for(int i=0; i < ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    mvec(i) = exp(logmc(i) + logmre(i));
+    mvec(i) = exp(logmc(i) + logmre(i) + logmsea(i));
   }
 
   Type p = n - 1.0;

@@ -255,7 +255,7 @@ sim.spict <- function(input, nobs=100){
     } else {
         F0 <- 0.2*exp(inp$ini$logr)
     }
-    m <- exp(pl$logm)
+    mbase <- exp(pl$logm)
     n <- exp(pl$logn)
     gamma <- calc.gamma(n)
     K <- exp(pl$logK)
@@ -270,6 +270,47 @@ sim.spict <- function(input, nobs=100){
     sde <- exp(pl$logsde)
     lambda <- exp(pl$loglambda)
     omega <- inp$omega
+    sdSP <- exp(pl$logSdSP)
+
+
+    ## simulate MSY regimes
+    mbase <- mbase * as.numeric(inp$MSYregime)
+
+    ## seasonal production (seasonal component in m)
+    msea <- rep(1,nt)
+    SPvec <- exp(inp$ini$logSPvec)
+    if(inp$seasonalProd == 2){
+        ## seasonal pattern
+        logSPvec <- inp$ini$logSPvec
+        nSP <- length(logSPvec)
+
+        ## RW
+        e.SP <- rnorm(nSP-1, 0, sdSP*sqrt(dt))
+        for(i in 2:nSP){
+            logSPvec[i] <- logSPvec[i-1] + e.SP[i-1]
+        }
+
+        ## Closed circle
+        logSPvec[nSP] <- logSPvec[1]
+
+        SPvec <- exp(logSPvec)
+        
+        ## Mean 1
+        SPvec <- SPvec - mean(SPvec) + 1
+        
+        msea <- SPvec[inp$seasonindex+1]
+
+##        print(inp$seasonindex)
+##        print(msea)
+
+    }
+
+    m <- mbase * msea
+    ## m longer than 1 requires changes in inp$ir!!!!!
+    ## careful with conflict of usage of inp$ir between MSYregime and seasonalProd
+    ## hack with inp$ir in check.inp()
+
+
     
     # B[t] is biomass at the beginning of the time interval starting at time t
     # I[t] is an index of biomass (e.g. CPUE) at time t
@@ -503,6 +544,9 @@ sim.spict <- function(input, nobs=100){
     sim$true$e.i <- e.i
     sim$true$e.b <- e.b
     sim$true$e.f <- e.f
+    sim$true$SPvec <- SPvec
+    sim$true$e.SP <- e.SP
+    
     
     sign <- 1
     R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
