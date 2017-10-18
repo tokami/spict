@@ -284,11 +284,19 @@ sim.spict <- function(input, nobs=100){
         logSPvec <- inp$ini$logSPvec
         nSP <- length(logSPvec)
 
+        ## example forced seasonal pattern (but how to use sdSP?)
+        logSPvec <- sin(1:nSP)
+
+
         ## RW
         e.SP <- rnorm(nSP-1, 0, sdSP*sqrt(dt))
+        
+        if(FALSE){        
         for(i in 2:nSP){
             logSPvec[i] <- logSPvec[i-1] + e.SP[i-1]
         }
+        }
+        
 
         ## Closed circle
         logSPvec[nSP] <- logSPvec[1]
@@ -296,7 +304,8 @@ sim.spict <- function(input, nobs=100){
         SPvec <- exp(logSPvec)
         
         ## Mean 1
-        SPvec <- SPvec - mean(SPvec) + 1
+        ## SPvec <- SPvec - mean(SPvec) + 1 ## problem that negative SPvec possible
+        SPvec <- SPvec/mean(SPvec)
         
         msea <- SPvec[inp$seasonindex+1]
 
@@ -311,7 +320,6 @@ sim.spict <- function(input, nobs=100){
     ## hack with inp$ir in check.inp()
 
 
-    
     # B[t] is biomass at the beginning of the time interval starting at time t
     # I[t] is an index of biomass (e.g. CPUE) at time t
     # P[t] is the accumulated biomass production over the interval starting at time t
@@ -522,6 +530,7 @@ sim.spict <- function(input, nobs=100){
     sim$recount <- recount
     sim$nseasons <- inp$nseasons
     sim$seasontype <- inp$seasontype
+    ## sim$seasonalProd <- inp$seasonalProd
     sim$sim.comm.cpue <- inp$sim.comm.cpue
     sim$meyermillar <- inp$meyermillar
     sim$aspic <- inp$aspic
@@ -546,6 +555,8 @@ sim.spict <- function(input, nobs=100){
     sim$true$e.f <- e.f
     sim$true$SPvec <- SPvec
     sim$true$e.SP <- e.SP
+
+    ## sim$true$seasonalProd <- inp$seasonalProd
     
     
     sign <- 1
