@@ -287,9 +287,9 @@ sim.spict <- function(input, nobs=100, asea=NA, bsea=NA, csea=NA,dsea=NA){
 
         ## example forced seasonal pattern (but how to use sdSP?)
 
-        logSPvec <- csea + dsea * sin(asea+(1:nSP)*bsea)
+        logSPvec <- csea + dsea * sin(asea+seq(0,2*pi,length.out = nSP)*bsea)
 
-        if(FALSE){
+        if(TRUE){
         print(logSPvec)
         print(exp(logSPvec))
         plot(1:nSP, logSPvec, ty='b')
@@ -306,10 +306,10 @@ sim.spict <- function(input, nobs=100, asea=NA, bsea=NA, csea=NA,dsea=NA){
         
 
         ## Closed circle
-        logSPvec[nSP] <- logSPvec[1]
+        ##logSPvec[nSP] <- logSPvec[1]
 
         SPvec <- exp(logSPvec)
-        
+
         ## Mean 1
         ## SPvec <- SPvec - mean(SPvec) + 1 ## problem that negative SPvec possible
         SPvec <- SPvec/mean(SPvec)
@@ -318,7 +318,6 @@ sim.spict <- function(input, nobs=100, asea=NA, bsea=NA, csea=NA,dsea=NA){
     }
 
     m <- mbase * msea
-
     
     ## m longer than 1 requires changes in inp$ir!!!!!
     ## careful with conflict of usage of inp$ir between MSYregime and seasonalProd
@@ -568,15 +567,28 @@ sim.spict <- function(input, nobs=100, asea=NA, bsea=NA, csea=NA,dsea=NA){
     
     
     sign <- 1
-    R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
-    p <- n-1
-    sim$true$R <- R
-    sim$true$logrold <- log(abs(gamma * mean(m[inp$ir]) / K))
-    sim$true$logr <- log(mean(m[inp$ir]) / K * n^(n/(n-1.0)))
-    sim$true$logrc <- log(2 * R)
-    # Deterministic reference points
-    sim$true$Bmsyd <- K/(n^(1/(n-1)))
-    sim$true$MSYd <- mean(m[inp$ir])
+    
+    if(inp$seasonalProd==2){
+        R <- (n-1)/n * gamma * mean(m) / K
+        p <- n-1
+        sim$true$R <- R
+        sim$true$logrold <- log(abs(gamma * mean(m) / K))
+        sim$true$logr <- log(mean(m) / K * n^(n/(n-1.0)))
+        sim$true$logrc <- log(2 * R)
+        ## Deterministic reference points
+        sim$true$Bmsyd <- K/(n^(1/(n-1)))
+        sim$true$MSYd <- mean(m)        
+    }else{
+        R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
+        p <- n-1
+        sim$true$R <- R
+        sim$true$logrold <- log(abs(gamma * mean(m[inp$ir]) / K))
+        sim$true$logr <- log(mean(m[inp$ir]) / K * n^(n/(n-1.0)))
+        sim$true$logrc <- log(2 * R)
+        ## Deterministic reference points
+        sim$true$Bmsyd <- K/(n^(1/(n-1)))
+        sim$true$MSYd <- mean(m[inp$ir])        
+    }
     sim$true$Fmsyd <- sim$true$MSYd/sim$true$Bmsyd
     # Stochastic reference points from Bordet & Rivest (2014)
     sim$true$Bmsys <- K/(p+1)^(1/p) * (1- (1+R*(p-1)/2)/(R*(2-R)^2)*sdb^2)

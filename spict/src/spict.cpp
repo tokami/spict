@@ -309,23 +309,31 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i<ns; i++) logmsea(i) = 0.0; // Initialise  
   if(seasonalProd == 2.0){
 
+        //std::cout << "Bmsyd(i): " << Bmsyd(i) << std::endl;
+    //std::cout << "Bmsys(i): " << Bmsys(i) << std::endl;
+    
     // Constraints
-    for(int i=1; i<logSPvec.size(); i++) ans -= dnorm(logSPvec(i),logSPvec(i-1),Type(1),true); // spline smoothness penality
+    for(int i=1; i<logSPvec.size(); i++) ans -= dnorm(logSPvec(i),logSPvec(i-1),sqrt(dt(i-1))*sdSP,true); // spline smoothness penality
+    //    std::cout << "ans: " << ans << std::endl;
+
     ans -= dnorm(logSPvec(0),logSPvec(logSPvec.size()-1),Type(1),true); // circular
+    //    std::cout << "ans: " << ans << std::endl;
+
     ans -= dnorm(sum(exp(logSPvec))/logSPvec.size(), Type(1), Type(1), true); //mean 1 constraint
+    //    std::cout << "ans: " << ans << std::endl;
 
 
     // scale seasonal vector
-    for(int i=0; i<logSPvec.size(); i++) logSPvec(i) += logSdSP;
-    /*
-    vector<Type> logSPvecSCA = logSPvec;
-    for(int i=0; i<logSPvec.size(); i++) logSPvecSCA(i) += logSdSP;
-    */
+    for(int i=0; i<logSPvec.size(); i++){
+      //      std::cout << "logSPvec(i): " << logSPvec(i) << std::endl;
+      logSPvec(i) += logSdSP;
+    }
+
     
-    int indsea;
     for(int i=0; i<ns; i++){
-      indsea = CppAD::Integer(seasonindex(i));
-      logmsea(i) += logSPvec(indsea);
+      ind = CppAD::Integer(seasonindex(i));
+      logmsea(i) += logSPvec(ind);
+      //      std::cout << "logmsea(i): " << logmsea(i) << std::endl;      
     }
     
   }
@@ -335,6 +343,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> logmc(ns);
   for(int i=0; i < ns; i++){
     logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
+    //    std::cout << "MSYregime(i): " << MSYregime(i) << logm(MSYregime(i)) <<std::endl;          
   }
 
   // Seasonal m
