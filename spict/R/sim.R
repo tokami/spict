@@ -116,7 +116,7 @@ predict.logmre <- function(logmre0, dt, sdm, psi, logm){
 #' plot(sim2$obsC, typ='l')
 #' plot(sim2$obsI[[1]], typ='l')
 #' @export
-sim.spict <- function(input, nobs=100){
+sim.spict <- function(input, nobs=100, asea=NA, bsea=NA, csea=NA,dsea=NA){
     # Check if input is a inp (initial values) or rep (results).
     use.effort.flag <- TRUE
     use.index.flag <- TRUE
@@ -284,10 +284,17 @@ sim.spict <- function(input, nobs=100){
         logSPvec <- inp$ini$logSPvec
         nSP <- length(logSPvec)
 
+
         ## example forced seasonal pattern (but how to use sdSP?)
-        logSPvec <- sin(1:nSP)
 
+        logSPvec <- csea + dsea * sin(asea+(1:nSP)*bsea)
 
+        if(FALSE){
+        print(logSPvec)
+        print(exp(logSPvec))
+        plot(1:nSP, logSPvec, ty='b')
+        }
+        
         ## RW
         e.SP <- rnorm(nSP-1, 0, sdSP*sqrt(dt))
         
@@ -306,15 +313,13 @@ sim.spict <- function(input, nobs=100){
         ## Mean 1
         ## SPvec <- SPvec - mean(SPvec) + 1 ## problem that negative SPvec possible
         SPvec <- SPvec/mean(SPvec)
-        
         msea <- SPvec[inp$seasonindex+1]
-
-##        print(inp$seasonindex)
-##        print(msea)
 
     }
 
     m <- mbase * msea
+
+    
     ## m longer than 1 requires changes in inp$ir!!!!!
     ## careful with conflict of usage of inp$ir between MSYregime and seasonalProd
     ## hack with inp$ir in check.inp()
@@ -388,7 +393,11 @@ sim.spict <- function(input, nobs=100){
         B[1] <- B0
         e.b <- exp(rnorm(nt-1, 0, sdb*sqrt(dt)))
         for (t in 2:nt){
-            B[t] <- predict.b(B[t-1], F[t-1], gamma, m[inp$ir[t]], K, n, dt, sdb, inp$btype) * e.b[t-1]
+            if(inp$seasonalProd == 2){
+                B[t] <- predict.b(B[t-1], F[t-1], gamma, m[t-1], K, n, dt, sdb, inp$btype) * e.b[t-1]
+            }else{
+                B[t] <- predict.b(B[t-1], F[t-1], gamma, m[inp$ir[t]], K, n, dt, sdb, inp$btype) * e.b[t-1]
+            }
         }
         flag <- any(B <= 0) # Negative biomass not allowed
         recount <- recount+1
@@ -530,7 +539,7 @@ sim.spict <- function(input, nobs=100){
     sim$recount <- recount
     sim$nseasons <- inp$nseasons
     sim$seasontype <- inp$seasontype
-    ## sim$seasonalProd <- inp$seasonalProd
+    sim$seasonalProd <- inp$seasonalProd
     sim$sim.comm.cpue <- inp$sim.comm.cpue
     sim$meyermillar <- inp$meyermillar
     sim$aspic <- inp$aspic
@@ -555,8 +564,7 @@ sim.spict <- function(input, nobs=100){
     sim$true$e.f <- e.f
     sim$true$SPvec <- SPvec
     sim$true$e.SP <- e.SP
-
-    ## sim$true$seasonalProd <- inp$seasonalProd
+    sim$true$seasonalProd <- inp$seasonalProd
     
     
     sign <- 1

@@ -309,16 +309,25 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i<ns; i++) logmsea(i) = 0.0; // Initialise  
   if(seasonalProd == 2.0){
 
+    // Constraints
+    for(int i=1; i<logSPvec.size(); i++) ans -= dnorm(logSPvec(i),logSPvec(i-1),Type(1),true); // spline smoothness penality
+    ans -= dnorm(logSPvec(0),logSPvec(logSPvec.size()-1),Type(1),true); // circular
+    ans -= dnorm(sum(exp(logSPvec))/logSPvec.size(), Type(1), Type(1), true); //mean 1 constraint
+
+
+    // scale seasonal vector
+    for(int i=0; i<logSPvec.size(); i++) logSPvec(i) += logSdSP;
+    /*
+    vector<Type> logSPvecSCA = logSPvec;
+    for(int i=0; i<logSPvec.size(); i++) logSPvecSCA(i) += logSdSP;
+    */
+    
     int indsea;
     for(int i=0; i<ns; i++){
       indsea = CppAD::Integer(seasonindex(i));
       logmsea(i) += logSPvec(indsea);
     }
-
-    // Constraints
-    for(int i=1; i<logSPvec.size(); i++) ans -= dnorm(logSPvec(i),logSPvec(i-1),sqrt(dt(i-1))*sdSP,true); // RW
-    ans -= dnorm(logSPvec(0),logSPvec(logSPvec.size()-1),Type(1),true); // circular
-    ans -= dnorm(sum(exp(logSPvec))/logSPvec.size(), Type(1), Type(1e-4), true); //mean 1 constraint
+    
   }
   
 
@@ -328,11 +337,18 @@ Type objective_function<Type>::operator() ()
     logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
   }
 
+  // Seasonal m
+  vector<Type> logmc2(ns);
+  for(int i=0; i < ns; i++){
+    //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
+    logmc2(i) = logmc(i) + logmsea(i);
+  }  
+
   // Reference points
   vector<Type> mvec(ns);
   for(int i=0; i < ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    mvec(i) = exp(logmc(i) + logmre(i) + logmsea(i));
+    mvec(i) = exp(logmc2(i) + logmre(i));
   }
 
   Type p = n - 1.0;
@@ -1089,6 +1105,7 @@ Type objective_function<Type>::operator() ()
   ADREPORT(sde);
   ADREPORT(sdb);
   ADREPORT(sdi);
+  ADREPORT(sdSP);
   ADREPORT(isdf2);
   ADREPORT(isdc2);
   ADREPORT(isde2);
@@ -1132,6 +1149,7 @@ Type objective_function<Type>::operator() ()
   REPORT(logFFmsy);
   REPORT(logB);
   REPORT(logF);
+  REPORT(logSPvec);
 
   return ans;
 }

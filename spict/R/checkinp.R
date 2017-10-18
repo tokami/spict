@@ -892,7 +892,7 @@ check.inp <- function(inp){
     }
 
     if(inp$seasonalProd == 2){
-        inp$ir <- 1:length(inp$time)
+        ##inp$ir <- 1:length(inp$time)
     }
     
     check.mapped.ini <- function(inp, nam, nnam){
