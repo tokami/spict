@@ -504,6 +504,10 @@ sumspict.fixedpars <- function(rep, ndigits=8){
     if(rep$inp$seasontype != 3){
         nms <- nms[-match(c('logitSARphi','logSdSAR'), nms)]
     }
+    # Is seasonal production RW used? if not remove
+    if(rep$inp$seasonalProd != 2){
+        nms <- nms[-match(c('logSdSP','logSPvec'), nms)]
+    }    
     # Are seasonal SDE used? if not remove
     if(rep$inp$seasontype != 2){
         nms <- nms[-match(c('logsdu', 'loglambda'), nms)]

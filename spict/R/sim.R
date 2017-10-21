@@ -296,10 +296,11 @@ sim.spict <- function(input, nobs=100, asea=NA, bsea=NA, csea=NA,dsea=NA){
         }
         
         ## RW
-        e.SP <- rnorm(nSP-1, 0, sdSP*sqrt(dt))
+
         
         if(FALSE){        
-        for(i in 2:nSP){
+            for(i in 2:nSP){
+        e.SP <- rnorm(nSP-1, 0, sdSP*sqrt(dt))                
             logSPvec[i] <- logSPvec[i-1] + e.SP[i-1]
         }
         }
@@ -312,7 +313,8 @@ sim.spict <- function(input, nobs=100, asea=NA, bsea=NA, csea=NA,dsea=NA){
 
         ## Mean 1
         ## SPvec <- SPvec - mean(SPvec) + 1 ## problem that negative SPvec possible
-        SPvec <- SPvec/mean(SPvec)
+        SPvec <- SPvec * sdSP
+        SPvec <- SPvec/mean(SPvec)        
         msea <- SPvec[inp$seasonindex+1]
 
     }
@@ -562,22 +564,23 @@ sim.spict <- function(input, nobs=100, asea=NA, bsea=NA, csea=NA,dsea=NA){
     sim$true$e.b <- e.b
     sim$true$e.f <- e.f
     sim$true$SPvec <- SPvec
-    sim$true$e.SP <- e.SP
+##    sim$true$e.SP <- e.SP
     sim$true$seasonalProd <- inp$seasonalProd
     
     
     sign <- 1
-    
+
+    ## HACK! does not allow to combine MSYregime and seaProd
     if(inp$seasonalProd==2){
-        R <- (n-1)/n * gamma * mean(m) / K
+        R <- (n-1)/n * gamma * mean(mbase) / K
         p <- n-1
         sim$true$R <- R
-        sim$true$logrold <- log(abs(gamma * mean(m) / K))
-        sim$true$logr <- log(mean(m) / K * n^(n/(n-1.0)))
+        sim$true$logrold <- log(abs(gamma * mean(mbase) / K))
+        sim$true$logr <- log(mean(mbase) / K * n^(n/(n-1.0)))
         sim$true$logrc <- log(2 * R)
         ## Deterministic reference points
         sim$true$Bmsyd <- K/(n^(1/(n-1)))
-        sim$true$MSYd <- mean(m)        
+        sim$true$MSYd <- mean(mbase)        
     }else{
         R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
         p <- n-1

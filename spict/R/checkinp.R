@@ -1217,7 +1217,7 @@ check.inp <- function(inp){
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
     }
-    if(inp$seasonalProd == 1){
+    if(inp$seasonalProd != 2){
         forcefixpars <- c('logSPvec','logSdSP',forcefixpars)
     }
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
