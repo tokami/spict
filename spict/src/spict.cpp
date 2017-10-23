@@ -309,26 +309,17 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i<ns; i++) logmsea(i) = 0.0; // Initialise  
   if(seasonalProd == 2.0){
 
-        //std::cout << "Bmsyd(i): " << Bmsyd(i) << std::endl;
-    //std::cout << "Bmsys(i): " << Bmsys(i) << std::endl;
-    
     // Constraints
     for(int i=1; i<logSPvec.size(); i++) ans -= dnorm(logSPvec(i),logSPvec(i-1),Type(1),true); // spline smoothness penality
-    //    std::cout << "ans: " << ans << std::endl;
 
     ans -= dnorm(logSPvec(0),logSPvec(logSPvec.size()-1),Type(1),true); // circular
-    //    std::cout << "ans: " << ans << std::endl;
 
     ans -= dnorm(sum(exp(logSPvec))/logSPvec.size(), Type(1), Type(1), true); //mean 1 constraint
-    //    std::cout << "ans: " << ans << std::endl;
-    // ans -= dnorm(sum(exp(logSPvec)), Type(0), Type(1), true);    
 
     // ans -= dnorm(exp(logSPvec(0)), Type(0), Type(1), true); //first one 0 constraint    
 
     // scale seasonal vector
-    
     for(int i=0; i<logSPvec.size(); i++){
-      //      std::cout << "logSPvec(i): " << logSPvec(i) << std::endl;
       logSPvec(i) += logSdSP;
     }
 
@@ -336,7 +327,6 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindex(i));
       logmsea(i) += logSPvec(ind);
-      //      std::cout << "logmsea(i): " << logmsea(i) << std::endl;      
     }
     
   }
@@ -346,7 +336,6 @@ Type objective_function<Type>::operator() ()
   vector<Type> logmc(ns);
   for(int i=0; i < ns; i++){
     logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
-    //    std::cout << "MSYregime(i): " << MSYregime(i) << logm(MSYregime(i)) <<std::endl;          
   }
 
   /*
@@ -368,9 +357,8 @@ Type objective_function<Type>::operator() ()
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
   vector<Type> Fmsyd(nm);
-  vector<Type> MSYd(nm);
-  // this is not combinable with MSYregime and also would require that the time series starts and ends in the beginning of the year
-  for(int i=0; i<nm; i++) MSYd(i) = sum(mvec)/mvec.size();
+  vector<Type> MSYd = m;   //MSYd(nm); // this is not combinable with MSYregime and also would require that the time series starts and ends in the beginning of the year
+  // for(int i=0; i<nm; i++) MSYd(i) = sum(mvec)/mvec.size();
   vector<Type> Bmsys(nm);
   vector<Type> Fmsys(nm);
   vector<Type> MSYs(nm);
