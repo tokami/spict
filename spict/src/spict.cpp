@@ -319,9 +319,10 @@ Type objective_function<Type>::operator() ()
     // ans -= dnorm(exp(logSPvec(0)), Type(0), Type(1), true); //first one 0 constraint    
 
     // scale seasonal vector
-    for(int i=0; i<logSPvec.size(); i++){
-      logSPvec(i) += logSdSP;
-    }
+    logSPvec = logSPvec * exp(logSdSP);	  
+    //for(int i=0; i<logSPvec.size(); i++){
+    //  logSPvec(i) += logSdSP;
+    //}
 
     
     for(int i=0; i<ns; i++){
