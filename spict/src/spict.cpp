@@ -127,7 +127,6 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
-  DATA_SCALAR(seasonalProd);  // If 2 seasonal production is modelled as random effect
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -190,9 +189,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logmre);    // Random effect on m
   PARAMETER_VECTOR(SARvec);    // Autoregressive deviations to seasonal spline
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
-  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
-  PARAMETER(logSdSP);          // Standard deviation of seasonal spline deviations of seasonal production
-  PARAMETER_VECTOR(logSPvec);  // Random effect - seasonal production
+  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations  
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -288,7 +285,6 @@ Type objective_function<Type>::operator() ()
   Type logbeta = log(beta);
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
-  Type sdSP = exp(logSdSP);
 
 
   // Initialise vectors
@@ -303,63 +299,23 @@ Type objective_function<Type>::operator() ()
   vector<Type> logCpred(nobsCp);
   vector<Type> logEpred(nobsE);
 
-
-  // Seasonal production (seasonal component of m)
-  vector<Type> logmsea(ns);
-  for(int i=0; i<ns; i++) logmsea(i) = 0.0; // Initialise  
-  if(seasonalProd == 2.0){
-
-    // Constraints
-    for(int i=1; i<logSPvec.size(); i++) ans -= dnorm(logSPvec(i),logSPvec(i-1),Type(1),true); // spline smoothness penality
-
-    ans -= dnorm(logSPvec(0),logSPvec(logSPvec.size()-1),Type(1),true); // circular
-
-    ans -= dnorm(sum(exp(logSPvec))/logSPvec.size(), Type(1), Type(1), true); //mean 1 constraint
-
-    // ans -= dnorm(exp(logSPvec(0)), Type(0), Type(1), true); //first one 0 constraint    
-
-    // scale seasonal vector
-    logSPvec = logSPvec * exp(logSdSP);	  
-    //for(int i=0; i<logSPvec.size(); i++){
-    //  logSPvec(i) += logSdSP;
-    //}
-
-    
-    for(int i=0; i<ns; i++){
-      ind = CppAD::Integer(seasonindex(i));
-      logmsea(i) += logSPvec(ind);
-    }
-    
-  }
-  
-
   // Covariate for m
   vector<Type> logmc(ns);
   for(int i=0; i < ns; i++){
     logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
   }
 
-  /*
-  // Seasonal m
-  vector<Type> logmc2(ns);
-  for(int i=0; i < ns; i++){
-    //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    logmc2(i) = logmc(i) + logmsea(i);
-  } 
-  */ 
-
   // Reference points
   vector<Type> mvec(ns);
   for(int i=0; i < ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    mvec(i) = exp(logmc(i) + logmre(i) + logmsea(i));
+    mvec(i) = exp(logmc(i) + logmre(i));
   }
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
   vector<Type> Fmsyd(nm);
-  vector<Type> MSYd = m;   //MSYd(nm); // this is not combinable with MSYregime and also would require that the time series starts and ends in the beginning of the year
-  // for(int i=0; i<nm; i++) MSYd(i) = sum(mvec)/mvec.size();
+  vector<Type> MSYd = m;
   vector<Type> Bmsys(nm);
   vector<Type> Fmsys(nm);
   vector<Type> MSYs(nm);
@@ -447,7 +403,6 @@ Type objective_function<Type>::operator() ()
     }
   }
 
-  
   // These quantities are calculated to enable comparison with the Polacheck et al (1993) parameter estimates
   vector<Type> Emsy(nq);
   vector<Type> Emsy2(nq);
@@ -1111,7 +1066,6 @@ Type objective_function<Type>::operator() ()
   ADREPORT(sde);
   ADREPORT(sdb);
   ADREPORT(sdi);
-  ADREPORT(sdSP);
   ADREPORT(isdf2);
   ADREPORT(isdc2);
   ADREPORT(isde2);
@@ -1142,7 +1096,6 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFFmsynotS);
   }
   ADREPORT( logBmsyPluslogFmsy ) ;
-  ADREPORT(logSPvec);
   
   // REPORTS (these don't require sdreport to be output)
   REPORT(Cp);
@@ -1156,7 +1109,6 @@ Type objective_function<Type>::operator() ()
   REPORT(logFFmsy);
   REPORT(logB);
   REPORT(logF);
-  REPORT(logSPvec);
 
   return ans;
 }
