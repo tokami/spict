@@ -326,7 +326,7 @@ check.inp <- function(inp){
     inp$nseries <- 1 + inp$nindex + as.numeric(inp$nobsE > 0)
     
     # -- MODEL OPTIONS --
-    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB', 'logmre','SARvec')
+    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB', 'logmre','SARvec','logSPvec')
     if (!"scriptname" %in% names(inp)) inp$scriptname <- 'spict'
     # Index related
     if (!"onealpha" %in% names(inp)){
@@ -828,6 +828,10 @@ check.inp <- function(inp){
 
     if (!'logitSARphi' %in% names(inp$ini)) inp$ini$logitSARphi <- 0
     if (!'logSdSAR' %in% names(inp$ini)) inp$ini$logSdSAR <- -2
+
+    if(!'seasonalProd' %in% names(inp)) inp$seasonalProd <- 1
+    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <- -2
+
     
     if (!'logr' %in% names(inp$ini)){
         if (!'logm' %in% names(inp$ini) | length(inp$ini$logm)!=inp$noms){
@@ -887,6 +891,10 @@ check.inp <- function(inp){
         }
     }
 
+    if(inp$seasonalProd == 2){
+        ##inp$ir <- 1:length(inp$time)
+    }
+    
     check.mapped.ini <- function(inp, nam, nnam){
         if (nam %in% names(inp$ini)){
             if (length(inp$ini[[nam]]) != inp[[nnam]]){ # nq is given by mapq
@@ -1007,6 +1015,10 @@ check.inp <- function(inp){
     #    inp$ini$logmre <- check.mat(inp$ini$logmre, c(inp$nstocks, inp$ns), 'inp$ini$logmre')
     #}
     inp$ini$SARvec <- rep(0, max(inp$seasonindex2))
+
+    if (!"logSPvec" %in% names(inp$ini)){
+        inp$ini$logSPvec <- rep(log(1), 1/inp$dteuler)
+    }
     
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
@@ -1035,7 +1047,9 @@ check.inp <- function(inp){
                         logmre=inp$ini$logmre,
                         SARvec=inp$ini$SARvec,
                         logitSARphi=inp$ini$logitSARphi,
-                        logSdSAR=inp$ini$logSdSAR)
+                        logSdSAR=inp$ini$logSdSAR,
+                        logSPvec = inp$ini$logSPvec,
+                        logSdSP = inp$ini$logSdSP)
 
 
     # -- PRIORS --
@@ -1202,6 +1216,9 @@ check.inp <- function(inp){
         if(inp$seasontype == 3){ # Use spline + AR
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
+    }
+    if(inp$seasonalProd != 2){
+        forcefixpars <- c('logSPvec','logSdSP',forcefixpars)
     }
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
         forcefixpars <- c('logitpp', 'logp1robfac', forcefixpars)
