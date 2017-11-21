@@ -326,7 +326,7 @@ check.inp <- function(inp){
     inp$nseries <- 1 + inp$nindex + as.numeric(inp$nobsE > 0)
     
     # -- MODEL OPTIONS --
-    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB', 'logmre','SARvec')
+    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB', 'logmre','SARvec','SPvec')
     if (!"scriptname" %in% names(inp)) inp$scriptname <- 'spict'
     # Index related
     if (!"onealpha" %in% names(inp)){
@@ -654,7 +654,10 @@ check.inp <- function(inp){
     #} else {
     #    dtcpred <- 1
     #}
-    dtcpred <- inp$dtpredc
+
+    
+    ## ic is the indices of inp$time to which catch observations correspond to
+    dtcpred <- inp$dtpredc 
     
     inp$timeCpred <- unique(c(inp$timeC, (seq(tail(inp$timeC,1), inp$timepredc, by=tail(inp$dtc,1))), inp$timepredc))
     inp$nobsCp <- length(inp$timeCpred)
@@ -828,6 +831,38 @@ check.inp <- function(inp){
 
     if (!'logitSARphi' %in% names(inp$ini)) inp$ini$logitSARphi <- 0
     if (!'logSdSAR' %in% names(inp$ini)) inp$ini$logSdSAR <- -2
+
+
+    
+    ## seasonal production    
+    if(!'seasonalProd' %in% names(inp)) inp$seasonalProd <- 0
+    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <- -2
+
+    if(!"nseasonsProd" %in% names(inp)){      ## default number of seasons = 1
+        inp$nseasonsProd <- 1
+    }
+##    if("nseasonsProd" %in% names(inp)){
+##        if (!inp$nseasonsProd %in% c(1, 2, 4)){
+##            stop('inp$nseasonsProd (=', inp$nseasonsProd, ') must be either 1, 2 or 4.')
+##        }
+##    }
+##    if(inp$nseasonsProd == 1) inp$seasonalProd <- 0 # seasontypeP = 0 means seasons are disabled.
+
+    if(!'splineorderProd' %in% names(inp)) inp$splineorderProd <- inp$nseasonsProd
+
+    inp$splinematProd <- make.splinemat(inp$nseasonsProd, inp$splineorderProd, dtfine=inp$dteuler)
+    inp$splinematfineProd <- make.splinemat(inp$nseasonsProd, inp$splineorderProd, dtfine=1/100)
+    inp$seasonindexProd <- 1/inp$dteuler*(inp$time %% 1)
+    inp$seasonsProd <- rep(0, inp$ns)
+    for (i in 1:inp$nseasonsProd){
+        frac <- 1/inp$nseasonsProd
+        modtime <- inp$time %% 1
+        inds <- which(modtime>=((i-1)*frac) & modtime<(i*frac))
+        inp$seasonsProd[inds] <- i
+    }
+    
+    if (!"logphiProd" %in% names(inp$ini)) inp$ini$logphiProd <- rep(1, inp$nseasonsProd)
+
     
     if (!'logr' %in% names(inp$ini)){
         if (!'logm' %in% names(inp$ini) | length(inp$ini$logm)!=inp$noms){
@@ -1007,6 +1042,11 @@ check.inp <- function(inp){
     #    inp$ini$logmre <- check.mat(inp$ini$logmre, c(inp$nstocks, inp$ns), 'inp$ini$logmre')
     #}
     inp$ini$SARvec <- rep(0, max(inp$seasonindex2))
+
+
+    ## seasonal production
+    inp$ini$SPvec <- rep(log(1), 1/inp$dteuler)
+
     
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
@@ -1035,7 +1075,10 @@ check.inp <- function(inp){
                         logmre=inp$ini$logmre,
                         SARvec=inp$ini$SARvec,
                         logitSARphi=inp$ini$logitSARphi,
-                        logSdSAR=inp$ini$logSdSAR)
+                        logSdSAR=inp$ini$logSdSAR,
+                        SPvec=inp$ini$SPvec,
+                        logSdSP=inp$ini$logSdSP,
+                        logphiProd=inp$ini$logphiProd)
 
 
     # -- PRIORS --
@@ -1203,6 +1246,14 @@ check.inp <- function(inp){
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
     }
+
+    if(inp$seasonalProd != 2){
+        forcefixpars <- c('SPvec','logSdSP',forcefixpars)
+    }
+    if(inp$seasonalProd != 1){
+        forcefixpars <- c('logphiProd',forcefixpars)
+    }    
+    
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
         forcefixpars <- c('logitpp', 'logp1robfac', forcefixpars)
     }

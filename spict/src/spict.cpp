@@ -127,6 +127,12 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  DATA_SCALAR(seasonalProd);
+  DATA_VECTOR(seasonsProd);        // A vector of length ns indicating to which season a state belongs
+  DATA_VECTOR(seasonindexProd);    // A vector of length ns giving the number stepped within the current year
+  DATA_MATRIX(splinematProd);      // Design matrix for the seasonal spline
+  DATA_MATRIX(splinematfineProd);  // Design matrix for the seasonal spline on a fine time scale to get spline uncertainty
+  
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -189,7 +195,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logmre);    // Random effect on m
   PARAMETER_VECTOR(SARvec);    // Autoregressive deviations to seasonal spline
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
-  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations  
+  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
+  PARAMETER_VECTOR(SPvec);
+  PARAMETER(logSdSP);
+  PARAMETER_VECTOR(logphiProd);
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -285,6 +294,7 @@ Type objective_function<Type>::operator() ()
   Type logbeta = log(beta);
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
+  Type sdSP = exp(logSdSP);
 
 
   // Initialise vectors
@@ -299,17 +309,83 @@ Type objective_function<Type>::operator() ()
   vector<Type> logCpred(nobsCp);
   vector<Type> logEpred(nobsE);
 
+
+  // Seasonal production (seasonal component of m)
+  vector<Type> logmsea(ns);
+  for(int i=0; i<ns; i++) logmsea(i) = 0.0; // Initialise
+  vector<Type> tempProd = splinematProd.col(0);    
+  vector<Type> seasonsplineProd(tempProd.size());
+  seasonsplineProd = splinematProd * logphiProd;
+  vector<Type> expseasonsplineProd = exp(seasonsplineProd);
+  vector<Type> tempfineProd = splinematfineProd.col(0);
+  vector<Type> seasonsplinefineProd(tempfineProd.size());
+  seasonsplinefineProd = splinematfineProd * logphiProd;
+
+
+  if(seasonalProd == 2.0){
+
+    /*
+    // circle should be closed on January - January
+    vector<Type> Stemp(SPvec.size()+1);
+    for(int i=0; i<SPvec.size(); i++) Stemp(i) = SPvec(i);
+    Stemp(Stemp.size()-1) = SPvec(0);
+    vector<Type> expStemp = exp(Stemp);    
+    */
+
+    
+    // Constraints
+    for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true); // spline smoothness penality
+
+    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true); // circular
+
+
+
+    // ans -= dnorm(exp(logStemp(0)), Type(0), Type(1), true); //first one 0 constraint    
+
+    // scale seasonal vector
+    SPvec = SPvec * sdSP;
+
+    ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(1e-4), true); //mean 1 constraint
+    
+    // update SPvec
+    //for(int i=0; i<SPvec.size(); i++) SPvec(i) = Stemp(i);    
+        
+    for(int i=0; i<ns; i++){
+      ind = CppAD::Integer(seasonindex(i));
+      logmsea(i) += SPvec(ind);
+    }
+  }
+
+  if(seasonalProd == 1.0){
+    
+    int ind2P;    
+    for(int i=0; i<ns; i++){
+      ind2P = CppAD::Integer(seasonindexProd(i));
+      logmsea(i) += seasonsplineProd(ind2P);
+    }
+    
+    // add constraint on mean 1
+    ans -= dnorm(sum(expseasonsplineProd)/expseasonsplineProd.size(), Type(1), Type(1e-4), true);
+  }
+
+
   // Covariate for m
   vector<Type> logmc(ns);
   for(int i=0; i < ns; i++){
     logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
   }
 
+  // Seasonal m
+  vector<Type> logmc2(ns);
+  for(int i=0; i < ns; i++){
+    logmc2(i) = logmc(i) + logmsea(i);
+  }
+
   // Reference points
   vector<Type> mvec(ns);
   for(int i=0; i < ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    mvec(i) = exp(logmc(i) + logmre(i));
+    mvec(i) = exp(logmc2(i) + logmre(i));
   }
 
   Type p = n - 1.0;
@@ -1073,6 +1149,11 @@ Type objective_function<Type>::operator() ()
   ADREPORT(isdi2);
   ADREPORT(logalpha);
   ADREPORT(logbeta);
+  ADREPORT(sdSP);
+  ADREPORT(seasonsplinefineProd);
+  ADREPORT(SPvec);
+
+  
   if(reportall){ 
     // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
     // B
@@ -1096,6 +1177,7 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFFmsynotS);
   }
   ADREPORT( logBmsyPluslogFmsy ) ;
+
   
   // REPORTS (these don't require sdreport to be output)
   REPORT(Cp);
@@ -1109,7 +1191,9 @@ Type objective_function<Type>::operator() ()
   REPORT(logFFmsy);
   REPORT(logB);
   REPORT(logF);
-
+  if(seasonalProd == 2.0){
+    REPORT(SPvec);
+  }
   return ans;
 }
 

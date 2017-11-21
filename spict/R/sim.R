@@ -255,7 +255,7 @@ sim.spict <- function(input, nobs=100){
     } else {
         F0 <- 0.2*exp(inp$ini$logr)
     }
-    m <- exp(pl$logm)
+    mbase <- exp(pl$logm)  
     n <- exp(pl$logn)
     gamma <- calc.gamma(n)
     K <- exp(pl$logK)
@@ -270,6 +270,50 @@ sim.spict <- function(input, nobs=100){
     sde <- exp(pl$logsde)
     lambda <- exp(pl$loglambda)
     omega <- inp$omega
+    sdSP <- exp(pl$logSdSP)
+
+
+    ## simulate MSY regimes
+    mbase <- mbase * as.numeric(inp$MSYregime)
+
+    ## seasonal production (seasonal component in m)
+    msea <- rep(1,nt)
+    SPvec <- inp$ini$SPvec
+    if(inp$seasonalProd == 2 | inp$seasonalProd == 1){
+        ## seasonal pattern
+        nSP <- length(SPvec)
+
+        ## example forced seasonal pattern
+        SPvec <- sin(seq(0,2*pi,length.out = nSP))
+        
+        ## Closed circle (not necessary because closing through combining)
+        ## SPvec[nSP] <- SPvec[1]
+
+        ## scale with sd
+        SPvec <- SPvec * sdSP
+
+        ## SPvec <- SPvec[1:nSP]
+
+        ## Mean 1 + exponent
+        SPvec <- exp(SPvec)/mean(exp(SPvec))
+
+        ## get vector for whole time series
+        msea <- SPvec[inp$seasonindex+1]
+
+        ## for export in log scale
+        SPvec <- log(SPvec)
+    }
+
+    ## combine m with seasonal vector
+    m <- mbase * msea
+
+    
+    ## m longer than 1 requires changes in inp$ir!!!!!
+    ## careful with conflict of usage of inp$ir between MSYregime and seasonalProd
+    ## hack with inp$ir in check.inp()
+
+
+    
     
     # B[t] is biomass at the beginning of the time interval starting at time t
     # I[t] is an index of biomass (e.g. CPUE) at time t
@@ -339,7 +383,12 @@ sim.spict <- function(input, nobs=100){
         B[1] <- B0
         e.b <- exp(rnorm(nt-1, 0, sdb*sqrt(dt)))
         for (t in 2:nt){
-            B[t] <- predict.b(B[t-1], F[t-1], gamma, m[inp$ir[t]], K, n, dt, sdb, inp$btype) * e.b[t-1]
+            ## HACK! BETTER TO CORRECTLY CHANGE inp$ir
+            if(inp$seasonalProd == 2 | inp$seasonalProd == 1){
+                B[t] <- predict.b(B[t-1], F[t-1], gamma, m[t-1], K, n, dt, sdb, inp$btype) * e.b[t-1]
+            }else{
+                B[t] <- predict.b(B[t-1], F[t-1], gamma, m[inp$ir[t]], K, n, dt, sdb, inp$btype) * e.b[t-1]
+            }            
         }
         flag <- any(B <= 0) # Negative biomass not allowed
         recount <- recount+1
@@ -484,6 +533,10 @@ sim.spict <- function(input, nobs=100){
     sim$sim.comm.cpue <- inp$sim.comm.cpue
     sim$meyermillar <- inp$meyermillar
     sim$aspic <- inp$aspic
+    sim$splineorderProd <- inp$splineorderProd
+    sim$nseasonsProd <- inp$nseasonsProd
+    sim$seasonalProd <- inp$seasonalProd
+    
     sim$true <- pl
     sim$true$logalpha <- sim$true$logsdi - sim$true$logsdb
     sim$true$logbeta <- sim$true$logsdc - sim$true$logsdf
@@ -503,17 +556,35 @@ sim.spict <- function(input, nobs=100){
     sim$true$e.i <- e.i
     sim$true$e.b <- e.b
     sim$true$e.f <- e.f
-    
+    sim$true$splineorderProd <- inp$splineorderProd
+    sim$true$SPvec <- SPvec
+    sim$true$seasonalProd <- inp$seasonalProd
+
     sign <- 1
-    R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
-    p <- n-1
-    sim$true$R <- R
-    sim$true$logrold <- log(abs(gamma * mean(m[inp$ir]) / K))
-    sim$true$logr <- log(mean(m[inp$ir]) / K * n^(n/(n-1.0)))
-    sim$true$logrc <- log(2 * R)
-    # Deterministic reference points
-    sim$true$Bmsyd <- K/(n^(1/(n-1)))
-    sim$true$MSYd <- mean(m[inp$ir])
+
+     ## HACK! does not allow to combine MSYregime and seaProd
+    if(inp$seasonalProd==2){
+        R <- (n-1)/n * gamma * mean(mbase) / K
+        p <- n-1
+        sim$true$R <- R
+        sim$true$logrold <- log(abs(gamma * mean(mbase) / K))
+        sim$true$logr <- log(mean(mbase) / K * n^(n/(n-1.0)))
+        sim$true$logrc <- log(2 * R)
+        ## Deterministic reference points
+        sim$true$Bmsyd <- K/(n^(1/(n-1)))
+        sim$true$MSYd <- mean(mbase)        
+    }else{
+        R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
+        p <- n-1
+        sim$true$R <- R
+        sim$true$logrold <- log(abs(gamma * mean(m[inp$ir]) / K))
+        sim$true$logr <- log(mean(m[inp$ir]) / K * n^(n/(n-1.0)))
+        sim$true$logrc <- log(2 * R)
+        ## Deterministic reference points
+        sim$true$Bmsyd <- K/(n^(1/(n-1)))
+        sim$true$MSYd <- mean(m[inp$ir])        
+    }
+
     sim$true$Fmsyd <- sim$true$MSYd/sim$true$Bmsyd
     # Stochastic reference points from Bordet & Rivest (2014)
     sim$true$Bmsys <- K/(p+1)^(1/p) * (1- (1+R*(p-1)/2)/(R*(2-R)^2)*sdb^2)

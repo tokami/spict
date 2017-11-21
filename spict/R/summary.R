@@ -520,6 +520,14 @@ sumspict.fixedpars <- function(rep, ndigits=8){
     if (!rep$inp$timevaryinggrowth){
         nms <- nms[-match(c('logsdm', 'logpsi'),  nms)]
     }
+    # Is seasonal production RW used? if not remove
+    if(rep$inp$seasonalProd != 2){
+        nms <- nms[-match(c('sdSP','SPvec'), nms)]
+    }        
+    # Are seasonal production spline used? if not remove
+    if(rep$inp$seasonalProd != 1){
+        nms <- nms[-match(c('logphiProd'), nms)]
+    }       
     nnms <- length(nms)
     if(nnms > 0){
         vals <- numeric(0)
