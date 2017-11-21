@@ -925,16 +925,30 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
         cicol <- 'lightgray'
         tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
         qf <- get.par('logqf', rep, exp=TRUE)
-        Fest <- get.par('logFnotS', rep, exp=TRUE)
-        logFest <- get.par('logFnotS', rep)
+
+        if(rep$inp$seasonalProd %in% c(1,2)){
+            Fest <- get.par('logF', rep, exp=TRUE)
+            logFest <- get.par('logF', rep)
+        }else{
+            Fest <- get.par('logFnotS', rep, exp=TRUE)
+            logFest <- get.par('logFnotS', rep)
+        }
+        
         
         if (tvgflag){
             Fmsy <- get.par('logFmsyvec', rep, exp=TRUE)
             Fmsyvec <- as.data.frame(Fmsy)
             Fmsyvec$msy <- Fmsyvec$est
             fmsycols <- matrix(rep(Fmsyvec$msy, each=3), ncol=3, byrow=TRUE)
-            FF <- get.par('logFFmsynotS', rep, exp=TRUE)[, 1:3] * fmsycols
-            logFF <- get.par('logFFmsynotS', rep)[, 1:3] + log(fmsycols)
+##            FF <- get.par('logFFmsynotS', rep, exp=TRUE)[, 1:3] * fmsycols
+##            logFF <- get.par('logFFmsynotS', rep)[, 1:3] + log(fmsycols)
+            if(rep$inp$seasonalProd %in% c(1,2)){
+                FF <- get.par('logFFmsy', rep, exp=TRUE)[, 1:3] * fmsycols
+                logFF <- get.par('logFFmsy', rep)[, 1:3] + log(fmsycols)
+            }else{
+                FF <- get.par('logFFmsynotS', rep, exp=TRUE)[, 1:3] * fmsycols
+                logFF <- get.par('logFFmsynotS', rep)[, 1:3] + log(fmsycols)                
+            }            
             rel.axes <- FALSE
         } else {
             Fmsy <- get.par('logFmsy', rep, exp=TRUE)
@@ -943,8 +957,14 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
                 Fmsy <- Fmsyd
             }
             Fmsyvec <- get.msyvec(inp, Fmsy)
-            FF <- get.par('logFFmsynotS', rep, exp=TRUE)[, 1:3] * Fmsy[2]
-            logFF <- get.par('logFFmsynotS', rep)[, 1:3] + log(Fmsy[2])
+            if(rep$inp$seasonalProd %in% c(1,2)){
+                FF <- get.par('logFFmsy', rep, exp=TRUE)[, 1:3] * Fmsy[2]
+                logFF <- get.par('logFFmsy', rep)[, 1:3] + log(Fmsy[2])
+            }else{
+                FF <- get.par('logFFmsynotS', rep, exp=TRUE)[, 1:3] * Fmsy[2]
+                logFF <- get.par('logFFmsynotS', rep)[, 1:3] + log(Fmsy[2])
+            }            
+
         }
         Fmsy <- Fmsy[Fmsy[, 1:3] < 50] # only use these inds to calculate ylim
 
@@ -1071,10 +1091,16 @@ plotspict.ffmsy <- function(rep, logax=FALSE, main='Relative fishing mortality',
         inp <- rep$inp
         cicol <- 'lightgray'
         qf <- get.par('logqf', rep, exp=TRUE)
-        FF <- get.par('logFFmsynotS', rep, exp=TRUE)
-        logFF <- get.par('logFFmsynotS', rep)
+
+        if(rep$inp$seasonalProd %in% c(1,2)){
+            FF <- get.par('logFFmsy', rep, exp=TRUE)
+            logFF <- get.par('logFFmsy', rep)
+        }else{
+            FF <- get.par('logFFmsynotS', rep, exp=TRUE)
+            logFF <- get.par('logFFmsynotS', rep)
+        }
         FFs <- get.par('logFFmsy', rep, exp=TRUE)
-        
+
         time <- inp$time[inp$indest]
         cl <- FF[inp$indest, 1]
         F <- FF[inp$indest, 2]
