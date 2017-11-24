@@ -1003,6 +1003,10 @@ Type objective_function<Type>::operator() ()
 
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
+
+  // report scaled biomass and fishing mortality relative to mean for comparison with SAM, SMS and Co
+  vector<Type> Bscaled = log(exp(logB)/(sum(exp(logB))/logB.size()));
+  vector<Type> Fscaled = log(exp(logF)/(sum(exp(logF))/logF.size()));
   
   // ADREPORTS
   ADREPORT(Bmsy);  
@@ -1096,6 +1100,8 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFFmsynotS);
   }
   ADREPORT( logBmsyPluslogFmsy ) ;
+  ADREPORT(Bscaled);
+  ADREPORT(Fscaled);
   
   // REPORTS (these don't require sdreport to be output)
   REPORT(Cp);
