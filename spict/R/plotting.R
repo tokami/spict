@@ -1438,7 +1438,8 @@ plotspict.catch <- function(rep, main='Catch', ylim=NULL, qlegend=TRUE, lcol='bl
         indpred <- which(inp$timeCpred >= tail(inp$timeC,1))
         dtc <- inp$dtcp
         if (min(inp$dtc) < 1){
-            alo <- annual(inp$timeC, inp$obsC/inp$dtc)
+            alo <-
+                annual(inp$timeC, inp$obsC/inp$dtc)
             timeo <- alo$anntime
             obs <- alo$annvec
             al1 <- annual(inp$timeCpred[indest], Cpredest[indest, 1]/dtc[indest])
@@ -1831,6 +1832,7 @@ plotspict.season <- function(rep, stamp=get.version()){
 #' @export
 #'
 plotspict.seasonProd <- function(rep, stamp=get.version()){
+    browser()
     if (!'par.fixed' %in% names(rep)){
         stop('Input object was not a valid output from fit.spict()!')
     }

@@ -529,7 +529,7 @@ sumspict.fixedpars <- function(rep, ndigits=8){
         nms <- nms[-match(c('logphiProd'), nms)]
     }       
     nnms <- length(nms)
-    if(nnms > 0 & !is.na(nms)){
+    if(nnms > 0 & !all(is.na(nms))){
         vals <- numeric(0)
         valnms <- character(0)
         for(i in 1:nnms){

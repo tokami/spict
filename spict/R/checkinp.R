@@ -1234,8 +1234,15 @@ check.inp <- function(inp){
     # Determine fixed parameters
     forcefixpars <- c() # Parameters that are forced to be fixed.
     if (inp$nseasons == 1){
-        forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda', 'SARvec','logitSARphi','logSdSAR',forcefixpars)
+        forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda',
+                          'SARvec','logitSARphi','logSdSAR',
+                          'SPvec','logSdSP','logphiProd', forcefixpars)
     } else {
+        if (inp$seasontype == 0){ # no seasonal F
+            forcefixpars <- c('logphi','logu', 'logsdu',
+                              'loglambda','SARvec','logitSARphi',
+                              'logSdSAR', forcefixpars)
+        }        
         if (inp$seasontype == 1){ # Use spline
             forcefixpars <- c('logu', 'logsdu', 'loglambda','SARvec','logitSARphi','logSdSAR', forcefixpars)
         }
@@ -1245,15 +1252,18 @@ check.inp <- function(inp){
         if(inp$seasontype == 3){ # Use spline + AR
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
+        print(inp$seasonalProd)
+        if(inp$seasonalProd == 0){
+            forcefixpars <- c('logphiProd','SPvec','logSdSP',forcefixpars)
+        }        
+        if(inp$seasonalProd == 1){
+            forcefixpars <- c('SPvec','logSdSP',forcefixpars)
+        }
+        if(inp$seasonalProd == 2){
+            forcefixpars <- c('logphiProd',forcefixpars)
+        }            
     }
-
-    if(inp$seasonalProd != 2){
-        forcefixpars <- c('SPvec','logSdSP',forcefixpars)
-    }
-    if(inp$seasonalProd != 1){
-        forcefixpars <- c('logphiProd',forcefixpars)
-    }    
-    
+    print(forcefixpars)
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
         forcefixpars <- c('logitpp', 'logp1robfac', forcefixpars)
     }
