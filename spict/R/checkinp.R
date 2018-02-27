@@ -834,7 +834,7 @@ check.inp <- function(inp){
 
     ## seasonal production    
     if(!'seasonalProd' %in% names(inp)) inp$seasonalProd <- 0
-    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <- log(2)  ## -2
+    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2 ## log(2)
 
     if(!"nseasonsProd" %in% names(inp)){      ## default number of seasons = 1
         inp$nseasonsProd <- 1
@@ -1043,7 +1043,7 @@ check.inp <- function(inp){
 
 
     ## seasonal production
-    inp$ini$SPvec <- rep(1, 1/inp$dteuler)
+    inp$ini$SPvec <- rep(log(1), 1/inp$dteuler)
 
     
     # Reorder parameter list

@@ -337,6 +337,7 @@ Type objective_function<Type>::operator() ()
     for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true); // spline smoothness penality
     ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true); // circular          
 
+
     
     // ans -= dnorm(exp(logStemp(0)), Type(0), Type(1), true); //first one 0 constraint    
 
