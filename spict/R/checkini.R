@@ -78,6 +78,8 @@ check.ini <- function(input, ntrials=10, verbose=TRUE, numdigits=2){
             }
             inidist[i] <- calc.dist(inimat[i, ], inibasevec)
             inpsens$osar.method <- "none"
+            print(paste0(i,"    =     "))
+            print(inpsens$ini)
             repsens <- try(fit.spict(inpsens))
             if (class(repsens) != 'try-error' & 'opt' %in% names(repsens)){
                 if (repsens$opt$convergence == 0){

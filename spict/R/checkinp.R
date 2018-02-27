@@ -832,11 +832,9 @@ check.inp <- function(inp){
     if (!'logitSARphi' %in% names(inp$ini)) inp$ini$logitSARphi <- 0
     if (!'logSdSAR' %in% names(inp$ini)) inp$ini$logSdSAR <- -2
 
-
-    
     ## seasonal production    
     if(!'seasonalProd' %in% names(inp)) inp$seasonalProd <- 0
-    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <- -2
+    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <- log(2)  ## -2
 
     if(!"nseasonsProd" %in% names(inp)){      ## default number of seasons = 1
         inp$nseasonsProd <- 1
@@ -1045,7 +1043,7 @@ check.inp <- function(inp){
 
 
     ## seasonal production
-    inp$ini$SPvec <- rep(log(1), 1/inp$dteuler)
+    inp$ini$SPvec <- rep(1, 1/inp$dteuler)
 
     
     # Reorder parameter list
@@ -1252,7 +1250,6 @@ check.inp <- function(inp){
         if(inp$seasontype == 3){ # Use spline + AR
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
-        print(inp$seasonalProd)
         if(inp$seasonalProd == 0){
             forcefixpars <- c('logphiProd','SPvec','logSdSP',forcefixpars)
         }        
@@ -1263,7 +1260,6 @@ check.inp <- function(inp){
             forcefixpars <- c('logphiProd',forcefixpars)
         }            
     }
-    print(forcefixpars)
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
         forcefixpars <- c('logitpp', 'logp1robfac', forcefixpars)
     }

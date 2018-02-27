@@ -284,19 +284,20 @@ sim.spict <- function(input, nobs=100){
         nSP <- length(SPvec)
 
         ## example forced seasonal pattern
-        SPvec <- sin(seq(0,2*pi,length.out = nSP))
+        SPvec <- sin(seq(0.01,2*pi,length.out = nSP)) + 1
         
         ## Closed circle (not necessary because closing through combining)
         ## SPvec[nSP] <- SPvec[1]
 
         ## scale with sd
-        SPvec <- SPvec * sdSP
+        print(SPvec)
+        SPvec <- exp(log(SPvec) * sdSP)
 
         ## SPvec <- SPvec[1:nSP]
-
+        print(SPvec)
         ## Mean 1 + exponent
         SPvec <- exp(SPvec)/mean(exp(SPvec))
-
+        print(SPvec)
         ## get vector for whole time series
         msea <- SPvec[inp$seasonindex+1]
 
