@@ -1,0 +1,29 @@
+* installing *source* package ‘spict’ ...
+** libs
+make[1]: Entering directory '/home/tokami/Documents/DrTokami/R packages/SPiCT/spict/spict/src'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/home/tokami/Documents/DrTokami/R packages/SPiCT/spict/spict/src'
+make[1]: Entering directory '/home/tokami/Documents/DrTokami/R packages/SPiCT/spict/spict/src'
+make[1]: Leaving directory '/home/tokami/Documents/DrTokami/R packages/SPiCT/spict/spict/src'
+installing to /home/tokami/Documents/DrTokami/R packages/SPiCT/spict/spict.Rcheck/spict/libs
+** R
+** data
+*** moving datasets to lazyload DB
+** inst
+** preparing package for lazy loading
+Warning in checkMatrixPackageVersion() :
+  Package version inconsistency detected.
+TMB was built with Matrix version 1.2.11
+Current Matrix version is 1.2.12
+Please re-install 'TMB' from source or ask CRAN for a binary version of 'TMB' matching CRAN's 'Matrix' package
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+Warning in checkMatrixPackageVersion() :
+  Package version inconsistency detected.
+TMB was built with Matrix version 1.2.11
+Current Matrix version is 1.2.12
+Please re-install 'TMB' from source or ask CRAN for a binary version of 'TMB' matching CRAN's 'Matrix' package
+* DONE (spict)

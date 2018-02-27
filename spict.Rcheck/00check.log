@@ -1,0 +1,574 @@
+* using log directory ‘/home/tokami/Documents/DrTokami/R packages/SPiCT/spict/spict.Rcheck’
+* using R version 3.4.3 (2017-11-30)
+* using platform: x86_64-pc-linux-gnu (64-bit)
+* using session charset: UTF-8
+* checking for file ‘spict/DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘spict’ version ‘1.2.1’
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... WARNING
+Subdirectory ‘spict/src’ contains apparent object files/libraries
+  spict.o spict.so
+Object files/libraries should not be included in a source package.
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... NOTE
+Found the following hidden files and directories:
+  R/.Rhistory
+  src/.Rhistory
+These were most likely included in error. See section ‘Package
+structure’ in the ‘Writing R Extensions’ manual.
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘spict’ can be installed ... OK
+* checking installed package size ... NOTE
+  installed size is 45.6Mb
+  sub-directories of 1Mb or more:
+    libs  44.1Mb
+* checking package directory ... OK
+* checking DESCRIPTION meta-information ... NOTE
+Checking should be performed on sources prepared by ‘R CMD build’.
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... WARNING
+Invalid citation information in ‘inst/CITATION’:
+  Error in parse(file = cfile): /home/tokami/Documents/DrTokami/R packages/SPiCT/spict/spict/inst/CITATION:9:22: unexpected '/'
+  8:          journal="Fish and Fisheries",
+  9:          url = {http:/
+                          ^
+* checking R files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ...Loading required package: TMB
+Error: package or namespace load failed for ‘spict’:
+ .onAttach failed in attachNamespace() for 'spict', details:
+  call: packageDescription(pkg)
+  error: could not find function "packageDescription"
+In addition: Warning message:
+In checkMatrixPackageVersion() : Package version inconsistency detected.
+TMB was built with Matrix version 1.2.11
+Current Matrix version is 1.2.12
+Please re-install 'TMB' from source or ask CRAN for a binary version of 'TMB' matching CRAN's 'Matrix' package
+Execution halted
+
+It looks like this package (or one of its dependent packages) has an
+unstated dependence on a standard package.  All dependencies must be
+declared in DESCRIPTION.
+See section ‘The DESCRIPTION file’ in the ‘Writing R Extensions’
+manual.
+* checking whether the package can be unloaded cleanly ... WARNING
+Error: package or namespace load failed for ‘spict’:
+ .onAttach failed in attachNamespace() for 'spict', details:
+  call: packageDescription(pkg)
+  error: could not find function "packageDescription"
+In addition: Warning message:
+In checkMatrixPackageVersion() : Package version inconsistency detected.
+TMB was built with Matrix version 1.2.11
+Current Matrix version is 1.2.12
+Please re-install 'TMB' from source or ask CRAN for a binary version of 'TMB' matching CRAN's 'Matrix' package
+Execution halted
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking loading without being on the library search path ... OK
+* checking dependencies in R code ... NOTE
+Error: package or namespace load failed for ‘spict’:
+ .onAttach failed in attachNamespace() for 'spict', details:
+  call: packageDescription(pkg)
+  error: could not find function "packageDescription"
+Call sequence:
+6: stop(msg, call. = FALSE, domain = NA)
+5: value[[3L]](cond)
+4: tryCatchOne(expr, names, parentenv, handlers[[1L]])
+3: tryCatchList(expr, classes, parentenv, handlers)
+2: tryCatch({
+       attr(package, "LibPath") <- which.lib.loc
+       ns <- loadNamespace(package, lib.loc)
+       env <- attachNamespace(ns, pos = pos, deps)
+   }, error = function(e) {
+       P <- if (!is.null(cc <- conditionCall(e))) 
+           paste(" in", deparse(cc)[1L])
+       else ""
+       msg <- gettextf("package or namespace load failed for %s%s:\n %s", 
+           sQuote(package), P, conditionMessage(e))
+       if (logical.return) 
+           message(paste("Error:", msg), domain = NA)
+       else stop(msg, call. = FALSE, domain = NA)
+   })
+1: library(package, lib.loc = lib.loc, character.onl
+Execution halted
+* checking S3 generic/method consistency ... WARNING
+plot:
+  function(x, ...)
+plot.priors:
+  function(nm, priorsin, add, ...)
+
+See section ‘Generic functions and methods’ in the ‘Writing R
+Extensions’ manual.
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+acf.signf : calc.pval: no visible global function definition for
+  ‘pnorm’
+acf.signf : calc.limval: no visible global function definition for
+  ‘qnorm’
+acf.signf: no visible global function definition for ‘acf’
+acf.signf: no visible binding for global variable ‘na.pass’
+add.col.legend: no visible global function definition for ‘par’
+add.col.legend: no visible global function definition for ‘rect’
+add.col.legend: no visible global function definition for ‘text’
+add.col.legend.hor: no visible global function definition for ‘par’
+add.col.legend.hor: no visible global function definition for ‘rect’
+add.col.legend.hor: no visible global function definition for ‘text’
+add.manlines: no visible global function definition for ‘tail’
+add.manlines: no visible global function definition for ‘lines’
+add.manlines: no visible global function definition for
+  ‘capture.output’
+add.manlines: no visible global function definition for ‘legend’
+annual: no visible global function definition for ‘is’
+arrow.line: no visible global function definition for ‘par’
+arrow.line: no visible global function definition for ‘arrows’
+check.ini: no visible global function definition for ‘runif’
+check.inp: no visible global function definition for ‘tail’
+check.inp: no visible global function definition for ‘smooth.spline’
+check.inp: no visible global function definition for ‘predict’
+check.inp: no visible binding for global variable ‘noms’
+check.inp: no visible global function definition for ‘is’
+fit.aspic: no visible global function definition for ‘read.table’
+fit.jags: no visible global function definition for ‘update’
+fit.meyermillar: no visible global function definition for ‘pnorm’
+fit.spict: no visible global function definition for ‘nlminb’
+fit.spict: no visible global function definition for ‘optim’
+fit.spict: no visible global function definition for ‘packageVersion’
+get.EBinf: no visible global function definition for ‘tail’
+get.catchindexoverlap: no visible global function definition for
+  ‘na.omit’
+get.cov: no visible global function definition for ‘cov2cor’
+get.version: no visible global function definition for
+  ‘packageDescription’
+guess.m: no visible global function definition for ‘lm’
+list.possible.priors: no visible global function definition for ‘data’
+list.possible.priors: no visible binding for global variable ‘pol’
+make.ellipse: no visible global function definition for ‘cov2cor’
+make.report: no visible global function definition for ‘pdf’
+make.report: no visible global function definition for ‘plot’
+make.report: no visible global function definition for ‘dev.off’
+make.report: no visible global function definition for ‘capture.output’
+make.rpellipse: no visible global function definition for ‘cov2cor’
+manage: no visible global function definition for ‘tail’
+mansummary: no visible global function definition for ‘tail’
+plot.col: no visible global function definition for ‘plot’
+plot.col: no visible global function definition for ‘abline’
+plot.col: no visible global function definition for ‘lines’
+plot.col: no visible global function definition for ‘points’
+plot.col: no visible global function definition for ‘box’
+plot.priors: no visible global function definition for ‘dlnorm’
+plot.priors: no visible global function definition for ‘dgamma’
+plot.priors: no visible global function definition for ‘lines’
+plot.priors: no visible global function definition for ‘plot’
+plot.spictcls: no visible global function definition for ‘par’
+plotspict.bbmsy: no visible global function definition for ‘plot’
+plotspict.bbmsy: no visible global function definition for ‘tail’
+plotspict.bbmsy: no visible global function definition for ‘rgb’
+plotspict.bbmsy: no visible global function definition for ‘polygon’
+plotspict.bbmsy: no visible global function definition for ‘abline’
+plotspict.bbmsy: no visible global function definition for ‘points’
+plotspict.bbmsy: no visible global function definition for ‘lines’
+plotspict.bbmsy: no visible global function definition for ‘box’
+plotspict.biomass: no visible global function definition for ‘dev.cur’
+plotspict.biomass: no visible global function definition for ‘par’
+plotspict.biomass: no visible global function definition for ‘plot’
+plotspict.biomass: no visible global function definition for ‘tail’
+plotspict.biomass: no visible global function definition for ‘axis’
+plotspict.biomass: no visible global function definition for ‘mtext’
+plotspict.biomass: no visible global function definition for ‘polygon’
+plotspict.biomass: no visible global function definition for ‘rgb’
+plotspict.biomass: no visible global function definition for ‘abline’
+plotspict.biomass: no visible global function definition for ‘points’
+plotspict.biomass: no visible global function definition for ‘lines’
+plotspict.biomass: no visible global function definition for ‘box’
+plotspict.btrend: no visible global function definition for ‘plot’
+plotspict.btrend: no visible global function definition for ‘lines’
+plotspict.btrend: no visible global function definition for ‘abline’
+plotspict.btrend: no visible global function definition for ‘legend’
+plotspict.btrend: no visible global function definition for ‘box’
+plotspict.catch: no visible global function definition for ‘tail’
+plotspict.catch: no visible global function definition for ‘plot’
+plotspict.catch: no visible global function definition for ‘polygon’
+plotspict.catch: no visible global function definition for ‘rgb’
+plotspict.catch: no visible global function definition for ‘lines’
+plotspict.catch: no visible global function definition for ‘abline’
+plotspict.catch: no visible global function definition for ‘points’
+plotspict.catch: no visible global function definition for ‘box’
+plotspict.ci: no visible global function definition for ‘predict’
+plotspict.ci: no visible global function definition for ‘par’
+plotspict.ci : plot.seasondiff: no visible global function definition
+  for ‘plot’
+plotspict.ci : plot.seasondiff: no visible global function definition
+  for ‘abline’
+plotspict.ci : plot.seasondiff: no visible global function definition
+  for ‘box’
+plotspict.ci: no visible global function definition for ‘plot’
+plotspict.ci: no visible global function definition for ‘lines’
+plotspict.ci: no visible global function definition for ‘box’
+plotspict.ci: no visible global function definition for ‘abline’
+plotspict.data: no visible global function definition for ‘dev.cur’
+plotspict.data: no visible global function definition for ‘par’
+plotspict.data: no visible global function definition for ‘plot’
+plotspict.data: no visible global function definition for ‘box’
+plotspict.data: no visible global function definition for ‘grid’
+plotspict.data: no visible global function definition for ‘abline’
+plotspict.diagnostic: no visible global function definition for ‘par’
+plotspict.diagnostic : osar.acf.plot: no visible global function
+  definition for ‘acf’
+plotspict.diagnostic : osar.acf.plot: no visible global function
+  definition for ‘title’
+plotspict.diagnostic : osar.acf.plot: no visible global function
+  definition for ‘legend’
+plotspict.diagnostic : osar.acf.plot: no visible global function
+  definition for ‘box’
+plotspict.diagnostic : osar.qq.plot: no visible global function
+  definition for ‘qqnorm’
+plotspict.diagnostic : osar.qq.plot: no visible global function
+  definition for ‘qqline’
+plotspict.diagnostic : osar.qq.plot: no visible global function
+  definition for ‘box’
+plotspict.f: no visible global function definition for ‘par’
+plotspict.f: no visible global function definition for ‘dev.cur’
+plotspict.f: no visible global function definition for ‘tail’
+plotspict.f: no visible global function definition for ‘plot’
+plotspict.f: no visible global function definition for ‘axis’
+plotspict.f: no visible global function definition for ‘mtext’
+plotspict.f: no visible global function definition for ‘polygon’
+plotspict.f: no visible global function definition for ‘rgb’
+plotspict.f: no visible global function definition for ‘lines’
+plotspict.f: no visible global function definition for ‘abline’
+plotspict.f: no visible global function definition for ‘box’
+plotspict.fb: no visible global function definition for ‘dev.cur’
+plotspict.fb: no visible global function definition for ‘par’
+plotspict.fb: no visible global function definition for ‘tail’
+plotspict.fb: no visible global function definition for ‘plot’
+plotspict.fb: no visible global function definition for ‘axis’
+plotspict.fb: no visible global function definition for ‘mtext’
+plotspict.fb: no visible global function definition for ‘polygon’
+plotspict.fb: no visible global function definition for ‘rgb’
+plotspict.fb: no visible global function definition for ‘abline’
+plotspict.fb: no visible global function definition for ‘col2rgb’
+plotspict.fb: no visible global function definition for ‘points’
+plotspict.fb: no visible global function definition for ‘lines’
+plotspict.fb: no visible global function definition for ‘legend’
+plotspict.fb: no visible global function definition for ‘text’
+plotspict.fb: no visible global function definition for ‘box’
+plotspict.ffmsy: no visible global function definition for ‘plot’
+plotspict.ffmsy: no visible global function definition for ‘tail’
+plotspict.ffmsy: no visible global function definition for ‘rgb’
+plotspict.ffmsy: no visible global function definition for ‘polygon’
+plotspict.ffmsy: no visible global function definition for ‘lines’
+plotspict.ffmsy: no visible global function definition for ‘abline’
+plotspict.ffmsy: no visible global function definition for ‘box’
+plotspict.growth: no visible global function definition for ‘tail’
+plotspict.growth: no visible global function definition for ‘plot’
+plotspict.growth: no visible global function definition for ‘rgb’
+plotspict.growth: no visible global function definition for ‘abline’
+plotspict.growth: no visible global function definition for ‘polygon’
+plotspict.growth: no visible global function definition for ‘lines’
+plotspict.growth: no visible global function definition for ‘box’
+plotspict.infl: no visible global function definition for ‘par’
+plotspict.infl: no visible global function definition for ‘plot’
+plotspict.infl: no visible global function definition for ‘abline’
+plotspict.infl: no visible global function definition for ‘text’
+plotspict.infl: no visible global function definition for ‘box’
+plotspict.infl: no visible global function definition for ‘points’
+plotspict.infl: no visible global function definition for ‘legend’
+plotspict.inflsum: no visible global function definition for ‘matplot’
+plotspict.inflsum: no visible global function definition for ‘axis’
+plotspict.inflsum: no visible global function definition for ‘abline’
+plotspict.likprof: no visible global function definition for ‘plot’
+plotspict.likprof: no visible global function definition for ‘qchisq’
+plotspict.likprof: no visible global function definition for ‘abline’
+plotspict.likprof: no visible global function definition for ‘dnorm’
+plotspict.likprof: no visible global function definition for ‘lines’
+plotspict.likprof: no visible global function definition for ‘legend’
+plotspict.likprof: no visible global function definition for ‘pchisq’
+plotspict.likprof: no visible global function definition for ‘contour’
+plotspict.likprof: no visible global function definition for ‘box’
+plotspict.osar : fun: no visible global function definition for ‘text’
+plotspict.osar: no visible global function definition for ‘abline’
+plotspict.priors: no visible global function definition for ‘dnorm’
+plotspict.priors: no visible global function definition for ‘plot’
+plotspict.priors: no visible global function definition for ‘abline’
+plotspict.priors: no visible global function definition for ‘legend’
+plotspict.priors: no visible global function definition for ‘lines’
+plotspict.priors: no visible global function definition for ‘box’
+plotspict.production: no visible global function definition for ‘plot’
+plotspict.production: no visible global function definition for ‘lines’
+plotspict.production: no visible global function definition for
+  ‘points’
+plotspict.production: no visible global function definition for ‘par’
+plotspict.production: no visible global function definition for ‘text’
+plotspict.production: no visible global function definition for
+  ‘abline’
+plotspict.production: no visible global function definition for ‘box’
+plotspict.retro: no visible global function definition for ‘par’
+plotspict.retro: no visible global function definition for ‘plot’
+plotspict.retro: no visible global function definition for ‘polygon’
+plotspict.retro: no visible global function definition for ‘lines’
+plotspict.retro: no visible global function definition for ‘box’
+plotspict.season: no visible global function definition for ‘plot’
+plotspict.season: no visible global function definition for ‘rgb’
+plotspict.season: no visible global function definition for ‘polygon’
+plotspict.season: no visible global function definition for ‘lines’
+plotspict.season: no visible global function definition for ‘abline’
+plotspict.season: no visible binding for global variable ‘nnnytrue’
+plotspict.season: no visible global function definition for ‘axis’
+plotspict.season: no visible global function definition for ‘box’
+plotspict.seasonProd: no visible global function definition for ‘rgb’
+plotspict.seasonProd: no visible global function definition for ‘plot’
+plotspict.seasonProd: no visible global function definition for
+  ‘polygon’
+plotspict.seasonProd: no visible global function definition for ‘lines’
+plotspict.seasonProd: no visible global function definition for
+  ‘abline’
+plotspict.seasonProd: no visible global function definition for ‘axis’
+plotspict.seasonProd: no visible global function definition for ‘box’
+plotspict.tc: no visible global function definition for ‘tail’
+plotspict.tc: no visible global function definition for ‘plot’
+plotspict.tc: no visible global function definition for ‘abline’
+plotspict.tc: no visible global function definition for ‘lines’
+plotspict.tc: no visible global function definition for ‘legend’
+plotspict.tc: no visible global function definition for ‘points’
+plotspict.tc: no visible global function definition for ‘par’
+plotspict.tc: no visible global function definition for ‘box’
+prop.F: no visible global function definition for ‘packageVersion’
+put.xax: no visible global function definition for ‘axis’
+put.xax: no visible global function definition for ‘abline’
+read.aspic: no visible global function definition for ‘read.table’
+read.aspic.res: no visible global function definition for ‘read.table’
+refpointci: no visible global function definition for ‘tail’
+refpointci: no visible global function definition for ‘polygon’
+res.diagn: no visible global function definition for ‘shapiro.test’
+res.diagn: no visible global function definition for ‘t.test’
+res.diagn: no visible global function definition for ‘Box.test’
+retro: no visible global function definition for ‘packageVersion’
+retro: no visible global function definition for ‘head’
+season.cols: no visible global function definition for ‘colorRamp’
+season.cols: no visible global function definition for ‘rgb’
+sim.spict: no visible global function definition for ‘rnorm’
+summary.spictcls: no visible global function definition for
+  ‘capture.output’
+summary.spictcls: no visible global function definition for ‘na.omit’
+sumspict.diagnostics: no visible global function definition for ‘is’
+sumspict.ini: no visible global function definition for ‘is’
+sumspict.predictions: no visible global function definition for ‘tail’
+test.spict: no visible global function definition for ‘data’
+test.spict: no visible binding for global variable ‘pol’
+test.spict: no visible global function definition for ‘tail’
+test.spict: no visible global function definition for ‘dev.new’
+test.spict: no visible global function definition for ‘plot’
+true.col: no visible global function definition for ‘rgb’
+txt.stamp: no visible global function definition for ‘par’
+txt.stamp: no visible global function definition for ‘plot’
+txt.stamp: no visible global function definition for ‘strwidth’
+txt.stamp: no visible global function definition for ‘strheight’
+txt.stamp: no visible global function definition for ‘text’
+validate.spict : fun: no visible global function definition for
+  ‘capture.output’
+warning.stamp: no visible global function definition for ‘par’
+warning.stamp: no visible global function definition for ‘points’
+warning.stamp: no visible global function definition for ‘text’
+Undefined global functions or variables:
+  Box.test abline acf arrows axis box capture.output col2rgb colorRamp
+  contour cov2cor data dev.cur dev.new dev.off dgamma dlnorm dnorm grid
+  head is legend lines lm matplot mtext na.omit na.pass nlminb nnnytrue
+  noms optim packageDescription packageVersion par pchisq pdf plot
+  pnorm points pol polygon predict qchisq qnorm qqline qqnorm
+  read.table rect rgb rnorm runif shapiro.test smooth.spline strheight
+  strwidth t.test tail text title update
+Consider adding
+  importFrom("grDevices", "col2rgb", "colorRamp", "dev.cur", "dev.new",
+             "dev.off", "pdf", "rgb")
+  importFrom("graphics", "abline", "arrows", "axis", "box", "contour",
+             "grid", "legend", "lines", "matplot", "mtext", "par",
+             "plot", "points", "polygon", "rect", "strheight",
+             "strwidth", "text", "title")
+  importFrom("methods", "is")
+  importFrom("stats", "Box.test", "acf", "cov2cor", "dgamma", "dlnorm",
+             "dnorm", "lm", "na.omit", "na.pass", "nlminb", "optim",
+             "pchisq", "pnorm", "predict", "qchisq", "qnorm", "qqline",
+             "qqnorm", "rnorm", "runif", "shapiro.test", "smooth.spline",
+             "t.test", "update")
+  importFrom("utils", "capture.output", "data", "head",
+             "packageDescription", "packageVersion", "read.table",
+             "tail")
+to your NAMESPACE file (and ensure that your DESCRIPTION Imports field
+contains 'methods').
+* checking Rd files ... WARNING
+checkRd: (5) acf.signf.Rd:0-22: Must have a \description
+checkRd: (5) add.catchunit.Rd:0-17: Must have a \description
+checkRd: (5) add.col.legend.Rd:0-12: Must have a \description
+checkRd: (5) add.col.legend.hor.Rd:0-12: Must have a \description
+checkRd: (5) add.manlines.Rd:0-22: Must have a \description
+checkRd: (5) annual.Rd:0-19: Must have a \description
+checkRd: (5) arrow.line.Rd:0-35: Must have a \description
+checkRd: (5) calc.EBinf.Rd:0-26: Must have a \description
+checkRd: (5) calc.gamma.Rd:0-12: Must have a \description
+checkRd: (5) calc.influence.Rd:0-18: Must have a \description
+checkRd: (5) calc.osa.resid.Rd:0-24: Must have a \description
+checkRd: (5) check.ini.Rd:0-21: Must have a \description
+checkRd: (5) check.inp.Rd:0-105: Must have a \description
+checkRd: (5) extract.simstats.Rd:0-31: Must have a \description
+checkRd: (5) fd.Rd:0-17: Must have a \description
+checkRd: (5) fit.aspic.Rd:0-31: Must have a \description
+checkRd: (5) fit.jags.Rd:0-26: Must have a \description
+checkRd: (5) fit.meyermillar.Rd:0-44: Must have a \description
+checkRd: (5) fit.spict.Rd:0-77: Must have a \description
+checkRd: (5) get.AIC.Rd:0-15: Must have a \description
+checkRd: (5) get.EBinf.Rd:0-18: Must have a \description
+checkRd: (5) get.catchindexoverlap.Rd:0-15: Must have a \description
+checkRd: (5) get.colnms.Rd:0-12: Must have a \description
+checkRd: (5) get.cov.Rd:0-21: Must have a \description
+checkRd: (5) get.mfrow.Rd:0-15: Must have a \description
+checkRd: (5) get.msyvec.Rd:0-17: Must have a \description
+checkRd: (5) get.order.Rd:0-12: Must have a \description
+checkRd: (5) get.osar.pvals.Rd:0-15: Must have a \description
+checkRd: (5) get.par.Rd:0-46: Must have a \description
+checkRd: (5) get.spline.Rd:0-19: Must have a \description
+checkRd: (5) get.version.Rd:0-15: Must have a \description
+checkRd: (5) guess.m.Rd:0-20: Must have a \description
+checkRd: (5) invlogit.Rd:0-15: Must have a \description
+checkRd: (5) invlogp1.Rd:0-18: Must have a \description
+checkRd: (5) latex.figure.Rd:0-19: Must have a \description
+checkRd: (5) likprof.spict.Rd:0-39: Must have a \description
+checkRd: (5) list.possible.priors.Rd:0-12: Must have a \description
+checkRd: (5) make.datin.Rd:0-17: Must have a \description
+checkRd: (5) make.ellipse.Rd:0-20: Must have a \description
+checkRd: (5) make.ffacvec.Rd:0-17: Must have a \description
+checkRd: (5) make.obj.Rd:0-21: Must have a \description
+checkRd: (5) make.report.Rd:0-31: Must have a \description
+checkRd: (5) make.rpellipse.Rd:0-18: Must have a \description
+checkRd: (5) make.splinemat.Rd:0-19: Must have a \description
+checkRd: (5) man.cols.Rd:0-12: Must have a \description
+checkRd: (5) manage.Rd:0-39: Must have a \description
+checkRd: (5) mansummary.Rd:0-24: Must have a \description
+checkRd: (5) meanvar2shaperate.Rd:0-17: Must have a \description
+checkRd: (5) plot.col.Rd:0-35: Must have a \description
+checkRd: (5) plot.spictcls.Rd:0-43: Must have a \description
+checkRd: (5) plotmm.priors.Rd:0-22: Must have a \description
+checkRd: (5) plotspict.bbmsy.Rd:0-41: Must have a \description
+checkRd: (5) plotspict.biomass.Rd:0-45: Must have a \description
+checkRd: (5) plotspict.btrend.Rd:0-15: Must have a \description
+checkRd: (5) plotspict.catch.Rd:0-38: Must have a \description
+checkRd: (5) plotspict.ci.Rd:0-17: Must have a \description
+checkRd: (5) plotspict.data.Rd:0-24: Must have a \description
+checkRd: (5) plotspict.diagnostic.Rd:0-32: Must have a \description
+checkRd: (5) plotspict.f.Rd:0-45: Must have a \description
+checkRd: (5) plotspict.fb.Rd:0-45: Must have a \description
+checkRd: (5) plotspict.ffmsy.Rd:0-41: Must have a \description
+checkRd: (5) plotspict.growth.Rd:0-34: Must have a \description
+checkRd: (5) plotspict.infl.Rd:0-20: Must have a \description
+checkRd: (5) plotspict.inflsum.Rd:0-20: Must have a \description
+checkRd: (5) plotspict.likprof.Rd:0-22: Must have a \description
+checkRd: (5) plotspict.osar.Rd:0-28: Must have a \description
+checkRd: (5) plotspict.priors.Rd:0-19: Must have a \description
+checkRd: (5) plotspict.production.Rd:0-30: Must have a \description
+checkRd: (5) plotspict.retro.Rd:0-17: Must have a \description
+checkRd: (5) plotspict.season.Rd:0-20: Must have a \description
+checkRd: (5) plotspict.tc.Rd:0-27: Must have a \description
+checkRd: (5) pol.Rd:0-24: Must have a \description
+checkRd: (5) pred.catch.Rd:0-23: Must have a \description
+checkRd: (5) predict.b.Rd:0-31: Must have a \description
+checkRd: (5) predict.logf.Rd:0-21: Must have a \description
+checkRd: (5) predict.logmre.Rd:0-23: Must have a \description
+checkRd: (5) print.spictcls.Rd:0-17: Must have a \description
+checkRd: (5) prop.F.Rd:0-25: Must have a \description
+checkRd: (5) put.ax.Rd:0-19: Must have a \description
+checkRd: (5) read.aspic.Rd:0-27: Must have a \description
+checkRd: (5) read.aspic.res.Rd:0-18: Must have a \description
+checkRd: (5) refpointci.Rd:0-21: Must have a \description
+checkRd: (5) res.diagn.Rd:0-19: Must have a \description
+checkRd: (5) retro.Rd:0-27: Must have a \description
+checkRd: (5) season.cols.Rd:0-15: Must have a \description
+checkRd: (5) shaperate2meanvar.Rd:0-17: Must have a \description
+checkRd: (5) sim.spict.Rd:0-58: Must have a \description
+checkRd: (5) spict.Rd:0-24: Must have a \description
+checkRd: (5) spict2DLMtool.Rd:0-74: Must have a \description
+checkRd: (5) summary.spictcls.Rd:0-25: Must have a \description
+checkRd: (5) sumspict.diagnostics.Rd:0-17: Must have a \description
+checkRd: (5) sumspict.drefpoints.Rd:0-17: Must have a \description
+checkRd: (5) sumspict.fixedpars.Rd:0-17: Must have a \description
+checkRd: (5) sumspict.ini.Rd:0-17: Must have a \description
+checkRd: (5) sumspict.parest.Rd:0-17: Must have a \description
+checkRd: (5) sumspict.predictions.Rd:0-17: Must have a \description
+checkRd: (5) sumspict.priors.Rd:0-17: Must have a \description
+checkRd: (5) sumspict.srefpoints.Rd:0-17: Must have a \description
+checkRd: (5) sumspict.states.Rd:0-17: Must have a \description
+checkRd: (5) take.c.Rd:0-23: Must have a \description
+checkRd: (5) test.spict.Rd:0-21: Must have a \description
+checkRd: (5) trans2real.Rd:0-19: Must have a \description
+checkRd: (5) true.col.Rd:0-12: Must have a \description
+checkRd: (5) txt.stamp.Rd:0-19: Must have a \description
+checkRd: (5) validate.spict.Rd:0-57: Must have a \description
+checkRd: (5) validation.data.frame.Rd:0-15: Must have a \description
+checkRd: (5) warning.stamp.Rd:0-12: Must have a \description
+checkRd: (5) write.aspic.Rd:0-27: Must have a \description
+checkRd: (5) write.bug.file.Rd:0-23: Must have a \description
+* checking Rd metadata ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... WARNING
+Undocumented code objects:
+  ‘plotspict.seasonProd’
+All user-level objects in a package should have documentation entries.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... WARNING
+Undocumented arguments in documentation object 'add.manlines'
+  ‘plot.legend’ ‘...’
+
+Undocumented arguments in documentation object 'make.report'
+  ‘summaryoutfile’
+
+Undocumented arguments in documentation object 'manage'
+  ‘catch’ ‘catchList’
+
+Undocumented arguments in documentation object 'plot.spictcls'
+  ‘stamp’
+
+Undocumented arguments in documentation object 'pred.catch'
+  ‘repin’
+Documented arguments not in \usage in documentation object 'pred.catch':
+  ‘rep’
+
+Undocumented arguments in documentation object 'take.c'
+  ‘catchList’
+
+Functions with \usage entries need to have the appropriate \alias
+entries, and all their arguments documented.
+The \usage entries must correspond to syntactically valid R code.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking line endings in C/C++/Fortran sources/headers ... OK
+* checking compiled code ... WARNING
+File ‘spict/libs/spict.so’:
+  Found ‘_ZSt4cout’, possibly from ‘std::cout’ (C++)
+    Object: ‘spict.o’
+  Found ‘abort’, possibly from ‘abort’ (C)
+    Object: ‘spict.o’
+File ‘spict/libs/spict.so’:
+  Found non-API call to R: ‘R_RunExitFinalizers’
+
+Compiled code should not call entry points which might terminate R nor
+write to stdout/stderr instead of to the console, nor the system RNG.
+Compiled code should not call non-API entry points in R.
+
+See ‘Writing portable packages’ in the ‘Writing R Extensions’ manual.
+* checking files in ‘vignettes’ ... WARNING
+Files in the 'vignettes' directory but no files in 'inst/doc':
+  ‘bibliography.bib’, ‘vignette.Rmd’, ‘vignette.html’, ‘vignette.pdf’
+* checking examples ...

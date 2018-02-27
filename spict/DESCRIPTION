@@ -25,4 +25,4 @@ LazyData: true
 VignetteBuilder: knitr
 GithubRepo: spict
 GithubRef: seaProd 
-GithubSHA1: 037432c5a01951b68517c75114c3a8628a31393f 
+GithubSHA1: 2703076d1dfc0204e721604dcddf902ca2a08a98 

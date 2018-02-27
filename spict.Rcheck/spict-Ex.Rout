@@ -1,0 +1,1311 @@
+
+R version 3.4.3 (2017-11-30) -- "Kite-Eating Tree"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> pkgname <- "spict"
+> source(file.path(R.home("share"), "R", "examples-header.R"))
+> options(warn = 1)
+> library('spict')
+Loading required package: TMB
+Warning in checkMatrixPackageVersion() :
+  Package version inconsistency detected.
+TMB was built with Matrix version 1.2.11
+Current Matrix version is 1.2.12
+Please re-install 'TMB' from source or ask CRAN for a binary version of 'TMB' matching CRAN's 'Matrix' package
+Welcome to spict_v1.2.1@2703076d1dfc0204e721604dcddf902ca2a08a98
+> 
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+> cleanEx()
+> nameEx("calc.osa.resid")
+> ### * calc.osa.resid
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: calc.osa.resid
+> ### Title: Calculate one-step-ahead residuals.
+> ### Aliases: calc.osa.resid
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> rep <- calc.osa.resid(rep)
+> plotspict.osar(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("check.inp")
+> ### * check.inp
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: check.inp
+> ### Title: Check list of input variables
+> ### Aliases: check.inp
+> 
+> ### ** Examples
+> 
+> data(pol)
+> (inp <- check.inp(pol$albacore))
+Catch observations:
+ [1] 1967 1968 1969 1970 1971 1972 1973 1974 1975 1976 1977 1978 1979 1980 1981
+[16] 1982 1983 1984 1985 1986 1987 1988 1989
+ [1] 15.9 25.7 28.5 23.7 25.0 33.3 28.2 19.7 17.5 19.3 21.6 23.1 22.5 22.5 23.6
+[16] 29.1 14.4 13.2 28.4 34.6 37.5 25.9 25.3
+Index observations:
+[[1]]
+ [1] 1967 1968 1969 1970 1971 1972 1973 1974 1975 1976 1977 1978 1979 1980 1981
+[16] 1982 1983 1984 1985 1986 1987 1988 1989
+
+[[1]]
+ [1] 61.89 78.98 55.59 44.61 56.89 38.27 33.84 36.13 41.95 36.63 36.33 38.82
+[13] 34.32 37.64 34.01 32.16 26.88 36.61 30.07 30.75 23.36 22.36 21.91
+
+> 
+> 
+> 
+> cleanEx()
+> nameEx("extract.simstats")
+> ### * extract.simstats
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: extract.simstats
+> ### Title: Extracts relevant statistics from the estimation of a simulated
+> ###   data set.
+> ### Aliases: extract.simstats
+> 
+> ### ** Examples
+> 
+> data(pol)
+> repin <- fit.spict(pol$albacore)
+> sim <- sim.spict(repin)
+> rep <- fit.spict(sim)
+> extract.simstats(rep)
+$nobs
+$nobs$nobsc
+[1] 23
+
+$nobs$nobsI
+[1] 23
+
+$nobs$nobsE
+[1] 0
+
+
+$conv
+[1] 0
+
+$sderr
+[1] 0
+
+$logFmsy
+$logFmsy$ci
+[1] 1
+
+$logFmsy$ciw
+[1] 0.2848106
+
+$logFmsy$cv
+[1] 0.1915746
+
+$logFmsy$err
+[1] 0.005992386
+
+$logFmsy$exp
+[1] TRUE
+
+
+$logBmsy
+$logBmsy$ci
+[1] 1
+
+$logBmsy$ciw
+[1] 47.73845
+
+$logBmsy$cv
+[1] 0.1953732
+
+$logBmsy$err
+[1] 0.01153214
+
+$logBmsy$exp
+[1] TRUE
+
+
+$MSY
+$MSY$ci
+[1] 1
+
+$MSY$ciw
+[1] 3.036662
+
+$MSY$cv
+[1] 0.03371315
+
+$MSY$err
+[1] 0.01759361
+
+$MSY$exp
+[1] FALSE
+
+
+$logBl
+$logBl$ci
+[1] 1
+
+$logBl$ciw
+[1] 22.53241
+
+$logBl$cv
+[1] 0.1966451
+
+$logBl$err
+[1] -0.2148288
+
+$logBl$exp
+[1] TRUE
+
+
+$logBlBmsy
+$logBlBmsy$ci
+[1] 1
+
+$logBlBmsy$ciw
+[1] 0.3578074
+
+$logBlBmsy$cv
+[1] 0.1919754
+
+$logBlBmsy$err
+[1] -0.2237803
+
+$logBlBmsy$exp
+[1] TRUE
+
+
+$logFlFmsy
+$logFlFmsy$ci
+[1] 1
+
+$logFlFmsy$ciw
+[1] 2.321657
+
+$logFlFmsy$cv
+[1] 0.2460943
+
+$logFlFmsy$err
+[1] 0.07081853
+
+$logFlFmsy$exp
+[1] TRUE
+
+
+$logsdb
+$logsdb$ci
+[1] 1
+
+$logsdb$ciw
+[1] 0.124612
+
+$logsdb$cv
+[1] 1.3482
+
+$logsdb$err
+[1] 0.3478404
+
+$logsdb$exp
+[1] TRUE
+
+
+$logsdi
+$logsdi$ci
+[1] 1
+
+$logsdi$ciw
+[1] 0.07315961
+
+$logsdi$cv
+[1] 0.1728098
+
+$logsdi$err
+[1] -0.02403227
+
+$logsdi$exp
+[1] TRUE
+
+
+$convall
+[1] FALSE
+
+> 
+> 
+> 
+> cleanEx()
+> nameEx("fit.meyermillar")
+> ### * fit.meyermillar
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: fit.meyermillar
+> ### Title: Fit the model of Meyer & Millar (1999)
+> ### Aliases: fit.meyermillar
+> 
+> ### ** Examples
+> 
+> priors <- list()
+> priors$K <- c(5.042905, 3.76)
+> priors$r <- c(-1.38, 3.845)
+> priors$iq <- c(0.001, 0.0012)
+> priors$itau2 <- c(1.709, 0.00861342)
+> priors$isigma2 <- c(3.785518, 0.0102232)
+> priors$logPini <- -0.223
+> data(pol)
+> inp <- pol$albacore
+> inp$meyermillar$n.iter <- 10000
+> inp$meyermillar$burnin <- 1000
+> inp$meyermillar$thin <- 10
+> inp$meyermillar$n.chains <- 1
+> inp$meyermillar$priors <- priors
+> res <- fit.meyermillar(inp)
+Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 23
+   Unobserved stochastic nodes: 28
+   Total graph size: 314
+
+Initializing model
+
+> summary(res$jags)
+
+Iterations = 2010:12000
+Thinning interval = 10 
+Number of chains = 1 
+Sample size per chain = 1000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+            Mean        SD Naive SE Time-series SE
+BBlast    0.5557   0.07289 0.002305       0.007309
+BBpred    0.4877   0.08449 0.002672       0.008049
+Blast    81.6988  25.57795 0.808846       5.497334
+Bmsy    147.5847  44.70909 1.413825      10.650305
+Bpred    72.1016  25.17245 0.796023       5.207267
+EMSY      0.5381   0.08589 0.002716       0.010326
+Fmsy      0.1467   0.05024 0.001589       0.009861
+K       295.1693  89.41817 2.827651      21.300610
+MSY      19.6663   2.52116 0.079726       0.257388
+P[1]      0.8288   0.05022 0.001588       0.003686
+P[2]      0.8462   0.07236 0.002288       0.006301
+P[3]      0.7592   0.06325 0.002000       0.006163
+P[4]      0.6809   0.05754 0.001820       0.005594
+P[5]      0.6557   0.05993 0.001895       0.005498
+P[6]      0.5910   0.05441 0.001721       0.005736
+P[7]      0.5270   0.05087 0.001609       0.005216
+P[8]      0.5037   0.04860 0.001537       0.005223
+P[9]      0.5151   0.05080 0.001606       0.005435
+P[10]     0.5160   0.04938 0.001562       0.005639
+P[11]     0.5141   0.04954 0.001567       0.005688
+P[12]     0.5100   0.04882 0.001544       0.005472
+P[13]     0.4925   0.04593 0.001452       0.005089
+P[14]     0.4863   0.04703 0.001487       0.005462
+P[15]     0.4696   0.04382 0.001386       0.004862
+P[16]     0.4482   0.04218 0.001334       0.004847
+P[17]     0.4095   0.04050 0.001281       0.003961
+P[18]     0.4385   0.04282 0.001354       0.005040
+P[19]     0.4517   0.04528 0.001432       0.005776
+P[20]     0.4218   0.04107 0.001299       0.005624
+P[21]     0.3656   0.03564 0.001127       0.004614
+P[22]     0.3049   0.03263 0.001032       0.003652
+P[23]     0.2779   0.03644 0.001152       0.003654
+Ppred     0.2439   0.04224 0.001336       0.004025
+iq        3.9999   1.11687 0.035318       0.244603
+isigma2 354.6413 178.56966 5.646869       8.067115
+itau2    87.8397  37.71329 1.192599       1.412452
+r         0.2934   0.10048 0.003177       0.019722
+
+2. Quantiles for each variable:
+
+             2.5%      25%      50%      75%    97.5%
+BBlast    0.42276   0.5073   0.5479   0.6023   0.7090
+BBpred    0.33295   0.4332   0.4829   0.5439   0.6596
+Blast    45.33551  63.5026  77.3771  94.8418 147.5594
+Bmsy     88.90151 116.7280 139.7123 165.2004 267.7033
+Bpred    35.41091  54.1538  67.9094  85.1784 137.4349
+EMSY      0.35166   0.4850   0.5420   0.5925   0.7023
+Fmsy      0.05697   0.1137   0.1422   0.1788   0.2506
+K       177.80303 233.4560 279.4247 330.4008 535.4066
+MSY      13.77514  18.3229  19.8810  21.3422  24.0033
+P[1]      0.74068   0.7958   0.8255   0.8559   0.9474
+P[2]      0.72664   0.7996   0.8376   0.8847   1.0004
+P[3]      0.64411   0.7153   0.7567   0.7971   0.8956
+P[4]      0.57532   0.6439   0.6812   0.7152   0.8016
+P[5]      0.54993   0.6170   0.6503   0.6911   0.7885
+P[6]      0.48378   0.5565   0.5906   0.6250   0.7020
+P[7]      0.43104   0.4930   0.5273   0.5599   0.6371
+P[8]      0.41322   0.4715   0.5015   0.5327   0.6061
+P[9]      0.42368   0.4801   0.5152   0.5482   0.6214
+P[10]     0.42561   0.4836   0.5136   0.5493   0.6176
+P[11]     0.42056   0.4797   0.5121   0.5465   0.6177
+P[12]     0.42299   0.4778   0.5083   0.5411   0.6101
+P[13]     0.40852   0.4604   0.4899   0.5239   0.5866
+P[14]     0.40410   0.4531   0.4843   0.5192   0.5792
+P[15]     0.39094   0.4391   0.4682   0.4987   0.5618
+P[16]     0.36940   0.4186   0.4475   0.4758   0.5311
+P[17]     0.33171   0.3817   0.4070   0.4361   0.4931
+P[18]     0.35853   0.4079   0.4369   0.4660   0.5300
+P[19]     0.36550   0.4205   0.4521   0.4795   0.5440
+P[20]     0.34285   0.3941   0.4215   0.4473   0.5053
+P[21]     0.29855   0.3413   0.3642   0.3886   0.4398
+P[22]     0.24494   0.2834   0.3023   0.3262   0.3737
+P[23]     0.21138   0.2536   0.2740   0.3011   0.3545
+Ppred     0.16647   0.2166   0.2415   0.2720   0.3298
+iq        2.48561   3.2042   3.7927   4.5421   6.8826
+isigma2  96.46431 223.6766 330.1484 444.5495 785.9720
+itau2    38.94732  64.6318  82.4175 102.2041 174.4150
+r         0.11393   0.2275   0.2843   0.3577   0.5011
+
+> 
+> 
+> 
+> cleanEx()
+> nameEx("fit.spict")
+> ### * fit.spict
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: fit.spict
+> ### Title: Fit a continuous-time surplus production model to data.
+> ### Aliases: fit.spict
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> Bmsy <- get.par('logBmsy', rep, exp=TRUE)
+> summary(rep)
+Convergence: 0  MSG: relative convergence (4)
+Objective function at optimum: 2.0654958
+Euler time step (years):  1/16 or 0.0625
+Nobs C: 23,  Nobs I1: 23
+
+Priors
+     logn  ~  dnorm[log(2), 2^2]
+ logalpha  ~  dnorm[log(1), 2^2]
+  logbeta  ~  dnorm[log(1), 2^2]
+
+Model parameter estimates w 95% CI 
+           estimate       cilow       ciupp    log.est  
+ alpha    8.5381047   1.2232708  59.5936968  2.1445391  
+ beta     0.1212590   0.0180688   0.8137626 -2.1098264  
+ r        0.2556015   0.1010594   0.6464726 -1.3641356  
+ rc       0.7435358   0.1445714   3.8240307 -0.2963383  
+ rold     0.8180029   0.0019100 350.3332222 -0.2008894  
+ m       22.5827681  17.0681861  29.8790633  3.1171871  
+ K      201.4754019 138.1193807 293.8931334  5.3056673  
+ q        0.3512548   0.1942689   0.6350989 -1.0462433  
+ n        0.6875298   0.0636701   7.4241652 -0.3746501  
+ sdb      0.0128136   0.0018406   0.0892015 -4.3572484  
+ sdf      0.3673760   0.2673608   0.5048054 -1.0013693  
+ sdi      0.1094038   0.0808973   0.1479555 -2.2127093  
+ sdc      0.0445477   0.0073370   0.2704792 -3.1111957  
+ 
+Deterministic reference points (Drp)
+         estimate      cilow      ciupp    log.est  
+ Bmsyd 60.7442629 15.4031099 239.553279  4.1066726  
+ Fmsyd  0.3717679  0.0722857   1.912015 -0.9894855  
+ MSYd  22.5827681 17.0681861  29.879063  3.1171871  
+Stochastic reference points (Srp)
+         estimate      cilow      ciupp    log.est  rel.diff.Drp  
+ Bmsys 60.7366125 15.4032686 239.490474  4.1065467 -1.259603e-04  
+ Fmsys  0.3717801  0.0722788   1.912323 -0.9894528  3.276943e-05  
+ MSYs  22.5806624 17.0626510  29.883183  3.1170939 -9.325180e-05  
+
+States w 95% CI (inp$msytype: s)
+                  estimate      cilow       ciupp    log.est  
+ B_1989.00      59.1917177 31.0255685 112.9281304  4.0807816  
+ F_1989.00       0.4160742  0.2048126   0.8452494 -0.8768917  
+ B_1989.00/Bmsy  0.9745640  0.3430184   2.7688752 -0.0257651  
+ F_1989.00/Fmsy  1.1191406  0.2899282   4.3199506  0.1125611  
+
+Predictions w 95% CI (inp$msytype: s)
+                prediction      cilow       ciupp    log.est  
+ B_1990.00      56.5242669 30.0511479 106.3184926  4.0346700  
+ F_1990.00       0.4464499  0.2098831   0.9496596 -0.8064282  
+ B_1990.00/Bmsy  0.9306457  0.2932030   2.9539311 -0.0718766  
+ F_1990.00/Fmsy  1.2008440  0.2832215   5.0915131  0.1830246  
+ Catch_1990.00  24.7359893 15.3328280  39.9058260  3.2082592  
+ E(B_inf)       49.9856425         NA          NA  3.9117358  
+> plot(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("get.par")
+> ### * get.par
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: get.par
+> ### Title: Extract parameters from a result report as generated by
+> ###   fit.spict.
+> ### Aliases: get.par list.quantities
+> 
+> ### ** Examples
+> 
+> ## Make the south Atlantic albacore assessment
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> 
+> ## See all quantitites that can be extracted
+> list.quantities(rep)
+ [1] "Bmsy"                 "Bmsy2"                "Bmsyd"               
+ [4] "Bmsys"                "Cp"                   "Emsy"                
+ [7] "Emsy2"                "Fmsy"                 "Fmsyd"               
+[10] "Fmsys"                "K"                    "MSY"                 
+[13] "MSYd"                 "MSYs"                 "SPvec"               
+[16] "gamma"                "isdb2"                "isdc2"               
+[19] "isde2"                "isdf2"                "isdi2"               
+[22] "logB"                 "logBBmsy"             "logBl"               
+[25] "logBlBmsy"            "logBlK"               "logBmsy"             
+[28] "logBmsyPluslogFmsy"   "logBmsyd"             "logBmsys"            
+[31] "logBp"                "logBpBmsy"            "logBpK"              
+[34] "logCp"                "logCpred"             "logEmsy"             
+[37] "logEmsy2"             "logEp"                "logF"                
+[40] "logFFmsy"             "logFFmsynotP"         "logFFmsynotS"        
+[43] "logFl"                "logFlFmsy"            "logFmsy"             
+[46] "logFmsyd"             "logFmsys"             "logFnotS"            
+[49] "logFp"                "logFpFmsy"            "logFs"               
+[52] "logIp"                "logIpred"             "logK"                
+[55] "logMSY"               "logMSYd"              "logMSYs"             
+[58] "logalpha"             "logbeta"              "logbkfrac"           
+[61] "logm"                 "logn"                 "logq"                
+[64] "logq2"                "logr"                 "logrc"               
+[67] "logrold"              "logsdb"               "logsdc"              
+[70] "logsdf"               "logsdi"               "m"                   
+[73] "p"                    "q"                    "r"                   
+[76] "rc"                   "rold"                 "sdSP"                
+[79] "sdb"                  "sdc"                  "sde"                 
+[82] "sdf"                  "sdi"                  "seasonsplinefine"    
+[85] "seasonsplinefineProd"
+> 
+> ## Extract the Bmsy reference point
+> Bmsy <- get.par('logBmsy', rep, exp=TRUE)
+> 
+> ## Extract the exploitable biomass estimates
+> Best <- get.par('logB', rep, exp=TRUE)
+> 
+> ## Extract the estimated caryting capacity
+> K <- get.par('logK', rep, exp=TRUE)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("likprof.spict")
+> ### * likprof.spict
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: likprof.spict
+> ### Title: Create profile likelihood
+> ### Aliases: likprof.spict
+> 
+> ### ** Examples
+> 
+> data(pol)
+> inp <- pol$albacore
+> inp$likprof <- list()
+> inp$likprof$pars <- 'logK'
+> inp$likprof$parrange <- c(log(80), log(400))
+> inp$likprof$nogridpoints <- 15
+> rep <- fit.spict(inp)
+> rep <- likprof.spict(rep)
+Loading required package: parallel
+> plotspict.likprof(rep, logpar=TRUE)
+> 
+> 
+> 
+> cleanEx()
+
+detaching ‘package:parallel’
+
+> nameEx("manage")
+> ### * manage
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: manage
+> ### Title: Calculate predictions under different management scenarios
+> ### Aliases: manage
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> repman <- manage(rep)
+> mansummary(repman) # To print projections
+Observed interval, index:  1967.00 - 1989.00
+Observed interval, catch:  1967.00 - 1990.00
+
+Fishing mortality (F) prediction: 1991.00
+Biomass (B) prediction:           1991.00
+Catch (C) prediction interval:    1990.00 - 1991.00
+
+Predictions
+                         C    B     F B/Bmsy F/Fmsy perc.dB perc.dF
+1. Keep current catch 25.3 53.7 0.462  0.885  1.244    -4.9     3.6
+2. Keep current F     24.7 54.3 0.446  0.894  1.201    -3.9     0.0
+3. Fish at Fmsy       21.3 57.8 0.372  0.952  1.000     2.3   -16.7
+4. No fishing          0.0 79.1 0.000  1.303  0.001    40.0   -99.9
+5. Reduce F 25%       19.4 59.6 0.335  0.982  0.901     5.5   -25.0
+6. Increase F 25%     29.5 49.5 0.558  0.814  1.501   -12.5    25.0
+
+95% CIs of absolute predictions
+                      C.lo C.hi B.lo  B.hi  F.lo  F.hi
+1. Keep current catch 25.3 25.3 28.1 102.6 0.219 0.977
+2. Keep current F     15.3 39.9 27.9 105.9 0.157 1.267
+3. Fish at Fmsy       13.0 34.9 30.9 108.1 0.131 1.055
+4. No fishing          0.0  0.1 51.3 122.1 0.000 0.001
+5. Reduce F 25%       11.8 32.2 32.6 109.3 0.118 0.950
+6. Increase F 25%     18.7 46.6 23.8 102.7 0.197 1.584
+
+95% CIs of relative predictions
+                      B/Bmsy.lo B/Bmsy.hi F/Fmsy.lo F/Fmsy.hi
+1. Keep current catch     0.244     3.207     0.262     5.894
+2. Keep current F         0.250     3.200     0.239     6.032
+3. Fish at Fmsy           0.269     3.366     0.199     5.023
+4. No fishing             0.376     4.517     0.000     0.006
+5. Reduce F 25%           0.279     3.455     0.179     4.524
+6. Increase F 25%         0.222     2.981     0.299     7.540
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot.spictcls")
+> ### * plot.spictcls
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot.spictcls
+> ### Title: Plot summarising spict results.
+> ### Aliases: plot.spictcls
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> plot(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.bbmsy")
+> ### * plotspict.bbmsy
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.bbmsy
+> ### Title: Plot estimated B/Bmsy.
+> ### Aliases: plotspict.bbmsy
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> plotspict.bbmsy(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.biomass")
+> ### * plotspict.biomass
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.biomass
+> ### Title: Plot estimated biomass.
+> ### Aliases: plotspict.biomass
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> plotspict.biomass(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.catch")
+> ### * plotspict.catch
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.catch
+> ### Title: Plot observed catch and predictions.
+> ### Aliases: plotspict.catch
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> plotspict.catch(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.diagnostic")
+> ### * plotspict.diagnostic
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.diagnostic
+> ### Title: Plot model diagnostic (data, residuals, and more)
+> ### Aliases: plotspict.diagnostic
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> rep <- calc.osa.resid(rep)
+> plotspict.diagnostic(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.f")
+> ### * plotspict.f
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.f
+> ### Title: Plot estimated fishing mortality.
+> ### Aliases: plotspict.f
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> plotspict.f(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.fb")
+> ### * plotspict.fb
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.fb
+> ### Title: Plot fishing mortality versus biomass.
+> ### Aliases: plotspict.fb
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> plotspict.fb(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.ffmsy")
+> ### * plotspict.ffmsy
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.ffmsy
+> ### Title: Plot estimated relative fishing mortality.
+> ### Aliases: plotspict.ffmsy
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> plotspict.ffmsy(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.osar")
+> ### * plotspict.osar
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.osar
+> ### Title: Plot one-step-ahead residuals
+> ### Aliases: plotspict.osar
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> rep <- calc.osa.resid(rep)
+> plotspict.osar(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.production")
+> ### * plotspict.production
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.production
+> ### Title: Plot theoretical production curve and estimates.
+> ### Aliases: plotspict.production
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> plotspict.production(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plotspict.tc")
+> ### * plotspict.tc
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plotspict.tc
+> ### Title: Plot time constant.
+> ### Aliases: plotspict.tc
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> plotspict.tc(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("pol")
+> ### * pol
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: pol
+> ### Title: Fisheries data included in Polacheck et al. (1993).
+> ### Aliases: pol
+> ### Keywords: datasets
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(inp=pol$albacore)
+> rep <- fit.spict(inp=pol$hake)
+> rep <- fit.spict(inp=pol$lobster)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("read.aspic")
+> ### * read.aspic
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: read.aspic
+> ### Title: Reads ASPIC input file.
+> ### Aliases: read.aspic
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D filename <- 'YFT-SSE.a7inp' # or some other ASPIC 7 input file
+> ##D inp <- read.aspic(filename)
+> ##D rep <- fit.spict(inp)
+> ##D summary(rep)
+> ##D plot(rep)
+> ## End(Not run)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("retro")
+> ### * retro
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: retro
+> ### Title: Conduct retrospective analysis
+> ### Aliases: retro
+> 
+> ### ** Examples
+> 
+> data(pol)
+> inp <- pol$albacore
+> rep <- fit.spict(inp)
+> rep <- retro(rep, nretroyear=6)
+> plotspict.retro(rep)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("sim.spict")
+> ### * sim.spict
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: sim.spict
+> ### Title: Simulate data from Pella-Tomlinson model
+> ### Aliases: sim.spict
+> 
+> ### ** Examples
+> 
+> data(pol)
+> repin <- fit.spict(pol$albacore)
+> # Simulate a specific number of observations
+> inp <- list()
+> inp$dteuler <- 1/4 # To reduce calculation time
+> inp$ini <- repin$inp$ini
+> inp$ini$logF <- NULL
+> inp$ini$logB <- NULL
+> set.seed(1)
+> sim <- sim.spict(inp, nobs=150)
+> repsim <- fit.spict(sim)
+> summary(repsim) # Note true values are listed in the summary
+Convergence: 0  MSG: relative convergence (4)
+Objective function at optimum: 70.4643901
+Euler time step (years):  1/4 or 0.25
+Nobs C: 150,  Nobs I1: 150
+
+Priors
+     logn  ~  dnorm[log(2), 2^2]
+ logalpha  ~  dnorm[log(1), 2^2]
+  logbeta  ~  dnorm[log(1), 2^2]
+
+Model parameter estimates w 95% CI 
+           estimate        true       cilow       ciupp true.in.ci    log.est  
+ alpha    1.0638406  -9.0000000   0.6900011   1.6402246         -9  0.0618855  
+ beta     0.9657214  -9.0000000   0.6190236   1.5065950         -9 -0.0348799  
+ r        0.5882783  -9.0000000   0.3596041   0.9623677         -9 -0.5305552  
+ rc       0.6760366  -9.0000000   0.4991753   0.9155611         -9 -0.3915081  
+ rold     0.7945689  -9.0000000   0.5257510   1.2008342         -9 -0.2299556  
+ m       27.8760158  30.1417383  24.8502085  31.2702510          1  3.3277667  
+ K      174.3086348 150.0000000 122.9914707 247.0374573          1  5.1608275  
+ q        0.4573433   0.5265333   0.3347128   0.6249026          1 -0.7823210  
+ n        1.7403742   2.0000000   1.2921695   2.3440441          1  0.5541001  
+ sdb      0.1760013   0.2000000   0.1297515   0.2387369          1 -1.7372637  
+ sdf      0.1935596   0.2000000   0.1433962   0.2612713          1 -1.6421697  
+ sdi      0.1872374   0.2000000   0.1536413   0.2281797          1 -1.6753781  
+ sdc      0.1869247   0.2000000   0.1496165   0.2335360          1 -1.6770496  
+ 
+Deterministic reference points (Drp)
+         estimate       true      cilow       ciupp true.in.ci   log.est  
+ Bmsyd 82.4689574 75.0000000 60.6069531 112.2169749          1  4.412422  
+ Fmsyd  0.3380183  0.4018898  0.2495876   0.4577806          1 -1.084655  
+ MSYd  27.8760158 30.1417383 24.8502085  31.2702510          1  3.327767  
+Stochastic reference points (Srp)
+         estimate       true      cilow       ciupp true.in.ci   log.est  
+ Bmsys 79.8529284 72.0771885 58.6625775 108.6977499          1  4.380186  
+ Fmsys  0.3325219  0.3925223  0.2459293   0.4496041          1 -1.101050  
+ MSYs  26.5384695 28.2645210 23.8528209  29.5265019          1  3.278595  
+       rel.diff.Drp  
+ Bmsys  -0.03276059  
+ Fmsys  -0.01652940  
+ MSYs   -0.05040028  
+
+States w 95% CI (inp$msytype: s)
+                 estimate       true      cilow      ciupp true.in.ci    log.est  
+ B_150.00      90.8130864 59.1619302 60.0576076 137.318434          1  4.5088034  
+ F_150.00       0.2228456  0.3570811  0.1343594   0.369607          1 -1.5012759  
+ B_150.00/Bmsy  1.1372543  0.8208135  0.8228755   1.571741          1  0.1286168  
+ F_150.00/Fmsy  0.6701683  0.9097093  0.4316943   1.040379          1 -0.4002264  
+
+Predictions w 95% CI (inp$msytype: s)
+                prediction      cilow       ciupp    log.est  
+ B_151.00       93.1050514 57.0136937 152.0433083  4.5337284  
+ F_151.00        0.2096133  0.1156919   0.3797823 -1.5624907  
+ B_151.00/Bmsy   1.1659566  0.7680609   1.7699832  0.1535419  
+ F_151.00/Fmsy   0.6303745  0.3684192   1.0785867 -0.4614411  
+ Catch_151.00   20.0064887 12.4679252  32.1031435  2.9960567  
+ E(B_inf)      107.0590948         NA          NA  4.6733810  
+> plot(repsim) # Note true states are shown with orange colour
+> 
+> # Simulate data with seasonal F
+> inp <- list()
+> inp$dteuler <- 1/4
+> inp$nseasons <- 2
+> inp$splineorder <- 1
+> inp$obsC <- 1:80
+> inp$obsI <- 1:80
+> inp$ini <- repin$inp$ini
+> inp$ini$logF <- NULL
+> inp$ini$logB <- NULL
+> inp$ini$logphi <- log(2) # Seasonality introduced here
+> inp <- check.inp(inp)
+> sim2 <- sim.spict(inp)
+> par(mfrow=c(2, 1))
+> plot(sim2$obsC, typ='l')
+> plot(sim2$obsI[[1]], typ='l')
+> 
+> 
+> 
+> graphics::par(get("par.postscript", pos = 'CheckExEnv'))
+> cleanEx()
+> nameEx("spict")
+> ### * spict
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: spict
+> ### Title: Fits a continuous-time surplus production model to data
+> ### Aliases: spict spict-package
+> ### Keywords: assessment fisheries, model, production
+> 
+> ### ** Examples
+> 
+> rep <- test.spict()
+Convergence: 0  MSG: relative convergence (4)
+Objective function at optimum: 2.6276056
+Euler time step (years):  1/16 or 0.0625
+Nobs C: 23,  Nobs I1: 23
+
+Residual diagnostics (p-values)
+    shapiro   bias    acf   LBox shapiro bias acf LBox  
+ C   0.1071 0.3681 0.0647 0.2743       -    -   .    -  
+ I1  0.1909 0.7846 0.2743 0.5191       -    -   -    -  
+
+Priors
+     logn  ~  dnorm[log(2), 2^2]
+ logalpha  ~  dnorm[log(1), 2^2]
+  logbeta  ~  dnorm[log(1), 2^2]
+
+Model parameter estimates w 95% CI 
+           estimate       cilow       ciupp   log.est  
+ alpha   10.4367727   1.5824533  68.8337682  2.345335  
+ beta     0.1278822   0.0186362   0.8775334 -2.056646  
+ r        0.3627678   0.2188890   0.6012204 -1.013992  
+ rc       0.3627678   0.2188890   0.6012204 -1.013992  
+ rold     0.3627678   0.2188890   0.6012204 -1.013992  
+ m       20.0671567  17.8406356  22.5715488  2.999084  
+ K      221.2672048 147.8514565 331.1375961  5.399371  
+ q        0.2668998   0.1620416   0.4396125 -1.320882  
+ sdb      0.0106456   0.0015995   0.0708525 -4.542606  
+ sdf      0.3650857   0.2646083   0.5037164 -1.007623  
+ sdi      0.1111060   0.0823283   0.1499430 -2.197270  
+ sdc      0.0466880   0.0076090   0.2864722 -3.064269  
+ 
+Deterministic reference points (Drp)
+          estimate      cilow       ciupp   log.est  
+ Bmsyd 110.6336024 73.9257283 165.5687981  4.706224  
+ Fmsyd   0.1813839  0.1094445   0.3006102 -1.707139  
+ MSYd   20.0671567 17.8406356  22.5715488  2.999084  
+Stochastic reference points (Srp)
+          estimate      cilow     ciupp   log.est  rel.diff.Drp  
+ Bmsys 110.6127023 73.9157781 165.52853  4.706035 -0.0001889483  
+ Fmsys   0.1813559  0.1094216   0.30058 -1.707294 -0.0001545111  
+ MSYs   20.0602624 17.8339704  22.56447  2.998741 -0.0003436770  
+
+States w 95% CI (inp$msytype: s)
+                  estimate      cilow       ciupp    log.est  
+ B_1989.00      76.8050383 42.2056194 139.7684478  4.3412702  
+ F_1989.00       0.3221852  0.1646394   0.6304891 -1.1326286  
+ B_1989.00/Bmsy  0.6943600  0.5239597   0.9201773 -0.3647647  
+ F_1989.00/Fmsy  1.7765361  1.1641019   2.7111718  0.5746654  
+
+Predictions w 95% CI (inp$msytype: s)
+                prediction      cilow      ciupp    log.est  
+ B_1992.00      65.0766693 27.8248455 152.201129  4.1755661  
+ F_1992.00       0.2848140  0.0797730   1.016873 -1.2559191  
+ B_1992.00/Bmsy  0.5883291  0.3195732   1.083104 -0.5304688  
+ F_1992.00/Fmsy  1.5704701  0.4986706   4.945902  0.4513750  
+ Catch_1992.00  18.2942895  8.4298502  39.701895  2.9065890  
+ E(B_inf)       47.4512137         NA         NA  3.8597021  
+> 
+> 
+> 
+> cleanEx()
+> nameEx("spict2DLMtool")
+> ### * spict2DLMtool
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: spict2DLMtool
+> ### Title: Get function to estimate TAC for the DLMtool package
+> ### Aliases: spict2DLMtool
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D library(DLMtool)
+> ##D 
+> ##D ## Put together an operating model from the available DLM toolkit examples
+> ##D StockEx <- Herring
+> ##D FleetEx <- Generic_IncE
+> ##D ObsEx <- Precise_Unbiased
+> ##D 
+> ##D ## Remove changes in life history parameters
+> ##D StockEx@Mgrad <- c(0,0)
+> ##D StockEx@Kgrad <- c(0,0)
+> ##D StockEx@Linfgrad <- c(0,0)
+> ##D StockEx@Prob_staying <- c(1,1)
+> ##D 
+> ##D ## Set the depletion level 
+> ##D StockEx@D <- c(0.3, 0.4)
+> ##D 
+> ##D ## create Operation Model
+> ##D OMex <- new("OM", Stock = StockEx, Fleet = FleetEx, 
+> ##D                   Obs = ObsEx)
+> ##D 
+> ##D ## Set simulation options
+> ##D OMex@nsim <- 10
+> ##D OMex@nyears <- 25
+> ##D OMex@proyears <- 3
+> ##D 
+> ##D ## Get SPiCT HCR
+> ##D MPname <- spict2DLMtool(percentileC=0.3)
+> ##D 
+> ##D ## run MSE
+> ##D MSEex <- runMSE(OMex, MPs = MPname,
+> ##D             interval = 1, reps = 1, timelimit = 150, CheckMPs = FALSE)
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("summary.spictcls")
+> ### * summary.spictcls
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: summary.spictcls
+> ### Title: Output a summary of a fit.spict() run.
+> ### Aliases: summary.spictcls
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep <- fit.spict(pol$albacore)
+> summary(rep)
+Convergence: 0  MSG: relative convergence (4)
+Objective function at optimum: 2.0654958
+Euler time step (years):  1/16 or 0.0625
+Nobs C: 23,  Nobs I1: 23
+
+Priors
+     logn  ~  dnorm[log(2), 2^2]
+ logalpha  ~  dnorm[log(1), 2^2]
+  logbeta  ~  dnorm[log(1), 2^2]
+
+Model parameter estimates w 95% CI 
+           estimate       cilow       ciupp    log.est  
+ alpha    8.5381047   1.2232708  59.5936968  2.1445391  
+ beta     0.1212590   0.0180688   0.8137626 -2.1098264  
+ r        0.2556015   0.1010594   0.6464726 -1.3641356  
+ rc       0.7435358   0.1445714   3.8240307 -0.2963383  
+ rold     0.8180029   0.0019100 350.3332222 -0.2008894  
+ m       22.5827681  17.0681861  29.8790633  3.1171871  
+ K      201.4754019 138.1193807 293.8931334  5.3056673  
+ q        0.3512548   0.1942689   0.6350989 -1.0462433  
+ n        0.6875298   0.0636701   7.4241652 -0.3746501  
+ sdb      0.0128136   0.0018406   0.0892015 -4.3572484  
+ sdf      0.3673760   0.2673608   0.5048054 -1.0013693  
+ sdi      0.1094038   0.0808973   0.1479555 -2.2127093  
+ sdc      0.0445477   0.0073370   0.2704792 -3.1111957  
+ 
+Deterministic reference points (Drp)
+         estimate      cilow      ciupp    log.est  
+ Bmsyd 60.7442629 15.4031099 239.553279  4.1066726  
+ Fmsyd  0.3717679  0.0722857   1.912015 -0.9894855  
+ MSYd  22.5827681 17.0681861  29.879063  3.1171871  
+Stochastic reference points (Srp)
+         estimate      cilow      ciupp    log.est  rel.diff.Drp  
+ Bmsys 60.7366125 15.4032686 239.490474  4.1065467 -1.259603e-04  
+ Fmsys  0.3717801  0.0722788   1.912323 -0.9894528  3.276943e-05  
+ MSYs  22.5806624 17.0626510  29.883183  3.1170939 -9.325180e-05  
+
+States w 95% CI (inp$msytype: s)
+                  estimate      cilow       ciupp    log.est  
+ B_1989.00      59.1917177 31.0255685 112.9281304  4.0807816  
+ F_1989.00       0.4160742  0.2048126   0.8452494 -0.8768917  
+ B_1989.00/Bmsy  0.9745640  0.3430184   2.7688752 -0.0257651  
+ F_1989.00/Fmsy  1.1191406  0.2899282   4.3199506  0.1125611  
+
+Predictions w 95% CI (inp$msytype: s)
+                prediction      cilow       ciupp    log.est  
+ B_1990.00      56.5242669 30.0511479 106.3184926  4.0346700  
+ F_1990.00       0.4464499  0.2098831   0.9496596 -0.8064282  
+ B_1990.00/Bmsy  0.9306457  0.2932030   2.9539311 -0.0718766  
+ F_1990.00/Fmsy  1.2008440  0.2832215   5.0915131  0.1830246  
+ Catch_1990.00  24.7359893 15.3328280  39.9058260  3.2082592  
+ E(B_inf)       49.9856425         NA          NA  3.9117358  
+> 
+> 
+> 
+> cleanEx()
+> nameEx("test.spict")
+> ### * test.spict
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: test.spict
+> ### Title: Example of a spict analysis.
+> ### Aliases: test.spict
+> 
+> ### ** Examples
+> 
+> rep <- test.spict()
+dev.new(): using pdf(file="Rplots1.pdf")
+Convergence: 0  MSG: relative convergence (4)
+Objective function at optimum: 2.6276056
+Euler time step (years):  1/16 or 0.0625
+Nobs C: 23,  Nobs I1: 23
+
+Residual diagnostics (p-values)
+    shapiro   bias    acf   LBox shapiro bias acf LBox  
+ C   0.1071 0.3681 0.0647 0.2743       -    -   .    -  
+ I1  0.1909 0.7846 0.2743 0.5191       -    -   -    -  
+
+Priors
+     logn  ~  dnorm[log(2), 2^2]
+ logalpha  ~  dnorm[log(1), 2^2]
+  logbeta  ~  dnorm[log(1), 2^2]
+
+Model parameter estimates w 95% CI 
+           estimate       cilow       ciupp   log.est  
+ alpha   10.4367727   1.5824533  68.8337682  2.345335  
+ beta     0.1278822   0.0186362   0.8775334 -2.056646  
+ r        0.3627678   0.2188890   0.6012204 -1.013992  
+ rc       0.3627678   0.2188890   0.6012204 -1.013992  
+ rold     0.3627678   0.2188890   0.6012204 -1.013992  
+ m       20.0671567  17.8406356  22.5715488  2.999084  
+ K      221.2672048 147.8514565 331.1375961  5.399371  
+ q        0.2668998   0.1620416   0.4396125 -1.320882  
+ sdb      0.0106456   0.0015995   0.0708525 -4.542606  
+ sdf      0.3650857   0.2646083   0.5037164 -1.007623  
+ sdi      0.1111060   0.0823283   0.1499430 -2.197270  
+ sdc      0.0466880   0.0076090   0.2864722 -3.064269  
+ 
+Deterministic reference points (Drp)
+          estimate      cilow       ciupp   log.est  
+ Bmsyd 110.6336024 73.9257283 165.5687981  4.706224  
+ Fmsyd   0.1813839  0.1094445   0.3006102 -1.707139  
+ MSYd   20.0671567 17.8406356  22.5715488  2.999084  
+Stochastic reference points (Srp)
+          estimate      cilow     ciupp   log.est  rel.diff.Drp  
+ Bmsys 110.6127023 73.9157781 165.52853  4.706035 -0.0001889483  
+ Fmsys   0.1813559  0.1094216   0.30058 -1.707294 -0.0001545111  
+ MSYs   20.0602624 17.8339704  22.56447  2.998741 -0.0003436770  
+
+States w 95% CI (inp$msytype: s)
+                  estimate      cilow       ciupp    log.est  
+ B_1989.00      76.8050383 42.2056194 139.7684478  4.3412702  
+ F_1989.00       0.3221852  0.1646394   0.6304891 -1.1326286  
+ B_1989.00/Bmsy  0.6943600  0.5239597   0.9201773 -0.3647647  
+ F_1989.00/Fmsy  1.7765361  1.1641019   2.7111718  0.5746654  
+
+Predictions w 95% CI (inp$msytype: s)
+                prediction      cilow      ciupp    log.est  
+ B_1992.00      65.0766693 27.8248455 152.201129  4.1755661  
+ F_1992.00       0.2848140  0.0797730   1.016873 -1.2559191  
+ B_1992.00/Bmsy  0.5883291  0.3195732   1.083104 -0.5304688  
+ F_1992.00/Fmsy  1.5704701  0.4986706   4.945902  0.4513750  
+ Catch_1992.00  18.2942895  8.4298502  39.701895  2.9065890  
+ E(B_inf)       47.4512137         NA         NA  3.8597021  
+> 
+> 
+> 
+> cleanEx()
+> nameEx("validate.spict")
+> ### * validate.spict
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: validate.spict
+> ### Title: Simulate data and reestimate parameters
+> ### Aliases: validate.spict
+> 
+> ### ** Examples
+> 
+> data(pol)
+> rep0 <- fit.spict(pol$albacore)
+> inp <- list()
+> inp$ini <- rep0$pl
+> set.seed(1234)
+> validate.spict(inp, nsim=10, invec=c(30, 60), backup='validate.RData')
+2018-02-27 13:29:31 - validating w mc.cores: 8 nobs: 30
+Warning in destructive_Chol_update(L, H, t) :
+  Cholmod warning 'matrix not positive definite' at file ../Supernodal/t_cholmod_super_numeric.c, line 729
+Warning in destructive_Chol_update(L, H, t) :
+  Cholmod warning 'matrix not positive definite' at file ../Supernodal/t_cholmod_super_numeric.c, line 729
+Error in nlminb(obj$par, obj$fn, obj$gr, control = inp$optimiser.control) : 
+  NA/NaN gradient evaluation
+obj$par:
+      logm       logK       logq       logn     logsdb     logsdf     logsdi 
+ 3.1171871  5.3056673 -1.0462433 -0.3746501 -4.3572484 -1.0013693 -2.2127093 
+    logsdc 
+-3.1111957 
+obj$fn:
+Warning in destructive_Chol_update(L, H, t) :
+  Cholmod warning 'matrix not positive definite' at file ../Supernodal/t_cholmod_super_numeric.c, line 729
+[1] -Inf
+attr(,"logarithm")
+[1] TRUE
+obj$gr:
+Warning in destructive_Chol_update(L, H, t) :
+  Cholmod warning 'matrix not positive definite' at file ../Supernodal/t_cholmod_super_numeric.c, line 729
+[1] NaN NaN NaN NaN NaN NaN NaN NaN
+Error in fit.spict(sim) : 
+  Could not fit model. Error msg:Error in nlminb(obj$par, obj$fn, obj$gr, control = inp$optimiser.control) : 
+  NA/NaN gradient evaluation
+
+2018-02-27 13:29:36 - validating:  i: 8  type: nobs  val: 30  Error in fit.spict()
+Warning in destructive_Chol_update(L, H, t) :
+  Cholmod warning 'matrix not positive definite' at file ../Supernodal/t_cholmod_super_numeric.c, line 729
+Warning in destructive_Chol_update(L, H, t) :
+  Cholmod warning 'matrix not positive definite' at file ../Supernodal/t_cholmod_super_numeric.c, line 729
+Error in nlminb(obj$par, obj$fn, obj$gr, control = inp$optimiser.control) : 
+  NA/NaN gradient evaluation
+obj$par:
+      logm       logK       logq       logn     logsdb     logsdf     logsdi 
+ 3.1171871  5.3056673 -1.0462433 -0.3746501 -4.3572484 -1.0013693 -2.2127093 
+    logsdc 
+-3.1111957 
+obj$fn:
+Warning in destructive_Chol_update(L, H, t) :
+  Cholmod warning 'matrix not positive definite' at file ../Supernodal/t_cholmod_super_numeric.c, line 729
+[1] -Inf
+attr(,"logarithm")
+[1] TRUE
+obj$gr:
+Warning in destructive_Chol_update(L, H, t) :
+  Cholmod warning 'matrix not positive definite' at file ../Supernodal/t_cholmod_super_numeric.c, line 729
+[1] NaN NaN NaN NaN NaN NaN NaN NaN
+Error in fit.spict(sim) : 
+  Could not fit model. Error msg:Error in nlminb(obj$par, obj$fn, obj$gr, control = inp$optimiser.control) : 
+  NA/NaN gradient evaluation
+
+2018-02-27 13:29:38 - validating:  i: 5  type: nobs  val: 30  Error in fit.spict()
+2018-02-27 13:30:11 - validating:  i: 4  type: nobs  val: 30  convall: 0 
+2018-02-27 13:30:11 - validating:  i: 1  type: nobs  val: 30  convall: 0 
+2018-02-27 13:30:13 - validating:  i: 6  type: nobs  val: 30  convall: 0 
+2018-02-27 13:30:13 - validating:  i: 3  type: nobs  val: 30  convall: 0 
+2018-02-27 13:30:13 - validating:  i: 2  type: nobs  val: 30  convall: 0 
+2018-02-27 13:30:13 - validating:  i: 7  type: nobs  val: 30  convall: 0 
+2018-02-27 13:30:26 - validating:  i: 9  type: nobs  val: 30  convall: 0 
+2018-02-27 13:30:27 - validating:  i: 10  type: nobs  val: 30  convall: 0 
+2018-02-27 13:30:27 - validating w mc.cores: 8 nobs: 60
