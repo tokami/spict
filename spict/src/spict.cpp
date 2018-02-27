@@ -335,18 +335,16 @@ Type objective_function<Type>::operator() ()
     
     // Constraints
     for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true); // spline smoothness penality
+    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true); // circular          
 
-    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true); // circular
-
-
-
+    
     // ans -= dnorm(exp(logStemp(0)), Type(0), Type(1), true); //first one 0 constraint    
 
     // scale seasonal vector
     SPvec = SPvec * sdSP;
 
     ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(1e-4), true); //mean 1 constraint
-    
+
     // update SPvec
     //for(int i=0; i<SPvec.size(); i++) SPvec(i) = Stemp(i);    
         
@@ -375,17 +373,17 @@ Type objective_function<Type>::operator() ()
     logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
   }
 
-  // Seasonal m
+  // Reference points
   vector<Type> logmc2(ns);
   for(int i=0; i < ns; i++){
-    logmc2(i) = logmc(i) + logmsea(i);
+    logmc2(i) = logmc(i) + logmre(i);
   }
 
-  // Reference points
+  // Seasonal m
   vector<Type> mvec(ns);
   for(int i=0; i < ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    mvec(i) = exp(logmc2(i) + logmre(i));
+    mvec(i) = exp(logmc2(i) + logmsea(i));
   }
 
   Type p = n - 1.0;
@@ -440,6 +438,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> logFmsyvec(ns);
   vector<Type> logBmsyvec(ns);
   vector<Type> logMSYvec(ns);
+  vector<Type> logFmsyvecnotP(ns);  
 
   vector<Type> Bmsy2(nm);
   if(flag){
@@ -462,6 +461,9 @@ Type objective_function<Type>::operator() ()
       logFmsyvec(i) = log(Fmsydveci - (p*(1.0-Fmsydveci)*sdb2) / pow(2.0-Fmsydveci, 2.0));
       logBmsyvec(i) = logBmsys(ind);
       logMSYvec(i) = log(mvec(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
+      
+      Type FmsydvecinotP = exp(logmc2(i)) / Bmsyd(ind);
+      logFmsyvecnotP(i) = log(FmsydvecinotP - (p*(1.0-FmsydvecinotP)*sdb2) / pow(2.0-FmsydvecinotP, 2.0));      
     }
   } else {
     // Use deterministic reference points
@@ -476,6 +478,7 @@ Type objective_function<Type>::operator() ()
       logFmsyvec(i) = log(mvec(i) / Bmsyd(ind));
       logBmsyvec(i) = logBmsyd(ind);
       logMSYvec(i) = log(mvec(i));
+      logFmsyvecnotP(i) = log(exp(logmc2(i)) / Bmsyd(ind));      
     }
   }
 
@@ -1077,6 +1080,14 @@ Type objective_function<Type>::operator() ()
     logFFmsynotS(i) = logFnotS(i) - logFmsyvec(i); 
   }
 
+
+  vector<Type> logFFmsynotP(ns);
+  
+  //  Type meanP = (exp(log(mvec) - logmc2)).sum() / mvec.size(); 
+  for(int i=0; i<ns; i++){
+    logFFmsynotP(i) = logFnotS(i) - logFmsyvecnotP(i); 
+  }
+
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
   
@@ -1175,6 +1186,7 @@ Type objective_function<Type>::operator() ()
     }
     ADREPORT(logFnotS);
     ADREPORT(logFFmsynotS);
+    ADREPORT(logFFmsynotP);
   }
   ADREPORT( logBmsyPluslogFmsy ) ;
 

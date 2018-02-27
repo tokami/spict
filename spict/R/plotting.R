@@ -1093,8 +1093,8 @@ plotspict.ffmsy <- function(rep, logax=FALSE, main='Relative fishing mortality',
         qf <- get.par('logqf', rep, exp=TRUE)
 
         if(rep$inp$seasonalProd %in% c(1,2)){
-            FF <- get.par('logFFmsy', rep, exp=TRUE)
-            logFF <- get.par('logFFmsy', rep)
+            FF <- get.par('logFFmsynotP', rep, exp=TRUE)
+            logFF <- get.par('logFFmsynotP', rep)
         }else{
             FF <- get.par('logFFmsynotS', rep, exp=TRUE)
             logFF <- get.par('logFFmsynotS', rep)
@@ -1610,14 +1610,26 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve', s
         } else {
             ylab <- add.catchunit(ylab, inp$catchunit)
         }
+
         plot(Bplot/Kest[2], Pst[[nr]]/Pstscal, typ='l', ylim=ylim, xlim=xlim,
              xlab='B/K', ylab=ylab, col=1, main=main)
+
         if (nr > 1){
             for (i in 1:(nr-1)){
                 lines(Bplot/Kest[2], Pst[[i]]/Pstscal, col='gray')
             }
         }
         if (inp$reportall){
+            ## for seasonal production take annual mean production (should be estimated in cpp file?)
+            if(inp$seasonalProd != 0){
+                BvecAn <- annual(inp$timeC, Bvec, type="mean")
+                Bvec <- BvecAn$annvec
+                PestAn <- annual(inp$timeC, Pest[,2], type="mean")
+                Pest <- data.frame(PestAn$anntime, NA)
+                Pest[,2] <- PestAn$annvec
+                yscal <- rep(1, length(Bvec))
+            }
+            
             lines(Bvec/Kest[2], Pest[, 2]/yscal, col=4, lwd=1.5)
             points(Bvec/Kest[2], Pest[, 2]/yscal, col=4, pch=20, cex=0.7)
             par(xpd=TRUE)
@@ -1832,7 +1844,6 @@ plotspict.season <- function(rep, stamp=get.version()){
 #' @export
 #'
 plotspict.seasonProd <- function(rep, stamp=get.version()){
-    browser()
     if (!'par.fixed' %in% names(rep)){
         stop('Input object was not a valid output from fit.spict()!')
     }
