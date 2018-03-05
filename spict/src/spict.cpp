@@ -334,23 +334,23 @@ Type objective_function<Type>::operator() ()
 
     
     // Constraints
-    for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true); // spline smoothness penality
+    for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true); // spline smoothness penalty
     ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true); // circular          
 
-
+    // ans -= dnorm(exp(logStemp(0)), Type(0), Type(1), true); //first one 0 constraint
     
-    // ans -= dnorm(exp(logStemp(0)), Type(0), Type(1), true); //first one 0 constraint    
+    //ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(1), true); //mean 1 constraint 1
 
     // scale seasonal vector
     SPvec = SPvec * sdSP;
 
-    ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(1e-4), true); //mean 1 constraint
+    ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(0.02), true); //mean 1 constraint 2  // Type(0.02)
 
     // update SPvec
     //for(int i=0; i<SPvec.size(); i++) SPvec(i) = Stemp(i);    
         
     for(int i=0; i<ns; i++){
-      ind = CppAD::Integer(seasonindex(i));
+      ind = CppAD::Integer(seasonindexProd(i));
       logmsea(i) += SPvec(ind);
     }
   }
@@ -1091,6 +1091,13 @@ Type objective_function<Type>::operator() ()
 
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
+
+
+  // report scaled biomass and fishing mortality relative to mean for comparison with SAM, SMS and Co
+  vector<Type> Bscaled = log(exp(logB)/(sum(exp(logB))/logB.size()));
+  vector<Type> Fscaled = log(exp(logF)/(sum(exp(logF))/logF.size()));
+
+  
   
   // ADREPORTS
   ADREPORT(Bmsy);  
@@ -1189,7 +1196,9 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFFmsynotS);
     ADREPORT(logFFmsynotP);
   }
-  ADREPORT( logBmsyPluslogFmsy ) ;
+  ADREPORT(logBmsyPluslogFmsy) ;
+  ADREPORT(Bscaled);
+  ADREPORT(Fscaled);  
 
   
   // REPORTS (these don't require sdreport to be output)
