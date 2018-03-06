@@ -926,13 +926,13 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
         tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
         qf <- get.par('logqf', rep, exp=TRUE)
 
-        if(rep$inp$seasonalProd %in% c(1,2)){
-            Fest <- get.par('logF', rep, exp=TRUE)
-            logFest <- get.par('logF', rep)
-        }else{
+##        if(rep$inp$seasonalProd %in% c(1,2)){
+##            Fest <- get.par('logF', rep, exp=TRUE)
+##            logFest <- get.par('logF', rep)
+##        }else{
             Fest <- get.par('logFnotS', rep, exp=TRUE)
             logFest <- get.par('logFnotS', rep)
-        }
+##        }
         
         
         if (tvgflag){
@@ -942,13 +942,13 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
             fmsycols <- matrix(rep(Fmsyvec$msy, each=3), ncol=3, byrow=TRUE)
 ##            FF <- get.par('logFFmsynotS', rep, exp=TRUE)[, 1:3] * fmsycols
 ##            logFF <- get.par('logFFmsynotS', rep)[, 1:3] + log(fmsycols)
-            if(rep$inp$seasonalProd %in% c(1,2)){
-                FF <- get.par('logFFmsy', rep, exp=TRUE)[, 1:3] * fmsycols
-                logFF <- get.par('logFFmsy', rep)[, 1:3] + log(fmsycols)
-            }else{
+##            if(rep$inp$seasonalProd %in% c(1,2)){
+##                FF <- get.par('logFFmsy', rep, exp=TRUE)[, 1:3] * fmsycols
+##                logFF <- get.par('logFFmsy', rep)[, 1:3] + log(fmsycols)
+##            }else{
                 FF <- get.par('logFFmsynotS', rep, exp=TRUE)[, 1:3] * fmsycols
                 logFF <- get.par('logFFmsynotS', rep)[, 1:3] + log(fmsycols)                
-            }            
+##            }            
             rel.axes <- FALSE
         } else {
             Fmsy <- get.par('logFmsy', rep, exp=TRUE)
@@ -1917,7 +1917,7 @@ plotspict.seasonProd <- function(rep, stamp=get.version()){
             }
             
             plot(t, y[,2], typ='n', xaxt='n', xlab='Time of year', ylab='Seasonal spline',
-                 main=paste('Seasonal production - RW'), ylim=ylim)
+                 main=paste('Seasonal production - RW'), ylim=c(0,10))##ylim)
             polygon(c(t,rev(t)),c(y[,1],rev(y[,3])), col=cicol2, border=cicol2)
         }
 

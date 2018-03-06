@@ -339,12 +339,12 @@ Type objective_function<Type>::operator() ()
 
     // ans -= dnorm(exp(logStemp(0)), Type(0), Type(1), true); //first one 0 constraint
     
-    //ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(1), true); //mean 1 constraint 1
+    // ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(1), true); //mean 1 constraint 1
 
     // scale seasonal vector
     SPvec = SPvec * sdSP;
 
-    ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(0.02), true); //mean 1 constraint 2  // Type(0.02)
+    ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(1), true); //mean 1 constraint 2  // Type(0.02)
 
     // update SPvec
     //for(int i=0; i<SPvec.size(); i++) SPvec(i) = Stemp(i);    
