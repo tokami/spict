@@ -1822,7 +1822,7 @@ plotspict.season <- function(rep, stamp=get.version()){
         lines(test, yest, lwd=1.5, col=4, typ='s')
         if ("true" %in% names(rep$inp)){
             if (rep$inp$true$seasontype==1){
-                lines(ttrue, nnnytrue, lwd=1, col=true.col(), typ='s')
+                lines(ttrue, ytrue, lwd=1, col=true.col(), typ='s')
             }
         }
         axis(1, at=ats, labels=lab)

@@ -835,6 +835,7 @@ check.inp <- function(inp){
     ## seasonal production    
     if(!'seasonalProd' %in% names(inp)) inp$seasonalProd <- 0
     if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2 ## log(2)
+    if(!'simSin' %in% names(inp)) inp$simSin <-  0    
 
     if(!"nseasonsProd" %in% names(inp)){      ## default number of seasons = 1
         inp$nseasonsProd <- 1
@@ -1044,6 +1045,10 @@ check.inp <- function(inp){
 
     ## seasonal production
     inp$ini$SPvec <- rep(log(1), 1/inp$dteuler)
+
+
+    ## exploitation pattern for simulation
+    if(!"exploitationpattern" %in% names(inp)) inp$exploitationpattern <- 0
 
     
     # Reorder parameter list
