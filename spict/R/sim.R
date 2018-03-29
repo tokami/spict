@@ -1590,3 +1590,4 @@ sim.spict2 <- function(input, nobs=100){
     return(sim)
 }
 
+ 
