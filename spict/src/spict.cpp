@@ -132,6 +132,7 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(seasonindexProd);    // A vector of length ns giving the number stepped within the current year
   DATA_MATRIX(splinematProd);      // Design matrix for the seasonal spline
   DATA_MATRIX(splinematfineProd);  // Design matrix for the seasonal spline on a fine time scale to get spline uncertainty
+  DATA_SCALAR(penRWSPsd);   // sd for the penality of the random walk of the seasonal producitivity
   
 
   // Priors
@@ -344,7 +345,7 @@ Type objective_function<Type>::operator() ()
     // scale seasonal vector
     SPvec = SPvec * sdSP;
 
-    ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(1e-4), true); //mean 1 constraint 2  // Type(0.02)
+    ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(penRWSPsd), true); //mean 1 constraint 2  // Type(0.02)
 
     // update SPvec
     //for(int i=0; i<SPvec.size(); i++) SPvec(i) = Stemp(i);    
