@@ -1,17 +1,14 @@
 /*
     Stochastic surplus Production model in Continuous-Time (SPiCT)
     Copyright (C) 2015-2016  Martin W. Pedersen, mawp@dtu.dk, wpsgodd@gmail.com
-
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -132,7 +129,7 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(seasonindexProd);    // A vector of length ns giving the number stepped within the current year
   DATA_MATRIX(splinematProd);      // Design matrix for the seasonal spline
   DATA_MATRIX(splinematfineProd);  // Design matrix for the seasonal spline on a fine time scale to get spline uncertainty
-  DATA_SCALAR(penRWSPsd);   // sd for the penality of the random walk of the seasonal producitivity
+  //DATA_SCALAR(penRWSPsd);   // sd for the penality of the random walk of the seasonal producitivity
   
 
   // Priors
@@ -325,30 +322,17 @@ Type objective_function<Type>::operator() ()
 
   if(seasonalProd == 2.0){
 
-    /*
-    // circle should be closed on January - January
-    vector<Type> Stemp(SPvec.size()+1);
-    for(int i=0; i<SPvec.size(); i++) Stemp(i) = SPvec(i);
-    Stemp(Stemp.size()-1) = SPvec(0);
-    vector<Type> expStemp = exp(Stemp);    
-    */
-
+    SPvec(0) = 0.0;
     
     // Constraints
-    for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true); // spline smoothness penalty
-    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true); // circular          
+    // spline smoothness penalty
+    for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true);
 
-    // ans -= dnorm(exp(logStemp(0)), Type(0), Type(1), true); //first one 0 constraint
-    
-    // ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(1), true); //mean 1 constraint 1
+    // circular          
+    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true); 
 
     // scale seasonal vector
     SPvec = SPvec * sdSP;
-
-    ans -= dnorm(sum(exp(SPvec))/SPvec.size(), Type(1), Type(penRWSPsd), true); //mean 1 constraint 2  // Type(0.02)
-
-    // update SPvec
-    //for(int i=0; i<SPvec.size(); i++) SPvec(i) = Stemp(i);    
         
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindexProd(i));
@@ -388,16 +372,20 @@ Type objective_function<Type>::operator() ()
     mvec(i) = exp(logmc2(i) + logmsea(i));
   }
 
+  // mean seasonal productivity factor
+  Type meanP = (exp(log(mvec) - logmc2)).sum() / mvec.size(); 
+
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
   vector<Type> Fmsyd(nm);
-  vector<Type> MSYd = m;
+  vector<Type> MSYd(nm);
   vector<Type> Bmsys(nm);
   vector<Type> Fmsys(nm);
   vector<Type> MSYs(nm);
   int flag = asDouble(n) > 1; // Cast n as double to calc flag
   for(int i=0; i<nm; i++){
     // Deterministic reference points
+    MSYd(i) = exp(log(m(i)) - meanP);
     Bmsyd(i) = K * pow(1.0/n, 1.0/(n-1.0));
     Fmsyd(i) = MSYd(i)/Bmsyd(i);
     // Stochastic reference points (NOTE: only proved for n>1, Bordet and Rivest (2014))
@@ -440,8 +428,6 @@ Type objective_function<Type>::operator() ()
   vector<Type> logFmsyvec(ns);
   vector<Type> logBmsyvec(ns);
   vector<Type> logMSYvec(ns);
-  vector<Type> logFmsyvecnotP(ns);  
-
   vector<Type> Bmsy2(nm);
   if(flag){
     Bmsy2 = Bmsys;
@@ -459,13 +445,10 @@ Type objective_function<Type>::operator() ()
     logMSY = logMSYs;
     for(int i=0; i < ns; i++){
       ind = CppAD::Integer(ir(i)-1); // minus 1 because R starts at 1 and c++ at 0
-      Type Fmsydveci = mvec(i) / Bmsyd(ind);
+      Type Fmsydveci = (mvec(i)-meanP) / Bmsyd(ind);
       logFmsyvec(i) = log(Fmsydveci - (p*(1.0-Fmsydveci)*sdb2) / pow(2.0-Fmsydveci, 2.0));
       logBmsyvec(i) = logBmsys(ind);
-      logMSYvec(i) = log(mvec(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
-      
-      Type FmsydvecinotP = exp(logmc2(i)) / Bmsyd(ind);
-      logFmsyvecnotP(i) = log(FmsydvecinotP - (p*(1.0-FmsydvecinotP)*sdb2) / pow(2.0-FmsydvecinotP, 2.0));      
+      logMSYvec(i) = log((mvec(i)-meanP) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
     }
   } else {
     // Use deterministic reference points
@@ -477,10 +460,10 @@ Type objective_function<Type>::operator() ()
     logMSY = logMSYd;
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(ir(i)-1); // minus 1 because R starts at 1 and c++ at 0
-      logFmsyvec(i) = log(mvec(i) / Bmsyd(ind));
+      logFmsyvec(i) = log((mvec(i)-meanP) / Bmsyd(ind));
       logBmsyvec(i) = logBmsyd(ind);
-      logMSYvec(i) = log(mvec(i));
-      logFmsyvecnotP(i) = log(exp(logmc2(i)) / Bmsyd(ind));      
+      logMSYvec(i) = log(mvec(i)-meanP);
+
     }
   }
 
@@ -1083,12 +1066,12 @@ Type objective_function<Type>::operator() ()
   }
 
 
+  /*
   vector<Type> logFFmsynotP(ns);
-  
-  //  Type meanP = (exp(log(mvec) - logmc2)).sum() / mvec.size(); 
   for(int i=0; i<ns; i++){
     logFFmsynotP(i) = logFnotS(i) - logFmsyvecnotP(i); 
   }
+  */
 
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
@@ -1195,7 +1178,6 @@ Type objective_function<Type>::operator() ()
     }
     ADREPORT(logFnotS);
     ADREPORT(logFFmsynotS);
-    ADREPORT(logFFmsynotP);
   }
   ADREPORT(logBmsyPluslogFmsy) ;
   ADREPORT(Bscaled);
@@ -1219,4 +1201,3 @@ Type objective_function<Type>::operator() ()
   }
   return ans;
 }
-
