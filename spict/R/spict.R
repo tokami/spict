@@ -278,7 +278,6 @@ make.datin <- function(inp, dbg=0){
                   splinematProd=inp$splinematProd,
                   splinematfineProd=inp$splinematfineProd,
                   seasonalProd=inp$seasonalProd,
-                  penRWSPsd=inp$penRWSPsd,
                   priorn=inp$priors$logn,
                   priorr=inp$priors$logr,
                   priorK=inp$priors$logK,

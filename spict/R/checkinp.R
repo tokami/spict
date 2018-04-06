@@ -836,7 +836,6 @@ check.inp <- function(inp){
     if(!'seasonalProd' %in% names(inp)) inp$seasonalProd <- 0
     if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2 ## log(2)
     if(!'simSin' %in% names(inp)) inp$simSin <-  0
-    if(!'penRWSPsd' %in% names(inp)) inp$penRWSPsd <-  1e-4
     
 
     if(!"nseasonsProd" %in% names(inp)){      ## default number of seasons = 1

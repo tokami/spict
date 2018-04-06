@@ -124,6 +124,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  // seaProd
   DATA_SCALAR(seasonalProd);
   DATA_VECTOR(seasonsProd);        // A vector of length ns indicating to which season a state belongs
   DATA_VECTOR(seasonindexProd);    // A vector of length ns giving the number stepped within the current year
@@ -194,6 +195,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(SARvec);    // Autoregressive deviations to seasonal spline
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
+  // seaProd
   PARAMETER_VECTOR(SPvec);
   PARAMETER(logSdSP);
   PARAMETER_VECTOR(logphiProd);
@@ -308,6 +310,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> logEpred(nobsE);
 
 
+  // seaProd
   // Seasonal production (seasonal component of m)
   vector<Type> logmsea(ns);
   for(int i=0; i<ns; i++) logmsea(i) = 0.0; // Initialise
@@ -319,37 +322,29 @@ Type objective_function<Type>::operator() ()
   vector<Type> seasonsplinefineProd(tempfineProd.size());
   seasonsplinefineProd = splinematfineProd * logphiProd;
 
-
+  // seaProd
   if(seasonalProd == 2.0){
-
-    SPvec(0) = 0.0;
-    
+    // fixing one time step to 0
+    // SPvec(0) = 0.0;
     // Constraints
     // spline smoothness penalty
     for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true);
-
     // circular          
-    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true); 
-
+    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true);
     // scale seasonal vector
     SPvec = SPvec * sdSP;
-        
+    // repeating for length of time series
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindexProd(i));
       logmsea(i) += SPvec(ind);
     }
   }
-
   if(seasonalProd == 1.0){
-    
     int ind2P;    
     for(int i=0; i<ns; i++){
       ind2P = CppAD::Integer(seasonindexProd(i));
       logmsea(i) += seasonsplineProd(ind2P);
     }
-    
-    // add constraint on mean 1
-    ans -= dnorm(sum(expseasonsplineProd)/expseasonsplineProd.size(), Type(1), Type(1e-4), true);
   }
 
 
@@ -365,6 +360,7 @@ Type objective_function<Type>::operator() ()
     logmc2(i) = logmc(i) + logmre(i);
   }
 
+  // seaProd
   // Seasonal m
   vector<Type> mvec(ns);
   for(int i=0; i < ns; i++){
@@ -372,8 +368,13 @@ Type objective_function<Type>::operator() ()
     mvec(i) = exp(logmc2(i) + logmsea(i));
   }
 
+  //seaProd
   // mean seasonal productivity factor
-  Type meanP = (exp(log(mvec) - logmc2)).sum() / mvec.size(); 
+  Type meanP = (exp(log(mvec) - logmc2)).sum() / mvec.size();
+  vector<Type> mnotP(nm);
+  for(int i=0; i<nm; i++) mnotP(i) = exp(log(m(i)) + log(meanP));
+  vector<Type> mvecnotP(ns);
+  for(int i=0; i<ns; i++) mvecnotP(i) = exp(log(mvec(i)) + log(meanP));
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
@@ -385,7 +386,7 @@ Type objective_function<Type>::operator() ()
   int flag = asDouble(n) > 1; // Cast n as double to calc flag
   for(int i=0; i<nm; i++){
     // Deterministic reference points
-    MSYd(i) = exp(log(m(i)) - meanP);
+    MSYd(i) = mnotP(i);  // seaProd
     Bmsyd(i) = K * pow(1.0/n, 1.0/(n-1.0));
     Fmsyd(i) = MSYd(i)/Bmsyd(i);
     // Stochastic reference points (NOTE: only proved for n>1, Bordet and Rivest (2014))
@@ -445,10 +446,10 @@ Type objective_function<Type>::operator() ()
     logMSY = logMSYs;
     for(int i=0; i < ns; i++){
       ind = CppAD::Integer(ir(i)-1); // minus 1 because R starts at 1 and c++ at 0
-      Type Fmsydveci = (mvec(i)-meanP) / Bmsyd(ind);
+      Type Fmsydveci = mvecnotP(i) / Bmsyd(ind);  // seaProd
       logFmsyvec(i) = log(Fmsydveci - (p*(1.0-Fmsydveci)*sdb2) / pow(2.0-Fmsydveci, 2.0));
       logBmsyvec(i) = logBmsys(ind);
-      logMSYvec(i) = log((mvec(i)-meanP) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
+      logMSYvec(i) = log(mvecnotP(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0)))); // seaProd
     }
   } else {
     // Use deterministic reference points
@@ -460,9 +461,9 @@ Type objective_function<Type>::operator() ()
     logMSY = logMSYd;
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(ir(i)-1); // minus 1 because R starts at 1 and c++ at 0
-      logFmsyvec(i) = log((mvec(i)-meanP) / Bmsyd(ind));
+      logFmsyvec(i) = log(mvecnotP(i) / Bmsyd(ind));   // seaProd
       logBmsyvec(i) = logBmsyd(ind);
-      logMSYvec(i) = log(mvec(i)-meanP);
+      logMSYvec(i) = log(mvecnotP(i));   // seaProd
 
     }
   }
@@ -490,18 +491,18 @@ Type objective_function<Type>::operator() ()
   //vector<Type> rp(nm);
   //vector<Type> logrp(nm);
   for(int i=0; i<nm; i++){ 
-    rold(i) =  CppAD::abs(gamma * m(i) / K);
+    rold(i) =  CppAD::abs(gamma * mnotP(i) / K);   // seaProd
     logrold(i) = log(rold(i)); 
     rc(i) = CppAD::abs(2.0 * rold(i) * (n - 1.0) / n);
     logrc(i) = log(rc(i)); 
     //rp(i) = abs(r(i) * (n - 1.0));
     //logrp(i) = log(rp(i)); 
-    r(i) = m(i)/K * pow(n,(n/(n-1.0))); //abs(r(i) * (n - 1.0));
+    r(i) = mnotP(i)/K * pow(n,(n/(n-1.0))); //abs(r(i) * (n - 1.0));   // seaProd
     logr(i) = log(r(i)); 
     //std::cout << " -- n: " << n << " -- gamma: " << gamma << n << " -- m(i): " << m(i)<< n << " -- K: " << K << " -- r(i): " << r(i) << " -- logr(i): " << logr(i) << std::endl;
   }
   for(int i=0; i<ns; i++){ 
-    logrre(i) = log(mvec(i)/K * pow(n,(n/(n-1.0))));
+    logrre(i) = log(mvecnotP(i)/K * pow(n,(n/(n-1.0))));   // seaProd
   }
 
   Type likval;
