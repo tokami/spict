@@ -1213,28 +1213,33 @@ sim.spict2 <- function(input, nobs=100){
     msea <- rep(1,nt)
     SPvec <- inp$ini$SPvec
     if(inp$seasonalProd == 2 | inp$seasonalProd == 1){
+
+        SPvecS <- c(0, SPvec)
+        
         ## seasonal pattern
-        nSP <- length(SPvec)
+        nSP <- length(SPvecS)
 
         ## example forced seasonal pattern
-        SPvec <- sin(seq(inp$simSin+1e-6,2*pi+inp$simSin,length.out = nSP)) + 1
+        SPvecS <- sin(seq(inp$simSin+1e-6,2*pi+inp$simSin,length.out = nSP)) + 1
 
         ## Closed circle (not necessary because closing through combining)
         ## SPvec[nSP] <- SPvec[1]
 
         ## scale with sd
-        SPvec <- log(SPvec) * sdSP
+        SPvecS <- exp(log(SPvecS) * sdSP)
 
         ## SPvec <- SPvec[1:nSP]
         
         ## Mean 1 + exponent
-        SPvec <- exp(SPvec)/mean(exp(SPvec))
+        SPvecS <- SPvecS/mean(SPvecS)
+
 
         ## get vector for whole time series
-        msea <- SPvec[inp$seasonindex+1]
+        msea <- SPvecS[inp$seasonindex+1]
+
 
         ## for export in log scale
-        SPvec <- log(SPvec)
+        SPvecS <- log(SPvecS)
         
 ##        plot(sin(seq(0.01,2*pi,length.out = 12)) + 1)
     }
