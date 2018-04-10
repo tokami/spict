@@ -321,22 +321,29 @@ Type objective_function<Type>::operator() ()
   vector<Type> tempfineProd = splinematfineProd.col(0);
   vector<Type> seasonsplinefineProd(tempfineProd.size());
   seasonsplinefineProd = splinematfineProd * logphiProd;
+  vector<Type> SPvecS(SPvec.size()+1);
+  //  Type meanSPvec = 1;
+  
 
   // seaProd
   if(seasonalProd == 2.0){
-    // fixing one time step to 0
-    // SPvec(0) = 0.0;
+    // set to zero
+    SPvecS(0) = 0.0;
+    for(int i=1; i<SPvecS.size(); i++) SPvecS(i) = SPvec(i-1);
     // Constraints
     // spline smoothness penalty
-    for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true);
+    for(int i=1; i<SPvecS.size(); i++) ans -= dnorm(SPvecS(i),SPvecS(i-1),Type(1),true);
     // circular          
-    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true);
+    ans -= dnorm(SPvecS(0),SPvecS(SPvecS.size()-1),Type(1),true);
     // scale seasonal vector
-    SPvec = SPvec * sdSP;
+    SPvecS = SPvecS * sdSP;
+    // standardise
+    // meanSPvec = exp(SPvec).sum() / SPvec.size();    
+    // SPvecS = SPvec - log(meanSPvec);
     // repeating for length of time series
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindexProd(i));
-      logmsea(i) += SPvec(ind);
+      logmsea(i) += SPvecS(ind);
     }
   }
   if(seasonalProd == 1.0){
@@ -368,13 +375,16 @@ Type objective_function<Type>::operator() ()
     mvec(i) = exp(logmc2(i) + logmsea(i));
   }
 
+
   //seaProd
-  // mean seasonal productivity factor
-  Type meanP = (exp(log(mvec) - logmc2)).sum() / mvec.size();
+  // mean seasonal productivity factor  
+  Type meanP = exp(SPvecS).sum() / SPvecS.size();
   vector<Type> mnotP(nm);
-  for(int i=0; i<nm; i++) mnotP(i) = exp(log(m(i)) + log(meanP));
+  for(int i=0; i<nm; i++) mnotP(i) = exp(log(m(i)) - log(meanP));
   vector<Type> mvecnotP(ns);
-  for(int i=0; i<ns; i++) mvecnotP(i) = exp(log(mvec(i)) + log(meanP));
+  for(int i=0; i<ns; i++) mvecnotP(i) = exp(log(mvec(i)) - log(meanP));
+
+
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
@@ -1155,7 +1165,7 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logbeta);
   ADREPORT(sdSP);
   ADREPORT(seasonsplinefineProd);
-  ADREPORT(SPvec);
+  ADREPORT(SPvecS);
 
   
   if(reportall){ 
@@ -1199,6 +1209,7 @@ Type objective_function<Type>::operator() ()
   REPORT(logF);
   if(seasonalProd == 2.0){
     REPORT(SPvec);
+    REPORT(SPvecS);
   }
   return ans;
 }

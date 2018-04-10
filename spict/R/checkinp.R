@@ -1045,7 +1045,7 @@ check.inp <- function(inp){
 
 
     ## seasonal production
-    inp$ini$SPvec <- rep(log(1), 1/inp$dteuler)
+    inp$ini$SPvec <- rep(log(1), 1/inp$dteuler-1)
 
 
     ## exploitation pattern for simulation
