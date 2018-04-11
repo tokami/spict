@@ -379,7 +379,7 @@ Type objective_function<Type>::operator() ()
   //seaProd
   // mean seasonal productivity factor  
   //  Type meanP = exp(SPvecS).sum() / SPvecS.size();
-  Type meanP = exp(log(mvec) - logmc2).sum() / mvec.size();  
+  Type meanP = exp(SPvecS).sum() / SPvecS.size();  
   vector<Type> mnotP(nm);
   for(int i=0; i<nm; i++) mnotP(i) = exp(log(m(i)) - log(meanP));
   vector<Type> mvecnotP(ns);
@@ -475,7 +475,6 @@ Type objective_function<Type>::operator() ()
       logFmsyvec(i) = log(mvecnotP(i) / Bmsyd(ind));   // seaProd
       logBmsyvec(i) = logBmsyd(ind);
       logMSYvec(i) = log(mvecnotP(i));   // seaProd
-
     }
   }
 
