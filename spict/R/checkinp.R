@@ -1013,6 +1013,9 @@ check.inp <- function(inp){
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
     if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdsp <-  -2
     if(!'simPhaseSP' %in% names(inp)) inp$simPhaseSP <- 0
+    if(inp$seaprod == 1){
+        inp$logm <- log(1)
+    }
 
     inp$ini$logSPvec <- rep(log(1), 1/inp$dteuler)
 
