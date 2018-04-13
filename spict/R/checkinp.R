@@ -1012,6 +1012,7 @@ check.inp <- function(inp){
     ## seaprod
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
     if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdsp <-  -2
+    if(!'logmregime' %in% names(inp$ini)) inp$ini$logmregime <- rep(log(1), inp$noms-1)
     if(!'simPhaseSP' %in% names(inp)) inp$simPhaseSP <- 0
     if(inp$seaprod == 1){
         inp$logm <- log(1)
