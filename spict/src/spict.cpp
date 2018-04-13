@@ -194,7 +194,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
   // seaprod
-  PARAMETER_VECTOR(logSPvec);  // log random effect vector with seasonal productivity and mean m
+  PARAMETER_VECTOR(SPvec);  // log random effect vector with seasonal productivity and mean m
   PARAMETER(logSdSP);          // SD of random walk process of seasonal producitivity
   PARAMETER_VECTOR(logmregime);// factor for ms in regime
 
@@ -308,58 +308,81 @@ Type objective_function<Type>::operator() ()
 
 
   // seaprod
+  vector<Type> logmSP(nm);
+  for(int i=0; i<nm; i++) logmSP(i) = 0.0;
   vector<Type> logmsea(ns);
-  for(int i=0; i<ns; i++) logmsea(i) = 0.0;
-  vector<Type> logSPvecST(logSPvec.size());
-  for(int i=0; i<logSPvec.size(); i++) logSPvecST(i) = 0.0;
+  for(int i=0; i<ns; i++) logmsea(i) = 0.0;  
   
-  if(seasonalProd == 1){
+  if(seaprod == 1){
     // smoothness constraint
-    for(int i=1; i<logSPvec.size(); i++) ans -= dnorm(logSPvec(i),logSPvec(i-1),Type(1),true);
+    for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true);
     // circular constraint          
-    ans -= dnorm(logSPvec(0),logSPvec(logSPvec.size()-1),Type(1),true);
-    // scaling seasonal vector
-    logSPvec = logSPvec * sdSP;
-    // mean of logSPvec is logm
-    Type logmSP  = logSPvec.sum() / logSPvec.size();
-    // overwrite logm
-    logm(0) = logmSP;
+    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true);
+    // scaling seasonal vector (SPvec not log!)
+    SPvec = SPvec * sdSP;
+
+    // mean of SPvec
+    logmSP(0) += SPvec.sum() / SPvec.size();
+
     // m-regimes as a factor of m in first regime
     if(nm > 1){
-      for(int i=1; i<nm; i++) logm(i) = logmSP + logm(i);      
+      for(int i=1; i<nm; i++) logmSP(i) += logmSP(0) + logmregime(i-1);
     }
-    // standardise seasonal factor
-    logSPvecST = logSPvec - logmSP;
-    // seasonal factor only
-    for(int i=0; i<ns; i++){
-      ind = CppAD::Integer(seasonindex(i));
-      logmsea(i) += logSPvecST(ind);
-    }    
+    // overwrite logm
+    for(int i=0; i<nm; i++) logm(i) = logmSP(i);
+
+    // standardise to mean 0 (on log scale)
+    vector<Type> SPvecST(SPvec.size());
+    for(int i=0; i<SPvec.size(); i++) SPvecST(i) = SPvec(i) - logmSP(0);
+
+
+    for(int i=0; i < ns; i++){
+      ind = CppAD::Integer(seasonindex(i));      
+      logmsea(i) = SPvecST(ind);
+    }
+
+
+    /*
+    // for mapping regimes on top of SPvec
+    vector<Type> logRegSP(nm);
+    logRegSP(0) = 0.0;
+    for(int i=1; i<nm; i++) logRegSP(i) = logmregime(i-1);
+
+    // combining SPvec and m-regimes
+    vector<Type> logmsea(ns);
+    for(int i=0; i < ns; i++){
+      ind = CppAD::Integer(seasonindex(i));      
+      logmsea(i) = SPvecST(ind) + logRegSP(MSYregime[i]);
+    }
+    */
   }
 
-  // Transform m
-  vector<Type> m(nm); 
-  for(int i=0; i<nm; i++){ m(i) = exp(logm(i)); }
-  
   // Covariate for m
-  vector<Type> logmc(ns);
+  vector<Type> logmc(ns);  
   for(int i=0; i < ns; i++){
     logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
   }
-
+    
   // Reference points
-  vector<Type> logmc2(ns);
+  vector<Type> logmc2(ns); 
   for(int i=0; i < ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
     logmc2(i) = logmc(i) + logmre(i);
   }
 
-  // seaprod
-  vector<Type> mvec(ns);
+  // incorporating SPvec 
+  vector<Type> mvec(ns);  
   for(int i=0; i < ns; i++){
     mvec(i) = exp(logmc2(i) + logmsea(i));
   }
   
+  
+  // Transform m
+  vector<Type> m(nm); 
+  for(int i=0; i<nm; i++){ m(i) = exp(logm(i)); }
+  vector<Type> mSP(nm); 
+  for(int i=0; i<nm; i++){ mSP(i) = exp(logmSP(i)); }  
+
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
@@ -1055,6 +1078,7 @@ Type objective_function<Type>::operator() ()
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
   
+  
   // ADREPORTS
   ADREPORT(Bmsy);  
   ADREPORT(Bmsyd);
@@ -1124,7 +1148,12 @@ Type objective_function<Type>::operator() ()
   ADREPORT(isdi2);
   ADREPORT(logalpha);
   ADREPORT(logbeta);
-  ADREPORT(logSPvecST);
+  if(seaprod == 1){
+    ADREPORT(sdSP);
+    ADREPORT(logmregime);
+    ADREPORT(logmSP);
+    ADREPORT(SPvec);    
+  }
   
   if(reportall){ 
     // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
@@ -1162,8 +1191,11 @@ Type objective_function<Type>::operator() ()
   REPORT(logFFmsy);
   REPORT(logB);
   REPORT(logF);
-  REPORT(logSPvec);
-
+  if(seaprod == 1){
+    REPORT(SPvec);
+  }
+  
   return ans;
 }
+
 

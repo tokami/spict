@@ -326,7 +326,7 @@ check.inp <- function(inp){
     inp$nseries <- 1 + inp$nindex + as.numeric(inp$nobsE > 0)
     
     # -- MODEL OPTIONS --
-    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB', 'logmre','SARvec','logSPvec')
+    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB', 'logmre','SARvec','SPvec')
     if (!"scriptname" %in% names(inp)) inp$scriptname <- 'spict'
     # Index related
     if (!"onealpha" %in% names(inp)){
@@ -1011,15 +1011,19 @@ check.inp <- function(inp){
 
     ## seaprod
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
-    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdsp <-  -2
-    if(!'logmregime' %in% names(inp$ini)) inp$ini$logmregime <- rep(log(1), inp$noms-1)
+    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2
+    if(!'logmregime' %in% names(inp$ini)) inp$ini$logmregime <- rep(log(1), max(c(inp$noms-1,1)))
     if(!'simPhaseSP' %in% names(inp)) inp$simPhaseSP <- 0
     if(inp$seaprod == 1){
-        inp$logm <- log(1)
+        inp$ini$logm <- rep(log(1), inp$noms)
     }
 
-    inp$ini$logSPvec <- rep(log(1), 1/inp$dteuler)
+    ## random effect vector with mean m
+    inp$ini$SPvec <- rep(unname(guess.m(inp)), 1/inp$dteuler)
 
+    ## exploitation pattern and max for simulation
+##    if(!"exploitationpattern" %in% names(inp)) inp$exploitationpattern <- 0
+##    if(!"exploitationmax" %in% names(inp)) inp$exploitationmax <- 0.5
     
     
     # Reorder parameter list
@@ -1051,8 +1055,9 @@ check.inp <- function(inp){
                         logitSARphi=inp$ini$logitSARphi,
                         logSdSAR=inp$ini$logSdSAR,
                         ## seaprod
-                        logSPvec=inp$ini$logSPvec,
-                        logSdSP=inp$ini$logSdSP)
+                        SPvec=inp$ini$SPvec,
+                        logSdSP=inp$ini$logSdSP,
+                        logmregime=inp$ini$logmregime)
 
 
 
@@ -1209,7 +1214,7 @@ check.inp <- function(inp){
     # Determine fixed parameters
     forcefixpars <- c() # Parameters that are forced to be fixed.
     if (inp$nseasons == 1){
-        forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda', 'SARvec','logitSARphi','logSdSAR','logSPvec','logSdSP',forcefixpars)
+        forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda', 'SARvec','logitSARphi','logSdSAR','SPvec','logSdSP','logmregime',forcefixpars)
     } else {
         if (inp$seasontype == 1){ # Use spline
             forcefixpars <- c('logu', 'logsdu', 'loglambda','SARvec','logitSARphi','logSdSAR', forcefixpars)
@@ -1222,7 +1227,7 @@ check.inp <- function(inp){
         }
         ## seaprod
         if(inp$seaprod == 0){
-            forcefixpars <- c('logSPvec', 'logSdSP', forcefixpars)
+            forcefixpars <- c('SPvec', 'logSdSP','logmregime', forcefixpars)
         }
         if(inp$seaprod == 1){
             forcefixpars <- c('logm', forcefixpars)

@@ -292,6 +292,52 @@ sim.spict <- function(input, nobs=100){
         for (t in 2:nt){
             logFbase[t] <- predict.logf(logFbase[t-1], dt, sdf, inp$efforttype) + e.f[t-1]
         }
+
+
+     ## random exploitation pattern
+        if(inp$exploitationpattern == 0){
+            e.f <- rnorm(nt-1, 0, sdf*sqrt(dt))
+            
+            for (t in 2:nt){
+                logFbase[t] <- predict.logf(logFbase[t-1], dt, sdf, inp$efforttype) + e.f[t-1]
+            }
+            #ef <- arima.sim(inp$armalistF, nt-1) * sdf*sqrt(dt) # Used to simulate other than white noise in F
+                                            #logFbase <- c(log(F0), log(F0) + cumsum(ef)) # Fishing mortality
+
+            ## strictly increasing scenario (fixed exploitation pattern)
+        }else if(inp$exploitationpattern == 1){
+            e.f <- abs(rnorm(nt-1, 0, sdf*sqrt(dt)))
+            
+            for (t in 2:nt){
+                logFbase[t] <- predict.logf(logFbase[t-1], dt, sdf, inp$efforttype) + e.f[t-1]
+            }
+
+            ## strictly decreasing scenario (fixed exploitation pattern)            
+        }else if(inp$exploitationpattern == 2){
+            e.f <- -abs(rnorm(nt-1, 0, sdf*sqrt(dt)))
+            
+            for (t in 2:nt){
+                logFbase[t] <- predict.logf(logFbase[t-1], dt, sdf, inp$efforttype) + e.f[t-1]
+            }
+
+            ## roller coaster scenario (fixed exploitation pattern)            
+        }else if(inp$exploitationpattern == 3){
+            maxEx <- inp$exploitationmax
+            e.f <- rnorm(nt-1, 0, sdf*sqrt(dt))
+            rawEx <- c(seq(F0,maxEx,length.out = floor(nt/2.5)),           ## increasing
+                       rep(maxEx,(nt-(floor(nt/2.5)+floor(nt/3)))),  ## stable 
+                       seq(maxEx,F0+0.1,length.out=floor(nt/3)))          ## decreasing
+
+            logFbase <- log(rawEx) 
+            logFbase[2:nt] <- logFbase[2:nt] + e.f
+            
+        }
+
+
+
+
+
+        
         #ef <- arima.sim(inp$armalistF, nt-1) * sdf*sqrt(dt) # Used to simulate other than white noise in F
         #logFbase <- c(log(F0), log(F0) + cumsum(ef)) # Fishing mortality
         # Impose seasons
