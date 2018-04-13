@@ -326,7 +326,7 @@ check.inp <- function(inp){
     inp$nseries <- 1 + inp$nindex + as.numeric(inp$nobsE > 0)
     
     # -- MODEL OPTIONS --
-    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB', 'logmre','SARvec')
+    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB', 'logmre','SARvec','logSPvec')
     if (!"scriptname" %in% names(inp)) inp$scriptname <- 'spict'
     # Index related
     if (!"onealpha" %in% names(inp)){
@@ -1007,6 +1007,16 @@ check.inp <- function(inp){
     #    inp$ini$logmre <- check.mat(inp$ini$logmre, c(inp$nstocks, inp$ns), 'inp$ini$logmre')
     #}
     inp$ini$SARvec <- rep(0, max(inp$seasonindex2))
+
+
+    ## seaprod
+    if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
+    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdsp <-  -2
+    if(!'simPhaseSP' %in% names(inp)) inp$simPhaseSP <- 0
+
+    inp$ini$logSPvec <- rep(log(1), 1/inp$dteuler)
+
+    
     
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
@@ -1035,7 +1045,11 @@ check.inp <- function(inp){
                         logmre=inp$ini$logmre,
                         SARvec=inp$ini$SARvec,
                         logitSARphi=inp$ini$logitSARphi,
-                        logSdSAR=inp$ini$logSdSAR)
+                        logSdSAR=inp$ini$logSdSAR,
+                        ## seaprod
+                        logSPvec=inp$ini$logSPvec,
+                        logSdSP=inp$ini$logSdSP)
+
 
 
     # -- PRIORS --
@@ -1191,7 +1205,7 @@ check.inp <- function(inp){
     # Determine fixed parameters
     forcefixpars <- c() # Parameters that are forced to be fixed.
     if (inp$nseasons == 1){
-        forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda', 'SARvec','logitSARphi','logSdSAR',forcefixpars)
+        forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda', 'SARvec','logitSARphi','logSdSAR','logSPvec','logSdSP',forcefixpars)
     } else {
         if (inp$seasontype == 1){ # Use spline
             forcefixpars <- c('logu', 'logsdu', 'loglambda','SARvec','logitSARphi','logSdSAR', forcefixpars)
@@ -1201,6 +1215,13 @@ check.inp <- function(inp){
         }
         if(inp$seasontype == 3){ # Use spline + AR
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
+        }
+        ## seaprod
+        if(inp$seaprod == 0){
+            forcefixpars <- c('logSPvec', 'logSdSP', forcefixpars)
+        }
+        if(inp$seaprod == 1){
+            forcefixpars <- c('logm', forcefixpars)
         }
     }
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
