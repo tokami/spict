@@ -1214,7 +1214,7 @@ sim.spict2 <- function(input, nobs=100){
     SPvec <- inp$ini$SPvec
     if(inp$seasonalProd == 2 | inp$seasonalProd == 1){
 
-        SPvecS <- c(0, SPvec)
+        SPvecS <- c(0,SPvec)
         
         ## seasonal pattern
         nSP <- length(SPvecS)

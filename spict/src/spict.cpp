@@ -322,7 +322,8 @@ Type objective_function<Type>::operator() ()
   vector<Type> seasonsplinefineProd(tempfineProd.size());
   seasonsplinefineProd = splinematfineProd * logphiProd;
   vector<Type> SPvecS(SPvec.size()+1);
-  //  Type meanSPvec = 1;
+  //vector<Type> SPvecSs(SPvec.size()+1);  
+  //Type meanSPvec = 1;
   
 
   // seaProd
@@ -338,8 +339,8 @@ Type objective_function<Type>::operator() ()
     // scale seasonal vector
     SPvecS = SPvecS * sdSP;
     // standardise
-    // meanSPvec = exp(SPvec).sum() / SPvec.size();    
-    // SPvecS = SPvec - log(meanSPvec);
+    //meanSPvec = exp(SPvecS).sum() / SPvecS.size();    
+    //SPvecS = SPvecS - log(meanSPvec);
     // repeating for length of time series
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindexProd(i));
@@ -376,28 +377,27 @@ Type objective_function<Type>::operator() ()
   }
 
 
-  //seaProd
-  // mean seasonal productivity factor  
-  //  Type meanP = exp(SPvecS).sum() / SPvecS.size();
-  Type meanP = exp(SPvecS).sum() / SPvecS.size();  
-  vector<Type> mnotP(nm);
-  for(int i=0; i<nm; i++) mnotP(i) = exp(log(m(i)) - log(meanP));
-  vector<Type> mvecnotP(ns);
-  for(int i=0; i<ns; i++) mvecnotP(i) = exp(log(mvec(i)) - log(meanP));
 
+  //seaProd
+  // mean seasonal productivity factor
+  // only for refernence levels
+  Type meanP = exp(SPvecS).sum() / SPvecS.size();
+  vector<Type> mnotP(nm);
+  for(int i=0; i<nm; i++) mnotP(i) = exp(logm(i) + log(meanP));
+  vector<Type> mvecnotP(ns);
+  for(int i=0; i<ns; i++) mvecnotP(i) = exp(logmc2(i) + log(meanP));
 
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
   vector<Type> Fmsyd(nm);
-  vector<Type> MSYd(nm);
+  vector<Type> MSYd = mnotP;
   vector<Type> Bmsys(nm);
   vector<Type> Fmsys(nm);
   vector<Type> MSYs(nm);
   int flag = asDouble(n) > 1; // Cast n as double to calc flag
   for(int i=0; i<nm; i++){
     // Deterministic reference points
-    MSYd(i) = mnotP(i);  // seaProd
     Bmsyd(i) = K * pow(1.0/n, 1.0/(n-1.0));
     Fmsyd(i) = MSYd(i)/Bmsyd(i);
     // Stochastic reference points (NOTE: only proved for n>1, Bordet and Rivest (2014))
@@ -1165,7 +1165,9 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logbeta);
   ADREPORT(sdSP);
   ADREPORT(seasonsplinefineProd);
+  ADREPORT(SPvec);
   ADREPORT(SPvecS);
+  ADREPORT(mnotP);    
 
   
   if(reportall){ 
