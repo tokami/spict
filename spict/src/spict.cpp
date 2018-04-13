@@ -127,6 +127,9 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  // seaprod
+  DATA_INTEGER(seaprod);        // use seasonal producitivity?
+  
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -189,7 +192,11 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logmre);    // Random effect on m
   PARAMETER_VECTOR(SARvec);    // Autoregressive deviations to seasonal spline
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
-  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations  
+  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
+  // seaprod
+  PARAMETER_VECTOR(logSPvec);  // log random effect vector with seasonal productivity and mean m
+  PARAMETER(logSdSP);          // SD of random walk process of seasonal producitivity
+  PARAMETER_VECTOR(logmregime);// factor for ms in regime
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -238,8 +245,6 @@ Type objective_function<Type>::operator() ()
   seasonsplinefine = splinematfine * logphipar;
   Type pp = 1.0/(1.0 + exp(-logitpp));
   Type robfac = 1.0 + exp(logp1robfac);
-  vector<Type> m(nm); 
-  for(int i=0; i<nm; i++){ m(i) = exp(logm(i)); }
   Type K = exp(logK);
   vector<Type> q(nq);
   for(int i=0; i<nq; i++){ q(i) = exp(logq(i)); }
@@ -285,6 +290,8 @@ Type objective_function<Type>::operator() ()
   Type logbeta = log(beta);
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
+  // seaprod
+  Type sdSP = exp(logSdSP);
 
 
   // Initialise vectors
@@ -299,6 +306,41 @@ Type objective_function<Type>::operator() ()
   vector<Type> logCpred(nobsCp);
   vector<Type> logEpred(nobsE);
 
+
+  // seaprod
+  vector<Type> logmsea(ns);
+  for(int i=0; i<ns; i++) logmsea(i) = 0.0;
+  vector<Type> logSPvecST(logSPvec.size());
+  for(int i=0; i<logSPvec.size(); i++) logSPvecST(i) = 0.0;
+  
+  if(seasonalProd == 1){
+    // smoothness constraint
+    for(int i=1; i<logSPvec.size(); i++) ans -= dnorm(logSPvec(i),logSPvec(i-1),Type(1),true);
+    // circular constraint          
+    ans -= dnorm(logSPvec(0),logSPvec(logSPvec.size()-1),Type(1),true);
+    // scaling seasonal vector
+    logSPvec = logSPvec * sdSP;
+    // mean of logSPvec is logm
+    Type logmSP  = logSPvec.sum() / logSPvec.size();
+    // overwrite logm
+    logm(0) = logmSP;
+    // m-regimes as a factor of m in first regime
+    if(nm > 1){
+      for(int i=1; i<nm; i++) logm(i) = logmSP + logm(i);      
+    }
+    // standardise seasonal factor
+    logSPvecST = logSPvec - logmSP;
+    // seasonal factor only
+    for(int i=0; i<ns; i++){
+      ind = CppAD::Integer(seasonindex(i));
+      logmsea(i) += logSPvecST(ind);
+    }    
+  }
+
+  // Transform m
+  vector<Type> m(nm); 
+  for(int i=0; i<nm; i++){ m(i) = exp(logm(i)); }
+  
   // Covariate for m
   vector<Type> logmc(ns);
   for(int i=0; i < ns; i++){
@@ -306,11 +348,18 @@ Type objective_function<Type>::operator() ()
   }
 
   // Reference points
-  vector<Type> mvec(ns);
+  vector<Type> logmc2(ns);
   for(int i=0; i < ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    mvec(i) = exp(logmc(i) + logmre(i));
+    logmc2(i) = logmc(i) + logmre(i);
   }
+
+  // seaprod
+  vector<Type> mvec(ns);
+  for(int i=0; i < ns; i++){
+    mvec(i) = exp(logmc2(i) + logmsea(i));
+  }
+  
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
@@ -1075,6 +1124,8 @@ Type objective_function<Type>::operator() ()
   ADREPORT(isdi2);
   ADREPORT(logalpha);
   ADREPORT(logbeta);
+  ADREPORT(logSPvecST);
+  
   if(reportall){ 
     // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
     // B
@@ -1111,6 +1162,7 @@ Type objective_function<Type>::operator() ()
   REPORT(logFFmsy);
   REPORT(logB);
   REPORT(logF);
+  REPORT(logSPvec);
 
   return ans;
 }
