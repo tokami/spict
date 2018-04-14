@@ -194,9 +194,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
   // seaprod
-  PARAMETER_VECTOR(SPvec);  // log random effect vector with seasonal productivity and mean m
+  PARAMETER_VECTOR(SPvec);     // log random effect vector with seasonal productivity and mean m
   PARAMETER(logSdSP);          // SD of random walk process of seasonal producitivity
-  PARAMETER_VECTOR(logmregime);// factor for ms in regime
+  PARAMETER_VECTOR(logmSPregime);    // factor for ms in regime
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -309,9 +309,13 @@ Type objective_function<Type>::operator() ()
 
   // seaprod
   vector<Type> logmSP(nm);
-  for(int i=0; i<nm; i++) logmSP(i) = 0.0;
+  for(int i=0; i<nm; i++) logmSP(i) = 0.0;  
   vector<Type> logmsea(ns);
-  for(int i=0; i<ns; i++) logmsea(i) = 0.0;  
+  for(int i=0; i<ns; i++) logmsea(i) = 0.0;
+  //vector<Type> SPvecST(SPvec.size());
+  //for(int i=0; i<SPvec.size(); i++) SPvecST(i) = 0.0;
+  vector<Type> logmreg(nm);
+  logmreg(0) = 0.0;  
   
   if(seaprod == 1){
     // smoothness constraint
@@ -320,63 +324,47 @@ Type objective_function<Type>::operator() ()
     ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true);
     // scaling seasonal vector (SPvec not log!)
     SPvec = SPvec * sdSP;
-
     // mean of SPvec
     logmSP(0) += SPvec.sum() / SPvec.size();
-
     // m-regimes as a factor of m in first regime
     if(nm > 1){
-      for(int i=1; i<nm; i++) logmSP(i) += logmSP(0) + logmregime(i-1);
+      for(int i=1; i<nm; i++) logmSP(i) += logmSP(0) + logmSPregime(i-1);
+      // help vector to use MSYregime
+      for(int i=1; i<nm; i++) logmreg(i) = logmSPregime(i-1);
     }
     // overwrite logm
     for(int i=0; i<nm; i++) logm(i) = logmSP(i);
-
-    // standardise to mean 0 (on log scale)
-    vector<Type> SPvecST(SPvec.size());
-    for(int i=0; i<SPvec.size(); i++) SPvecST(i) = SPvec(i) - logmSP(0);
-
-
-    for(int i=0; i < ns; i++){
-      ind = CppAD::Integer(seasonindex(i));      
-      logmsea(i) = SPvecST(ind);
-    }
-
-
     /*
-    // for mapping regimes on top of SPvec
-    vector<Type> logRegSP(nm);
-    logRegSP(0) = 0.0;
-    for(int i=1; i<nm; i++) logRegSP(i) = logmregime(i-1);
-
-    // combining SPvec and m-regimes
-    vector<Type> logmsea(ns);
+    // standardise to mean 0 (on log scale)
+    for(int i=0; i<SPvec.size(); i++) SPvecST(i) += SPvec(i) - logmSP(0);
+    */
+    // fit seasonal vector to time series length and account for regimes
     for(int i=0; i < ns; i++){
       ind = CppAD::Integer(seasonindex(i));      
-      logmsea(i) = SPvecST(ind) + logRegSP(MSYregime[i]);
+      logmsea(i) += SPvec(ind) + logmreg(MSYregime[i]);
     }
-    */
+    
+  }else{
+    // substitute logmsea
+    for(int i=0; i < ns; i++){
+      logmsea(i) += logm(MSYregime[i]);
+    }
   }
 
   // Covariate for m
-  vector<Type> logmc(ns);  
+  vector<Type> logmc(ns);
   for(int i=0; i < ns; i++){
-    logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
-  }
-    
-  // Reference points
-  vector<Type> logmc2(ns); 
-  for(int i=0; i < ns; i++){
-    //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    logmc2(i) = logmc(i) + logmre(i);
+    logmc(i) = logmsea(i) + mu*logmcov(i);
   }
 
-  // incorporating SPvec 
+  // Reference points  
   vector<Type> mvec(ns);  
   for(int i=0; i < ns; i++){
-    mvec(i) = exp(logmc2(i) + logmsea(i));
+    //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
+    mvec(i) = exp(logmc(i) + logmre(i));
   }
-  
-  
+
+
   // Transform m
   vector<Type> m(nm); 
   for(int i=0; i<nm; i++){ m(i) = exp(logm(i)); }
@@ -1150,9 +1138,10 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logbeta);
   if(seaprod == 1){
     ADREPORT(sdSP);
-    ADREPORT(logmregime);
+    //    ADREPORT(logmSPregime);
     ADREPORT(logmSP);
-    ADREPORT(SPvec);    
+    ADREPORT(SPvec);
+    //ADREPORT(SPvecST);
   }
   
   if(reportall){ 

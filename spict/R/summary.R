@@ -472,7 +472,10 @@ sumspict.fixedpars <- function(rep, ndigits=8){
     }
     ## seaprod - remove SdSP and mregime
     if (rep$inp$seaprod != 1){
-        nms <- nms[-match(c('logSdSP','logmregime'),  nms)]
+        nms <- nms[-match(c('logSdSP','logmSPregime'),  nms)]
+    ## seaprod - remove logmSPregime
+    }else if (nlevels(rep$inp$MSYregime) == 1){
+        nms <- nms[-match(c('logmSPregime'),  nms)]
     }    
     nnms <- length(nms)
     if(nnms > 0){
