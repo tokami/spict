@@ -2076,7 +2076,7 @@ plotspict.likprof <- function(input, logpar=FALSE, stamp=get.version()){
         pars[expinds] <- paste0('log', pars[expinds])
     }
     if (np == 1){
-        plot(pv[, 1], likprof$likvals, typ='l', xlab=pars[1], ylab='Objective function', lwd=1.5)
+        plot(pv[, 1], likprof$likvals, typ='p', xlab=pars[1], ylab='Objective function', lwd=1.5)
         lrlim <- 0.5*qchisq(0.95, 1) + nll
         abline(h=lrlim, lty=2) # Significance level
         pn <- likprof$pars

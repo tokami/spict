@@ -466,13 +466,9 @@ sumspict.fixedpars <- function(rep, ndigits=8){
     if (!rep$inp$timevaryinggrowth){
         nms <- nms[-match(c('logsdm', 'logpsi'),  nms)]
     }
-    ## seaprod - remove logm from fixed pars
-    if (rep$inp$seaprod == 1){
-        nms <- nms[-match(c('logm'),  nms)]
-    }
     ## seaprod - remove SdSP and mregime
     if (rep$inp$seaprod != 1){
-        nms <- nms[-match(c('logSdSP','logmregime'),  nms)]
+        nms <- nms[-match(c('logSdSP'),  nms)]
     }    
     nnms <- length(nms)
     if(nnms > 0){

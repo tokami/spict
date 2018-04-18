@@ -72,24 +72,24 @@ Type ilogit(Type x){
 
 // function creating circular and mean 0 matrix for seaprod
 template<class Type> 
-matrix<Type> circCov(int n, Type delta=0) {
+matrix<Type> circCov(int ncc, Type deltacc=0) {
   // Circular precision
-  matrix<Type> Q(n, n);
+  matrix<Type> Q(ncc, ncc);
   Q.setZero();
-  for (int i=0; i<n; i++) {
-    Q(i,(i+1)%n) = -1.;
-    Q(i,i) = 2. + delta;
-    Q((i+1)%n,i) = -1.;
+  for (int i=0; i<ncc; i++) {
+    Q(i,(i+1)%ncc) = -1.;
+    Q(i,i) = 2. + deltacc;
+    Q((i+1)%ncc,i) = -1.;
   }
   // Transform
-  matrix<Type> B(n, n);
+  matrix<Type> B(ncc, ncc);
   B.setIdentity();
-  for (int i=1; i<n; i++) {
+  for (int i=1; i<ncc; i++) {
     B(i,0) = -1.;
   }
   matrix<Type> Q2 = B * Q * B.transpose();
   // Remove first (sum)
-  matrix<Type> Q3 = Q2.block(1, 1, n-1 ,n-1);
+  matrix<Type> Q3 = Q2.block(1, 1, ncc-1 ,ncc-1);
   // Get correlation matrix
   matrix<Type> C = atomic::matinv(Q3);
   C = C / C(0,0);
@@ -258,6 +258,7 @@ Type objective_function<Type>::operator() ()
   int nsdi = logsdi.size();
   int nobsCp = ic.size();
   int ns = logF.size();
+  int nsp = SPvec.size() + 1; // Length of circle
 
   // Transform parameters
   Type psi = exp(logpsi);
@@ -339,23 +340,18 @@ Type objective_function<Type>::operator() ()
   // seaprod
   vector<Type> logmsea(ns);
   for(int i=0; i<ns; i++) logmsea(i) = 0.0;
-  vector<Type> meanSP;
-  meanSP = 0.0;
+  matrix<Type> Csp = circCov<Type>(nsp, Type(0));  
   
   if(seaprod == 1){
 
-    int n = SPvec.size() + 1; // Length of circle
-    matrix<Type> C = circCov<Type>(n, Type(0));
     using namespace density;
-    ans += SCALE( MVNORM(C), exp(logSdSP))(SPvec);
+    ans += SCALE(MVNORM(Csp), sdSP)(vector<Type>(SPvec));
 
-    Type SPvecsum = SPvec.sum();
-    SPvec.conservativeResize(n);
-    SPvec(n-1) = -SPvecsum;
+    Type spsum = SPvec.sum();
+    SPvec.conservativeResize(nsp);
+    SPvec(nsp-1) = -spsum;
 
-    meanSP = exp(SPvec).sum() / SPvec.size();
-
-    for(int i=0; i < ns; i++){
+    for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindex(i));      
       logmsea(i) = SPvec(ind);
     }
@@ -363,25 +359,30 @@ Type objective_function<Type>::operator() ()
 
   // Covariate for m
   vector<Type> logmc(ns);  
-  for(int i=0; i < ns; i++){
+  for(int i=0; i<ns; i++){
     logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
   }
     
   // Reference points
   vector<Type> logmc2(ns); 
-  for(int i=0; i < ns; i++){
+  for(int i=0; i<ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
     logmc2(i) = logmc(i) + logmre(i);
   }
 
   // incorporating SPvec 
   vector<Type> mvec(ns);  
-  for(int i=0; i < ns; i++){
+  for(int i=0; i<ns; i++){
     mvec(i) = exp(logmc2(i) + logmsea(i));
   }
 
 
-  // mvec without seasonal pattern for reference points
+  // without seasonal pattern for reference points
+  Type meanSP = exp(SPvec).sum() / nsp;
+  vector<Type> mnotP(nm);
+  for(int i=0; i<nm; i++){
+    mnotP(i) = exp(logm(i) + log(meanSP));
+  }
   vector<Type> mvecnotP(ns);
   for(int i=0; i<ns; i++){
     mvecnotP(i) = exp(logmc2(i) + log(meanSP));
@@ -391,7 +392,7 @@ Type objective_function<Type>::operator() ()
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
   vector<Type> Fmsyd(nm);
-  vector<Type> MSYd = m;
+  vector<Type> MSYd = mnotP;
   vector<Type> Bmsys(nm);
   vector<Type> Fmsys(nm);
   vector<Type> MSYs(nm);
@@ -502,13 +503,13 @@ Type objective_function<Type>::operator() ()
   //vector<Type> rp(nm);
   //vector<Type> logrp(nm);
   for(int i=0; i<nm; i++){ 
-    rold(i) =  CppAD::abs(gamma * m(i) / K);
+    rold(i) =  CppAD::abs(gamma * mnotP(i) / K);
     logrold(i) = log(rold(i)); 
     rc(i) = CppAD::abs(2.0 * rold(i) * (n - 1.0) / n);
     logrc(i) = log(rc(i)); 
     //rp(i) = abs(r(i) * (n - 1.0));
     //logrp(i) = log(rp(i)); 
-    r(i) = m(i)/K * pow(n,(n/(n-1.0))); //abs(r(i) * (n - 1.0));
+    r(i) = mnotP(i)/K * pow(n,(n/(n-1.0))); //abs(r(i) * (n - 1.0));
     logr(i) = log(r(i)); 
     //std::cout << " -- n: " << n << " -- gamma: " << gamma << n << " -- m(i): " << m(i)<< n << " -- K: " << K << " -- r(i): " << r(i) << " -- logr(i): " << logr(i) << std::endl;
   }
@@ -1154,9 +1155,8 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logbeta);
   if(seaprod == 1){
     ADREPORT(sdSP);
-    ADREPORT(logmregime);
-    ADREPORT(logmSP);
-    ADREPORT(SPvec);    
+    ADREPORT(SPvec);
+    //    ADREPORT(mvecnotP);
   }
   
   if(reportall){ 
@@ -1196,7 +1196,7 @@ Type objective_function<Type>::operator() ()
   REPORT(logB);
   REPORT(logF);
   if(seaprod == 1){
-    REPORT(SPvec);
+    REPORT(Csp);
   }
   
   return ans;
