@@ -1023,7 +1023,7 @@ validation.data.frame <- function(ss){
 #' plot(sim2$obsI[[1]], typ='l')
 #' @export
 
-sim.spict2 <- function(input, nobs=100){
+simspict2 <- function(input, nobs=100){
     # Check if input is a inp (initial values) or rep (results).
     use.effort.flag <- TRUE
     use.index.flag <- TRUE
