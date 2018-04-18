@@ -1287,6 +1287,14 @@ sim.spict2 <- function(input, nobs=100){
             logFbase <- log(rawEx) 
             logFbase[2:nt] <- logFbase[2:nt] + e.f
             
+            ## mean F with osciallations
+        }else if(inp$exploitationpattern == 4){
+            ##            maxEx <- inp$exploitationmax
+            e.f <- rnorm(nt-1, 0, sdf*sqrt(dt))
+            rawEx <- rep(F0, nt)
+            logFbase <- log(rawEx) 
+##            logFbase[2:nt] <- logFbase[2:nt] + e.f
+            
         }
 
         

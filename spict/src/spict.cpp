@@ -246,6 +246,8 @@ Type objective_function<Type>::operator() ()
   Type pp = 1.0/(1.0 + exp(-logitpp));
   Type robfac = 1.0 + exp(logp1robfac);
   Type K = exp(logK);
+  vector<Type> m(nm); 
+  for(int i=0; i<nm; i++){ m(i) = exp(logm(i)); }  
   vector<Type> q(nq);
   for(int i=0; i<nq; i++){ q(i) = exp(logq(i)); }
   vector<Type> logq2(nq);
@@ -312,37 +314,53 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i<nm; i++) logmSP(i) = 0.0;  
   vector<Type> logmsea(ns);
   for(int i=0; i<ns; i++) logmsea(i) = 0.0;
-  //vector<Type> SPvecST(SPvec.size());
-  //for(int i=0; i<SPvec.size(); i++) SPvecST(i) = 0.0;
+  vector<Type> logmseaST(ns);
+  for(int i=0; i<ns; i++) logmseaST(i) = 0.0;  
+  vector<Type> SPvecST(SPvec.size());
+  for(int i=0; i<SPvec.size(); i++) SPvecST(i) = 0.0;
   vector<Type> logmreg(nm);
   logmreg(0) = 0.0;  
   
   if(seaprod == 1){
-    // smoothness constraint
-    for(int i=1; i<SPvec.size(); i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true);
-    // circular constraint          
-    ans -= dnorm(SPvec(0),SPvec(SPvec.size()-1),Type(1),true);
-    // scaling seasonal vector (SPvec not log!)
-    SPvec = SPvec * sdSP;
+
     // mean of SPvec
-    logmSP(0) += SPvec.sum() / SPvec.size();
+    Type mSP2 = exp(SPvec).sum() / SPvec.size();
+    logmSP(0) += log(mSP2);
+
+    // standardise SPvec
+    for(int i=0; i<SPvec.size(); i++){
+      SPvecST(i) += SPvec(i) - logmSP(0);
+    }
+
     // m-regimes as a factor of m in first regime
     if(nm > 1){
       for(int i=1; i<nm; i++) logmSP(i) += logmSP(0) + logmSPregime(i-1);
+
       // help vector to use MSYregime
       for(int i=1; i<nm; i++) logmreg(i) = logmSPregime(i-1);
     }
-    // overwrite logm
-    for(int i=0; i<nm; i++) logm(i) = logmSP(i);
-    /*
-    // standardise to mean 0 (on log scale)
-    for(int i=0; i<SPvec.size(); i++) SPvecST(i) += SPvec(i) - logmSP(0);
-    */
+    
+    // smoothness constraint
+    for(int i=1; i<SPvecST.size(); i++) ans -= dnorm(SPvecST(i),SPvecST(i-1),Type(1),true);
+    
+    // circular constraint          
+    ans -= dnorm(SPvecST(0),SPvecST(SPvecST.size()-1),Type(1),true);
+
+    // scaling seasonal vector (SPvec not log!)
+    SPvecST = SPvecST * sdSP;
+    
+    // for reference points
+    for(int i=0; i < ns; i++){
+      ind = CppAD::Integer(seasonindex(i));      
+      logmseaST(i) += SPvecST(ind);
+    }
+    
     // fit seasonal vector to time series length and account for regimes
     for(int i=0; i < ns; i++){
       ind = CppAD::Integer(seasonindex(i));      
-      logmsea(i) += SPvec(ind) + logmreg(MSYregime[i]);
+      logmsea(i) += SPvecST(ind) + logmSP(MSYregime[i]);
     }
+
     
   }else{
     // substitute logmsea
@@ -364,18 +382,23 @@ Type objective_function<Type>::operator() ()
     mvec(i) = exp(logmc(i) + logmre(i));
   }
 
+  
+  // remove seasonality from mvec for reference points
+  vector<Type> mvecnotP(ns); 
+  for(int i=0; i<ns; i++){
+    mvecnotP(i) = exp(log(mvec(i)) - logmseaST(i));
+  }    
+
 
   // Transform m
-  vector<Type> m(nm); 
-  for(int i=0; i<nm; i++){ m(i) = exp(logm(i)); }
   vector<Type> mSP(nm); 
-  for(int i=0; i<nm; i++){ mSP(i) = exp(logmSP(i)); }  
-
+  for(int i=0; i<nm; i++){ mSP(i) = exp(logmSP(i)); }
+  
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
   vector<Type> Fmsyd(nm);
-  vector<Type> MSYd = m;
+  vector<Type> MSYd = mSP;
   vector<Type> Bmsys(nm);
   vector<Type> Fmsys(nm);
   vector<Type> MSYs(nm);
@@ -442,10 +465,10 @@ Type objective_function<Type>::operator() ()
     logMSY = logMSYs;
     for(int i=0; i < ns; i++){
       ind = CppAD::Integer(ir(i)-1); // minus 1 because R starts at 1 and c++ at 0
-      Type Fmsydveci = mvec(i) / Bmsyd(ind);
+      Type Fmsydveci = mvecnotP(i) / Bmsyd(ind);
       logFmsyvec(i) = log(Fmsydveci - (p*(1.0-Fmsydveci)*sdb2) / pow(2.0-Fmsydveci, 2.0));
       logBmsyvec(i) = logBmsys(ind);
-      logMSYvec(i) = log(mvec(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
+      logMSYvec(i) = log(mvecnotP(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
     }
   } else {
     // Use deterministic reference points
@@ -457,9 +480,9 @@ Type objective_function<Type>::operator() ()
     logMSY = logMSYd;
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(ir(i)-1); // minus 1 because R starts at 1 and c++ at 0
-      logFmsyvec(i) = log(mvec(i) / Bmsyd(ind));
+      logFmsyvec(i) = log(mvecnotP(i) / Bmsyd(ind));
       logBmsyvec(i) = logBmsyd(ind);
-      logMSYvec(i) = log(mvec(i));
+      logMSYvec(i) = log(mvecnotP(i));
     }
   }
 
@@ -486,18 +509,18 @@ Type objective_function<Type>::operator() ()
   //vector<Type> rp(nm);
   //vector<Type> logrp(nm);
   for(int i=0; i<nm; i++){ 
-    rold(i) =  CppAD::abs(gamma * m(i) / K);
+    rold(i) =  CppAD::abs(gamma * mSP(i) / K);
     logrold(i) = log(rold(i)); 
     rc(i) = CppAD::abs(2.0 * rold(i) * (n - 1.0) / n);
     logrc(i) = log(rc(i)); 
     //rp(i) = abs(r(i) * (n - 1.0));
     //logrp(i) = log(rp(i)); 
-    r(i) = m(i)/K * pow(n,(n/(n-1.0))); //abs(r(i) * (n - 1.0));
+    r(i) = mSP(i)/K * pow(n,(n/(n-1.0))); //abs(r(i) * (n - 1.0));
     logr(i) = log(r(i)); 
     //std::cout << " -- n: " << n << " -- gamma: " << gamma << n << " -- m(i): " << m(i)<< n << " -- K: " << K << " -- r(i): " << r(i) << " -- logr(i): " << logr(i) << std::endl;
   }
   for(int i=0; i<ns; i++){ 
-    logrre(i) = log(mvec(i)/K * pow(n,(n/(n-1.0))));
+    logrre(i) = log(mvecnotP(i)/K * pow(n,(n/(n-1.0))));
   }
 
   Type likval;
@@ -1141,7 +1164,7 @@ Type objective_function<Type>::operator() ()
     //    ADREPORT(logmSPregime);
     ADREPORT(logmSP);
     ADREPORT(SPvec);
-    //ADREPORT(SPvecST);
+    ADREPORT(SPvecST);
   }
   
   if(reportall){ 

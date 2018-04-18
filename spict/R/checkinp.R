@@ -1011,7 +1011,7 @@ check.inp <- function(inp){
 
     ## seaprod
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
-    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2
+    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  0
     if(!'logmSPregime' %in% names(inp$ini)) inp$ini$logmSPregime <- rep(0,max(c(inp$noms-1,1)))
                                                 ##rep(unname(log(guess.m(inp))), max(c(inp$noms-1,1)))
 
