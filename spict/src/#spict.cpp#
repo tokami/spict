@@ -1057,7 +1057,7 @@ Type objective_function<Type>::operator() ()
   Type logFlFmsy = logFl - logFmsyvec(indlastobs-1);
 
   if(dbg > 0){
-    std::cout << "--- DEBUG: Calculate relative levels of biomass and fishing mortality --- ans: " << ans << std::endl;
+    stppppd::cout << "--- DEBUG: Calculate relative levels of biomass and fishing mortality --- ans: " << ans << std::endl;
   }
 
   // Calculate relative levels of biomass and fishing mortality
