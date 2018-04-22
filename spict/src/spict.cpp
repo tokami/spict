@@ -72,7 +72,7 @@ Type ilogit(Type x){
 
 // function creating circular and mean 0 matrix for seaprod
 template<class Type> 
-matrix<Type> circCov(int ncc, Type deltacc=0) {
+matrix<Type> circCov(int ncc, Type deltacc) {
   // Circular precision
   matrix<Type> Q(ncc, ncc);
   Q.setZero();
@@ -223,7 +223,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
   // seaprod
   PARAMETER_VECTOR(SPvec);  // log random effect vector with seasonal productivity 
-  PARAMETER(logSdSP);          // SD of random walk process of seasonal producitivity
+  //  PARAMETER(logSdSP);          // SD of random walk process of seasonal producitivity
+  PARAMETER(logdeltacc);       // for SP matrix
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -321,7 +322,7 @@ Type objective_function<Type>::operator() ()
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
   // seaprod
-  Type sdSP = exp(logSdSP);
+  //  Type sdSP = exp(logSdSP);
 
 
   // Initialise vectors
@@ -340,12 +341,15 @@ Type objective_function<Type>::operator() ()
   // seaprod
   vector<Type> logmsea(ns);
   for(int i=0; i<ns; i++) logmsea(i) = 0.0;
-  matrix<Type> Csp = circCov<Type>(nsp, Type(0));  
+  Type deltacc = exp(logdeltacc);  
+  matrix<Type> Csp = circCov<Type>(nsp, deltacc);
+
   
   if(seaprod == 1){
 
     using namespace density;
-    ans += SCALE(MVNORM(Csp), sdSP)(vector<Type>(SPvec));
+    //    ans += SCALE(MVNORM(Csp), sdSP)(vector<Type>(SPvec));
+    ans += MVNORM(Csp)(vector<Type>(SPvec));
 
     Type spsum = SPvec.sum();
     SPvec.conservativeResize(nsp);
@@ -1154,9 +1158,10 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logalpha);
   ADREPORT(logbeta);
   if(seaprod == 1){
-    ADREPORT(sdSP);
+    //    ADREPORT(sdSP);
     ADREPORT(SPvec);
     //    ADREPORT(mvecnotP);
+    ADREPORT(deltacc);    
   }
   
   if(reportall){ 
