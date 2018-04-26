@@ -345,7 +345,7 @@ Type objective_function<Type>::operator() ()
   if(seaprod == 1){
 
     using namespace density;
-    ans += SCALE(MVNORM(Csp), sdSP)(vector<Type>(SPvec));
+    ans += SCALE(MVNORM(Csp), sdSP)(SPvec);
 
     Type spsum = SPvec.sum();
     SPvec.conservativeResize(nsp);

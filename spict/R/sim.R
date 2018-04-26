@@ -1023,7 +1023,7 @@ validation.data.frame <- function(ss){
 #' plot(sim2$obsI[[1]], typ='l')
 #' @export
 
-simspict2 <- function(input, nobs=100){
+sim.spict2 <- function(input, nobs=100){
     # Check if input is a inp (initial values) or rep (results).
     use.effort.flag <- TRUE
     use.index.flag <- TRUE
@@ -1295,8 +1295,20 @@ simspict2 <- function(input, nobs=100){
             e.f <- rnorm(nt-1, 0, sdf*sqrt(dt))
             rawEx <- rep(F0, nt)
             logFbase <- log(rawEx) 
-##            logFbase[2:nt] <- logFbase[2:nt] + e.f
-            
+            logFbase[2:nt] <- logFbase[2:nt] + e.f
+
+            ## combi of roller coaster and constant F for trueMSY scenario
+        }else if(inp$exploitationpattern == 5){
+            maxEx <- inp$exploitationmax
+            e.f <- rnorm(nt-1, 0, sdf*sqrt(dt))
+            rawEx <- c(seq(0.01,maxEx,length.out = floor(32)),           ## increasing
+                       rep(maxEx,floor(16)),                             ## stable at maxEx
+                       seq(maxEx,0.01,length.out=floor(32)),             ## decreasing
+                       rep(0.01,floor(32)),                             ## stable at 0.01                       
+                       seq(0.01,F0,length.out = floor(48)),              ## increasing                       
+                       rep(F0,(nt-5*floor(32))))                         ## stable at F0
+            logFbase <- log(rawEx) 
+            logFbase[2:nt] <- logFbase[2:nt] + e.f
         }
 
         
