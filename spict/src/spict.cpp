@@ -223,7 +223,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
   // seaprod
   PARAMETER_VECTOR(SPvec);  // log random effect vector with seasonal productivity 
-  //  PARAMETER(logSdSP);          // SD of random walk process of seasonal producitivity
+  PARAMETER(logSdSP);          // SD of random walk process of seasonal producitivity
   PARAMETER(logdeltacc);       // for SP matrix
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
@@ -322,7 +322,7 @@ Type objective_function<Type>::operator() ()
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
   // seaprod
-  //  Type sdSP = exp(logSdSP);
+  Type sdSP = exp(logSdSP);
 
 
   // Initialise vectors
@@ -348,8 +348,8 @@ Type objective_function<Type>::operator() ()
   if(seaprod == 1){
 
     using namespace density;
-    //    ans += SCALE(MVNORM(Csp), sdSP)(vector<Type>(SPvec));
-    ans += MVNORM(Csp)(vector<Type>(SPvec));
+    ans += SCALE(MVNORM(Csp), sdSP)(vector<Type>(SPvec));
+    // ans += MVNORM(Csp)(vector<Type>(SPvec));
 
     Type spsum = SPvec.sum();
     SPvec.conservativeResize(nsp);

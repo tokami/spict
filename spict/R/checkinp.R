@@ -1011,8 +1011,8 @@ check.inp <- function(inp){
 
     ## seaprod
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
-##    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2
-    if(!'logdeltacc' %in% names(inp$ini)) inp$ini$logdeltacc <-  -2
+    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2
+    if(!'logdeltacc' %in% names(inp$ini)) inp$ini$logdeltacc <-  0
 
     ## random effect vector with mean m
     inp$ini$SPvec <- rep(0, 1/inp$dteuler-1)
@@ -1056,7 +1056,7 @@ check.inp <- function(inp){
                         logSdSAR=inp$ini$logSdSAR,
                         ## seaprod
                         SPvec=inp$ini$SPvec,
-##                        logSdSP=inp$ini$logSdSP,
+                        logSdSP=inp$ini$logSdSP,
                         logdeltacc=inp$ini$logdeltacc)
 
 
@@ -1216,7 +1216,7 @@ check.inp <- function(inp){
     if (inp$nseasons == 1){
         forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda',
                           'SARvec','logitSARphi','logSdSAR',
-                          'SPvec','logdeltacc',forcefixpars)
+                          'SPvec','logSdSP','logdeltacc',forcefixpars)
     } else {
         if (inp$seasontype == 1){ # Use spline
             forcefixpars <- c('logu', 'logsdu', 'loglambda','SARvec','logitSARphi','logSdSAR', forcefixpars)
@@ -1229,7 +1229,7 @@ check.inp <- function(inp){
         }
         ## seaprod
         if(inp$seaprod == 0){
-            forcefixpars <- c('SPvec', 'logdeltacc', forcefixpars)
+            forcefixpars <- c('SPvec', 'logSdSP', 'logdeltacc', forcefixpars)
         }
     }
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
