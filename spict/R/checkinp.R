@@ -1014,7 +1014,7 @@ check.inp <- function(inp){
     if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2
 
     ## random effect vector with mean m
-    inp$ini$SPvec <- rep(0, 1/inp$dteuler-1)
+    inp$ini$SPvec <- rep(log(1), 1/inp$dteuler)
 
     
     ## exploitation pattern and max for simulation

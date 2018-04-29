@@ -119,6 +119,7 @@ likprof.spict <- function(input, verbose=FALSE){
             rep2$opt <- list()
             rep2$opt$objective <- NA
         } else {
+            if(reptmp$opt$convergence != 0) print(paste0(pv[i,], "  - not converged"))
             rep2 <- reptmp
         }
         return(rep2$opt$objective)

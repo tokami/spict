@@ -1211,7 +1211,7 @@ sim.spict2 <- function(input, nobs=100){
         ## SPvec <- SPvec[1:nSP]
         
         ## Mean 1 + exponent
-        SPvec <- SPvec/mean(SPvec)
+##        SPvec <- SPvec/mean(SPvec)
 
 
         ## get vector for whole time series
