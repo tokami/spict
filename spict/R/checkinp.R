@@ -1012,7 +1012,7 @@ check.inp <- function(inp){
     ## seaprod
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
     if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2
-    if(!'logdeltacc' %in% names(inp$ini)) inp$ini$logdeltacc <-  0
+    if(!'logdeltacc' %in% names(inp$ini)) inp$ini$logdeltacc <-  -2
 
     ## random effect vector with mean m
     inp$ini$SPvec <- rep(0, 1/inp$dteuler-1)

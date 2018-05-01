@@ -72,7 +72,7 @@ Type ilogit(Type x){
 
 // function creating circular and mean 0 matrix for seaprod
 template<class Type> 
-matrix<Type> circCov(int ncc, Type deltacc) {
+matrix<Type> circCov(int ncc, const Type &deltacc) {
   // Circular precision
   matrix<Type> Q(ncc, ncc);
   Q.setZero();
@@ -1158,7 +1158,7 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logalpha);
   ADREPORT(logbeta);
   if(seaprod == 1){
-    //    ADREPORT(sdSP);
+    ADREPORT(sdSP);
     ADREPORT(SPvec);
     //    ADREPORT(mvecnotP);
     ADREPORT(deltacc);    

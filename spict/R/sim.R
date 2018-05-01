@@ -1023,7 +1023,7 @@ validation.data.frame <- function(ss){
 #' plot(sim2$obsI[[1]], typ='l')
 #' @export
 
-simspict2 <- function(input, nobs=100){
+sim.spict2 <- function(input, nobs=100){
     # Check if input is a inp (initial values) or rep (results).
     use.effort.flag <- TRUE
     use.index.flag <- TRUE
@@ -1211,7 +1211,7 @@ simspict2 <- function(input, nobs=100){
         ## SPvec <- SPvec[1:nSP]
         
         ## Mean 1 + exponent
-        SPvec <- SPvec/mean(SPvec)
+##        SPvec <- SPvec/mean(SPvec)
 
 
         ## get vector for whole time series
