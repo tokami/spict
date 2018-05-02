@@ -72,24 +72,25 @@ Type ilogit(Type x){
 
 // function creating circular and mean 0 matrix for seaprod
 template<class Type> 
-matrix<Type> circCov(int ncc, const Type &deltacc) {
+matrix<Type> circCov(int nsp, Type deltaSP=0)
+{
   // Circular precision
-  matrix<Type> Q(ncc, ncc);
+  matrix<Type> Q(nsp, nsp);
   Q.setZero();
-  for (int i=0; i<ncc; i++) {
-    Q(i,(i+1)%ncc) = -1.;
-    Q(i,i) = 2. + deltacc;
-    Q((i+1)%ncc,i) = -1.;
+  for (int i=0; i<nsp; i++) {
+    Q(i,(i+1)%nsp) = -1.;
+    Q(i,i) = 2. + deltaSP;
+    Q((i+1)%nsp,i) = -1.;
   }
   // Transform
-  matrix<Type> B(ncc, ncc);
+  matrix<Type> B(nsp, nsp);
   B.setIdentity();
-  for (int i=1; i<ncc; i++) {
+  for (int i=1; i<nsp; i++) {
     B(i,0) = -1.;
   }
   matrix<Type> Q2 = B * Q * B.transpose();
   // Remove first (sum)
-  matrix<Type> Q3 = Q2.block(1, 1, ncc-1 ,ncc-1);
+  matrix<Type> Q3 = Q2.block(1, 1, nsp-1 ,nsp-1);
   // Get correlation matrix
   matrix<Type> C = atomic::matinv(Q3);
   C = C / C(0,0);
@@ -224,7 +225,7 @@ Type objective_function<Type>::operator() ()
   // seaprod
   PARAMETER_VECTOR(SPvec);  // log random effect vector with seasonal productivity 
   PARAMETER(logSdSP);          // SD of random walk process of seasonal producitivity
-  PARAMETER(logdeltacc);       // for SP matrix
+  PARAMETER(logdeltaSP);       // for SP matrix
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -322,7 +323,7 @@ Type objective_function<Type>::operator() ()
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
   // seaprod
-  Type sdSP = exp(logSdSP);
+  //Type sdSP = exp(logSdSP);
 
 
   // Initialise vectors
@@ -339,17 +340,17 @@ Type objective_function<Type>::operator() ()
 
 
   // seaprod
-  vector<Type> logmsea(ns);
-  for(int i=0; i<ns; i++) logmsea(i) = 0.0;
-  Type deltacc = exp(logdeltacc);  
-  matrix<Type> Csp = circCov<Type>(nsp, deltacc);
+  vector<Type> mvec(ns);
+  for(int i=0; i<ns; i++) mvec(i) = 1.0;
+  //Type deltaSP = exp(logdeltaSP);  
 
   
   if(seaprod == 1){
 
+    matrix<Type> CSP = circCov<Type>(nsp, exp(logdeltaSP));
+
     using namespace density;
-    ans += SCALE(MVNORM(Csp), sdSP)(vector<Type>(SPvec));
-    // ans += MVNORM(Csp)(vector<Type>(SPvec));
+    ans += SCALE(MVNORM(CSP), exp(logSdSP))(SPvec);
 
     Type spsum = SPvec.sum();
     SPvec.conservativeResize(nsp);
@@ -357,27 +358,20 @@ Type objective_function<Type>::operator() ()
 
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindex(i));      
-      logmsea(i) = SPvec(ind);
+      mvec(i) = exp(logm(MSYregime[i]) + SPvec(ind));
     }
-  }
+  }else{
+    // Covariate for m
+    vector<Type> logmc(ns);  
+    for(int i=0; i<ns; i++){
+      logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
+    }
 
-  // Covariate for m
-  vector<Type> logmc(ns);  
-  for(int i=0; i<ns; i++){
-    logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
-  }
-    
-  // Reference points
-  vector<Type> logmc2(ns); 
-  for(int i=0; i<ns; i++){
-    //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    logmc2(i) = logmc(i) + logmre(i);
-  }
-
-  // incorporating SPvec 
-  vector<Type> mvec(ns);  
-  for(int i=0; i<ns; i++){
-    mvec(i) = exp(logmc2(i) + logmsea(i));
+    // Reference points
+    for(int i=0; i<ns; i++){
+      //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
+      mvec(i) = exp(logmc(i) + logmre(i));
+    }
   }
 
 
@@ -389,7 +383,7 @@ Type objective_function<Type>::operator() ()
   }
   vector<Type> mvecnotP(ns);
   for(int i=0; i<ns; i++){
-    mvecnotP(i) = exp(logmc2(i) + log(meanSP));
+    mvecnotP(i) = exp(logm(MSYregime[i]) + log(meanSP));
   }
   
 
@@ -1158,10 +1152,10 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logalpha);
   ADREPORT(logbeta);
   if(seaprod == 1){
-    ADREPORT(sdSP);
+    //    ADREPORT(sdSP);
     ADREPORT(SPvec);
     //    ADREPORT(mvecnotP);
-    ADREPORT(deltacc);    
+    //    ADREPORT(deltaSP);    
   }
   
   if(reportall){ 
@@ -1201,7 +1195,7 @@ Type objective_function<Type>::operator() ()
   REPORT(logB);
   REPORT(logF);
   if(seaprod == 1){
-    REPORT(Csp);
+    //    REPORT(CSP);
   }
   
   return ans;

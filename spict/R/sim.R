@@ -1187,17 +1187,15 @@ sim.spict2 <- function(input, nobs=100){
 
 
     ## simulate MSY regimes
-    mbase <- mbase * as.numeric(inp$MSYregime)
+    mbase <- mbase ##* as.numeric(inp$MSYregime)
 
     ## seasonal production (seasonal component in m)
     msea <- rep(1,nt)
     SPvec <- inp$ini$SPvec
     if(inp$seaprod == 1){
 
-        SPvec <- c(0, SPvec)
-        
         ## seasonal pattern
-        nSP <- length(SPvec)
+        nSP <- length(SPvec)+1
 
         ## example forced seasonal pattern
         SPvec <- sin(seq(inp$simPhaseSP+1e-6,2*pi+inp$simPhaseSP,length.out = nSP)) + 1
