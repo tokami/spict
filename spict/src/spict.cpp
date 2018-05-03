@@ -72,24 +72,24 @@ Type ilogit(Type x){
 
 // function creating circular and mean 0 matrix for seaprod
 template<class Type> 
-matrix<Type> circCov(int ncc, Type deltacc=0) {
+matrix<Type> circCov(int nsp, Type deltaSP=0) {
   // Circular precision
-  matrix<Type> Q(ncc, ncc);
+  matrix<Type> Q(nsp, nsp);
   Q.setZero();
-  for (int i=0; i<ncc; i++) {
-    Q(i,(i+1)%ncc) = -1.;
-    Q(i,i) = 2. + deltacc;
-    Q((i+1)%ncc,i) = -1.;
+  for (int i=0; i<nsp; i++) {
+    Q(i,(i+1)%nsp) = -1.;
+    Q(i,i) = 2. + deltaSP;
+    Q((i+1)%nsp,i) = -1.;
   }
   // Transform
-  matrix<Type> B(ncc, ncc);
+  matrix<Type> B(nsp, nsp);
   B.setIdentity();
-  for (int i=1; i<ncc; i++) {
+  for (int i=1; i<nsp; i++) {
     B(i,0) = -1.;
   }
   matrix<Type> Q2 = B * Q * B.transpose();
   // Remove first (sum)
-  matrix<Type> Q3 = Q2.block(1, 1, ncc-1 ,ncc-1);
+  matrix<Type> Q3 = Q2.block(1, 1, nsp-1 ,nsp-1);
   // Get correlation matrix
   matrix<Type> C = atomic::matinv(Q3);
   C = C / C(0,0);
@@ -338,14 +338,14 @@ Type objective_function<Type>::operator() ()
 
 
   // seaprod
-  vector<Type> logmsea(ns);
-  for(int i=0; i<ns; i++) logmsea(i) = 0.0;
-  matrix<Type> Csp = circCov<Type>(nsp, Type(0));  
+  vector<Type> mvec(ns);
+  for(int i=0; i<ns; i++) mvec(i) = 1.0;
+  matrix<Type> CSP = circCov<Type>(nsp, Type(0));  
   
   if(seaprod == 1){
 
     using namespace density;
-    ans += SCALE(MVNORM(Csp), sdSP)(SPvec);
+    ans += SCALE(MVNORM(CSP), sdSP)(SPvec);
 
     Type spsum = SPvec.sum();
     SPvec.conservativeResize(nsp);
@@ -353,29 +353,22 @@ Type objective_function<Type>::operator() ()
 
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindex(i));      
-      logmsea(i) = SPvec(ind);
+      mvec(i) = exp(logm(MSYregime[i]) + SPvec(ind));
+    }
+    
+  }else{
+    // Covariate for m
+    vector<Type> logmc(ns);  
+    for(int i=0; i<ns; i++){
+      logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
+    }
+
+    // Reference points
+    for(int i=0; i<ns; i++){
+      //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
+      mvec(i) = exp(logmc(i) + logmre(i));
     }
   }
-
-  // Covariate for m
-  vector<Type> logmc(ns);  
-  for(int i=0; i<ns; i++){
-    logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
-  }
-    
-  // Reference points
-  vector<Type> logmc2(ns); 
-  for(int i=0; i<ns; i++){
-    //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    logmc2(i) = logmc(i) + logmre(i);
-  }
-
-  // incorporating SPvec 
-  vector<Type> mvec(ns);  
-  for(int i=0; i<ns; i++){
-    mvec(i) = exp(logmc2(i) + logmsea(i));
-  }
-
 
   // without seasonal pattern for reference points
   Type meanSP = exp(SPvec).sum() / nsp;
@@ -385,7 +378,7 @@ Type objective_function<Type>::operator() ()
   }
   vector<Type> mvecnotP(ns);
   for(int i=0; i<ns; i++){
-    mvecnotP(i) = exp(logmc2(i) + log(meanSP));
+    mvecnotP(i) = exp(logm(MSYregime[i]) + log(meanSP));
   }
   
 
@@ -1196,7 +1189,7 @@ Type objective_function<Type>::operator() ()
   REPORT(logB);
   REPORT(logF);
   if(seaprod == 1){
-    REPORT(Csp);
+    REPORT(CSP);
   }
   
   return ans;

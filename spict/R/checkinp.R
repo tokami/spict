@@ -1011,7 +1011,7 @@ check.inp <- function(inp){
 
     ## seaprod
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
-    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  -2
+    if(!'logSdSP' %in% names(inp$ini)) inp$ini$logSdSP <-  0
 
     ## random effect vector with mean m
     inp$ini$SPvec <- rep(0, 1/inp$dteuler-1)
@@ -1021,7 +1021,7 @@ check.inp <- function(inp){
     if(!"exploitationpattern" %in% names(inp)) inp$exploitationpattern <- 0
     if(!"exploitationmax" %in% names(inp)) inp$exploitationmax <- 0.5
     if(!'simPhaseSP' %in% names(inp)) inp$simPhaseSP <- 0
-    if(!'simlogm' %in% names(inp)) inp$simlogm <- 0    
+    if(!'simlogm' %in% names(inp)) inp$simlogm <- rep(unname(log(guess.m(inp))), inp$noms)
     
     
     

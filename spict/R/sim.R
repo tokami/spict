@@ -1546,15 +1546,16 @@ sim.spict2 <- function(input, nobs=100){
 
      ## HACK! does not allow to combine MSYregime and seaProd
     if(inp$seaprod==1){
-        R <- (n-1)/n * gamma * mean(mbase) / K
+        mcor <- mean(mbase) * mean(exp(SPvec))
+        R <- (n-1)/n * gamma * mcor / K
         p <- n-1
         sim$true$R <- R
-        sim$true$logrold <- log(abs(gamma * mean(mbase) / K))
-        sim$true$logr <- log(mean(mbase) / K * n^(n/(n-1.0)))
+        sim$true$logrold <- log(abs(gamma * mcor / K))
+        sim$true$logr <- log(mcor / K * n^(n/(n-1.0)))
         sim$true$logrc <- log(2 * R)
         ## Deterministic reference points
         sim$true$Bmsyd <- K/(n^(1/(n-1)))
-        sim$true$MSYd <- mean(mbase)
+        sim$true$MSYd <- mcor
     }else{
         R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
         p <- n-1
