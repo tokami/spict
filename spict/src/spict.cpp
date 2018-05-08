@@ -70,6 +70,35 @@ Type ilogit(Type x){
 }
 
 
+// function creating circular and mean 0 matrix for seaprod
+template<class Type> 
+matrix<Type> circCov(const int &nsp, const Type &deltaSP) {
+  // Circular precision
+  matrix<Type> Q(nsp, nsp);
+  Q.setZero();
+  for (int i=0; i<nsp; i++) {
+    Q(i,(i+1)%nsp) = -1.;
+    Q(i,i) = 2. + deltaSP;
+    Q((i+1)%nsp,i) = -1.;
+  }
+  // Transform
+  matrix<Type> B(nsp, nsp);
+  B.setIdentity();
+  for (int i=1; i<nsp; i++) {
+    B(i,0) = -1.;
+  }
+  matrix<Type> Q2 = B * Q * B.transpose();
+  // Remove first (sum)
+  matrix<Type> Q3 = Q2.block(1, 1, nsp-1 ,nsp-1);
+  // Get correlation matrix
+  matrix<Type> C = atomic::matinv(Q3);
+  C = C / C(0,0);
+  return C;
+}
+
+
+
+
 /* Main script */
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -127,6 +156,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  DATA_INTEGER(seaprod);
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -189,7 +219,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logmre);    // Random effect on m
   PARAMETER_VECTOR(SARvec);    // Autoregressive deviations to seasonal spline
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
-  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations  
+  PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
+  PARAMETER_VECTOR(SPvec);
+  PARAMETER(logsdSP);
+  PARAMETER(logdeltaSP);
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -224,6 +257,7 @@ Type objective_function<Type>::operator() ()
   int nsdi = logsdi.size();
   int nobsCp = ic.size();
   int ns = logF.size();
+  int nsp = SPvec.size() + 1;
 
   // Transform parameters
   Type psi = exp(logpsi);
@@ -273,7 +307,7 @@ Type objective_function<Type>::operator() ()
     sdi2(i) = sdi(i)*sdi(i);
     isdi2(i) = 1.0/sdi2(i);
   }
-  vector<Type> alpha = sdi/sdb;
+p  vector<Type> alpha = sdi/sdb;
   vector<Type> logalpha = log(alpha);
   Type sde = exp(logsde);
   Type sde2 = sde*sde;
@@ -285,6 +319,8 @@ Type objective_function<Type>::operator() ()
   Type logbeta = log(beta);
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
+  Type sdSP = exp(logsdSP);
+  Type deltaSP = exp(logdeltaSP);
 
 
   // Initialise vectors
@@ -299,23 +335,58 @@ Type objective_function<Type>::operator() ()
   vector<Type> logCpred(nobsCp);
   vector<Type> logEpred(nobsE);
 
-  // Covariate for m
-  vector<Type> logmc(ns);
-  for(int i=0; i < ns; i++){
-    logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
+
+  
+  vector<Type> mvec(ns);  
+  for(int i=0; i < ns; i++) mvec(i) = 1.0;
+  matrix<Type> CSP = circCov<Type>(nsp, deltaSP);
+  
+
+  if(seaprod == 1){
+
+    using namespace density;
+    ans += SCALE(NVNORM(CSP), sdSP)(vector<Type>(SPvec));
+
+    Type spsum = SPvec.sum();
+    SPvec.conservativeResize(nsp);
+    SPvec(nsp-1) = -spsum;
+
+    for(int i; i<ns; i++){
+      ind = CppAD::Integer(seasonindex(i));
+      mvec(i) = exp(logm(MSYregime[i]) + SPvec(ind));
+    }
+    
+  }else{
+    // Covariate for m
+    vector<Type> logmc(ns);
+    for(int i=0; i < ns; i++){
+      logmc(i) = logm(MSYregime[i]) + mu*logmcov(i);
+    }
+
+    // Reference points
+    for(int i=0; i < ns; i++){
+      //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
+      mvec(i) = exp(logmc(i) + logmre(i));
+    }
   }
 
-  // Reference points
-  vector<Type> mvec(ns);
-  for(int i=0; i < ns; i++){
-    //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    mvec(i) = exp(logmc(i) + logmre(i));
+
+  Type meanSP = exp(SPvec).sum() / nsp;
+  vector<Type> mnotP(nm);
+  for(int i; i<nm; i++){
+    mnotP(i) = exp(logm(i) + log(meanSP));
   }
+
+  vector<Type> mvecnotP(ns);
+  for(int i; i<ns; i++){
+    mvecnotP(i) = exp(logm(MSYregime[i]) + log(meanSP));
+  }
+
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
   vector<Type> Fmsyd(nm);
-  vector<Type> MSYd = m;
+  vector<Type> MSYd = mnotP;
   vector<Type> Bmsys(nm);
   vector<Type> Fmsys(nm);
   vector<Type> MSYs(nm);
@@ -382,10 +453,10 @@ Type objective_function<Type>::operator() ()
     logMSY = logMSYs;
     for(int i=0; i < ns; i++){
       ind = CppAD::Integer(ir(i)-1); // minus 1 because R starts at 1 and c++ at 0
-      Type Fmsydveci = mvec(i) / Bmsyd(ind);
+      Type Fmsydveci = mvecnotP(i) / Bmsyd(ind);
       logFmsyvec(i) = log(Fmsydveci - (p*(1.0-Fmsydveci)*sdb2) / pow(2.0-Fmsydveci, 2.0));
       logBmsyvec(i) = logBmsys(ind);
-      logMSYvec(i) = log(mvec(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
+      logMSYvec(i) = log(mvecnotP(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
     }
   } else {
     // Use deterministic reference points
@@ -397,9 +468,9 @@ Type objective_function<Type>::operator() ()
     logMSY = logMSYd;
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(ir(i)-1); // minus 1 because R starts at 1 and c++ at 0
-      logFmsyvec(i) = log(mvec(i) / Bmsyd(ind));
+      logFmsyvec(i) = log(mvecnotP(i) / Bmsyd(ind));
       logBmsyvec(i) = logBmsyd(ind);
-      logMSYvec(i) = log(mvec(i));
+      logMSYvec(i) = log(mvecnotP(i));
     }
   }
 
@@ -426,18 +497,18 @@ Type objective_function<Type>::operator() ()
   //vector<Type> rp(nm);
   //vector<Type> logrp(nm);
   for(int i=0; i<nm; i++){ 
-    rold(i) =  CppAD::abs(gamma * m(i) / K);
+    rold(i) =  CppAD::abs(gamma * mnotP(i) / K);
     logrold(i) = log(rold(i)); 
     rc(i) = CppAD::abs(2.0 * rold(i) * (n - 1.0) / n);
     logrc(i) = log(rc(i)); 
     //rp(i) = abs(r(i) * (n - 1.0));
     //logrp(i) = log(rp(i)); 
-    r(i) = m(i)/K * pow(n,(n/(n-1.0))); //abs(r(i) * (n - 1.0));
+    r(i) = mnotP(i)/K * pow(n,(n/(n-1.0))); //abs(r(i) * (n - 1.0));
     logr(i) = log(r(i)); 
     //std::cout << " -- n: " << n << " -- gamma: " << gamma << n << " -- m(i): " << m(i)<< n << " -- K: " << K << " -- r(i): " << r(i) << " -- logr(i): " << logr(i) << std::endl;
   }
   for(int i=0; i<ns; i++){ 
-    logrre(i) = log(mvec(i)/K * pow(n,(n/(n-1.0))));
+    logrre(i) = log(mvecnotP(i)/K * pow(n,(n/(n-1.0))));
   }
 
   Type likval;
@@ -636,7 +707,7 @@ Type objective_function<Type>::operator() ()
   SARphivec.setZero();
   SARphivec(nseasons-1) = SARphi;
 
-  using namespace density;
+  //using namespace density;
   ARk_t<Type> nldens(SARphivec);
   if(seasontype==3) ans += SCALE(nldens, sdSAR)(vector<Type>(SARvec));
 
