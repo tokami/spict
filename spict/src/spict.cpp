@@ -307,7 +307,7 @@ Type objective_function<Type>::operator() ()
     sdi2(i) = sdi(i)*sdi(i);
     isdi2(i) = 1.0/sdi2(i);
   }
-p  vector<Type> alpha = sdi/sdb;
+  vector<Type> alpha = sdi/sdb;
   vector<Type> logalpha = log(alpha);
   Type sde = exp(logsde);
   Type sde2 = sde*sde;
@@ -340,22 +340,21 @@ p  vector<Type> alpha = sdi/sdb;
   vector<Type> mvec(ns);  
   for(int i=0; i < ns; i++) mvec(i) = 1.0;
   matrix<Type> CSP = circCov<Type>(nsp, deltaSP);
-  
+  Type meanSP = 1;
 
   if(seaprod == 1){
-
     using namespace density;
-    ans += SCALE(NVNORM(CSP), sdSP)(vector<Type>(SPvec));
+    ans += SCALE(MVNORM(CSP), sdSP)(vector<Type>(SPvec));
 
     Type spsum = SPvec.sum();
     SPvec.conservativeResize(nsp);
     SPvec(nsp-1) = -spsum;
 
-    for(int i; i<ns; i++){
+    for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindex(i));
       mvec(i) = exp(logm(MSYregime[i]) + SPvec(ind));
     }
-    
+    meanSP = exp(SPvec).sum() / nsp;  //SPvec and nsp indicating different length if seaprod == 0
   }else{
     // Covariate for m
     vector<Type> logmc(ns);
@@ -370,15 +369,12 @@ p  vector<Type> alpha = sdi/sdb;
     }
   }
 
-
-  Type meanSP = exp(SPvec).sum() / nsp;
   vector<Type> mnotP(nm);
-  for(int i; i<nm; i++){
+  for(int i=0; i<nm; i++){
     mnotP(i) = exp(logm(i) + log(meanSP));
   }
-
   vector<Type> mvecnotP(ns);
-  for(int i; i<ns; i++){
+  for(int i=0; i<ns; i++){
     mvecnotP(i) = exp(logm(MSYregime[i]) + log(meanSP));
   }
 
@@ -707,7 +703,7 @@ p  vector<Type> alpha = sdi/sdb;
   SARphivec.setZero();
   SARphivec(nseasons-1) = SARphi;
 
-  //using namespace density;
+  using namespace density;
   ARk_t<Type> nldens(SARphivec);
   if(seasontype==3) ans += SCALE(nldens, sdSAR)(vector<Type>(SARvec));
 
@@ -1146,6 +1142,7 @@ p  vector<Type> alpha = sdi/sdb;
   ADREPORT(isdi2);
   ADREPORT(logalpha);
   ADREPORT(logbeta);
+  ADREPORT(SPvec);
   if(reportall){ 
     // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
     // B

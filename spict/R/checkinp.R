@@ -1016,6 +1016,12 @@ check.inp <- function(inp){
 
     inp$ini$SPvec <- rep(0, 1/inp$dteuler -1)
 
+
+
+    if(!'Fpattern' %in% names(inp)) inp$Fpattern <- 0
+    if(!'Fmax' %in% names(inp)) inp$Fmax <- 0.5
+    if(!'ampSP' %in% names(inp)) inp$ampSP <- 1
+    if(!'phaseSP' %in% names(inp)) inp$phaseSP <- 0    
     
     
     # Reorder parameter list
