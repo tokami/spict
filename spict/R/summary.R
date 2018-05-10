@@ -203,6 +203,10 @@ sumspict.parest <- function(rep, ndigits=8){
                             get.par(parname='logr', rep, exp=TRUE)[, order],
                             get.par(parname='logrc', rep, exp=TRUE)[, order],
                             get.par(parname='logrold', rep, exp=TRUE)[, order])
+            if(rep$inp$seaprod == 1){
+                derout <- rbind(derout,
+                                get.par(parname='mSP', rep)[, order])
+            }
             if (nalpha > 0){
                 derout <- rbind(get.par(parname='logalpha', rep, exp=TRUE)[1:nalpha, order],
                                 derout)
@@ -234,6 +238,9 @@ sumspict.parest <- function(rep, ndigits=8){
                 roldnms <- rep('rold  ', length(rep$inp$ini$logr))
                 rcnms <- rep('rc  ', length(rep$inp$ini$logr))
             }
+            if(rep$inp$seaprod == 1){
+                mSPnms <- paste0('mSP', 1:length(rep$inp$ini$logm))
+            }
             if (nalpha > 0){
                 if(nalpha > 1){
                     alphanms <- paste0('alpha', 1:nalpha)
@@ -243,9 +250,13 @@ sumspict.parest <- function(rep, ndigits=8){
             } else {
                 alphanms <- NULL
             }
-            rownames(derout) <- c(alphanms, 'beta', rnms, rcnms, roldnms)
+            if(rep$inp$seaprod == 1){
+                rownames(derout) <- c(alphanms, 'beta', rnms, rcnms, roldnms, mSPnms)
+            }else{
+                rownames(derout) <- c(alphanms, 'beta', rnms, rcnms, roldnms)                
+            }
             resout <- rbind(derout, resout)
-        }        
+        }
         if('true' %in% names(rep$inp)){
             colnames(resout) <- c(colnms[1], 'true', colnms[2:3], 'true.in.ci', colnms[4])
         } else {
@@ -466,6 +477,16 @@ sumspict.fixedpars <- function(rep, ndigits=8){
     if (!rep$inp$timevaryinggrowth){
         nms <- nms[-match(c('logsdm', 'logpsi'),  nms)]
     }
+    ## seaprod
+    if (rep$inp$seaprod == 1){
+        nms <- nms[-match(c('logm'),  nms)]
+        if (length(levels(rep$inp$MSYregime)) == 1){
+            nms <- nms[-match(c('logmdiff'),  nms)]
+        }
+    }
+    if (rep$inp$seaprod == 0){
+        nms <- nms[-match(c('logsdSP','logmdiff'),  nms)]
+    }        
     nnms <- length(nms)
     if(nnms > 0){
         vals <- numeric(0)

@@ -1009,16 +1009,21 @@ check.inp <- function(inp){
     inp$ini$SARvec <- rep(0, max(inp$seasonindex2))
 
 
+
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
-    if(!'logsdSP' %in% names(inp$ini)) inp$ini$logsdSP <- -1
-
-    if(!'regimeIdx' %in% names(inp)) inp$regimeIdx <- as.factor(unique(inp$MSYregime))
+    if(!'logsdSP' %in% names(inp$ini)) inp$ini$logsdSP <- 0
+    if(!'logmdiff' %in% names(inp$ini)){
+        if(length(levels(inp$MSYregime)) > 1){
+            inp$ini$logmdiff <- rep(0, length(levels(inp$MSYregime))-1)
+        }else{
+            inp$ini$logmdiff <- 0
+        }
+    }
+    if(!'regimeIdx' %in% names(inp)) inp$regimeIdx <- as.factor(levels(inp$MSYregime))
     
-
     inp$ini$SPvec <- rep(0, 1/inp$dteuler)
 
-    if(inp$seaprod == 1) inp$ini$logm <- log(1)
-
+    if(inp$seaprod == 1) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
 
     if(!'Fpattern' %in% names(inp)) inp$Fpattern <- 0
     if(!'Fmax' %in% names(inp)) inp$Fmax <- 0.5
@@ -1056,7 +1061,8 @@ check.inp <- function(inp){
                         logitSARphi=inp$ini$logitSARphi,
                         logSdSAR=inp$ini$logSdSAR,
                         SPvec=inp$ini$SPvec,
-                        logsdSP=inp$ini$logsdSP)
+                        logsdSP=inp$ini$logsdSP,
+                        logmdiff=inp$ini$logmdiff)
 
 
     # -- PRIORS --
@@ -1214,7 +1220,7 @@ check.inp <- function(inp){
     if (inp$nseasons == 1){
         forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda',
                           'SARvec','logitSARphi','logSdSAR',
-                          'SPvec','logsdSP',
+                          'SPvec','logsdSP', 'logmdiff',
                           forcefixpars)
     } else {
         if (inp$seasontype == 1){ # Use spline
@@ -1227,11 +1233,14 @@ check.inp <- function(inp){
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
         if(inp$seaprod == 0){
-            forcefixpars <- c('SPvec', 'logsdSP', forcefixpars)
+            forcefixpars <- c('SPvec', 'logsdSP','logmdiff', forcefixpars)
         }
         if(inp$seaprod == 1){
             forcefixpars <- c('logm', forcefixpars)
-        }        
+        }
+        if(length(levels(inp$MSYregime)) == 1){
+            forcefixpars <- c('logmdiff', forcefixpars)
+        }                
     }
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
         forcefixpars <- c('logitpp', 'logp1robfac', forcefixpars)

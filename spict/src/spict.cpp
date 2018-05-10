@@ -194,6 +194,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
   PARAMETER_VECTOR(SPvec);
   PARAMETER(logsdSP);
+  PARAMETER_VECTOR(logmdiff);
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -305,6 +306,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> logEpred(nobsE);
 
 
+  // seaprod initialise vectors
   vector<Type> mvec(ns);  
   for(int i=0; i < ns; i++) mvec(i) = 1.0;
   vector<Type> logmbase(ns);
@@ -312,50 +314,65 @@ Type objective_function<Type>::operator() ()
   Type meanSP = 1;
   vector<Type> SPvecS(nsp);
   for(int i=0; i < nsp; i++) SPvecS(i) = 0.0;  
+  vector<Type> SPvecSnotM(nsp);
+  for(int i=0; i < nsp; i++) SPvecSnotM(i) = 0.0;  
 
-
+  // seaprod calculations
   if(seaprod == 1){
-
+    // constraints
     for(int i=1; i<nsp; i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true);  // RW
     ans -= dnorm(SPvec(0),SPvec(nsp-1),Type(1),true);                         // circular
 
+    // scale seasonal vector
     SPvecS = SPvec * sdSP;
 
+    // for seasonal productivity and several regimes
+    vector<Type> logmregime(nm);
+    logmregime(0) = 0.0;
+    if(regimeIdx.size() > 1){
+      for(int i=1; i<nm; i++){
+	logmregime(i) = logmdiff(i-1);
+      }
+    }
+
+    // extend seasonal vector to time series
     int indSP;
     for(int i=0; i<ns; i++){
       indSP = CppAD::Integer(seasonindex(i));      
-      mvec(i) = exp(SPvecS(indSP));
+      mvec(i) = exp(SPvecS(indSP) + logmregime(MSYregime[i]));
     }
-    
+
+    // extract m from seasonal vector
     vector<Type> meanM(nm);
     int ind = 0;    
     for(int i=0; i<nm; i++){
       Type tmp = 0;
+      int regimeSize = 0;
       while((ind < (ns-1)) & (MSYregime(ind) == regimeIdx(i))){
 	tmp += mvec(ind);
 	ind += 1;
+	regimeSize += 1;
       }
-      meanM(i) = tmp / (ind+1);
+      meanM(i) = tmp / (regimeSize+1);
     }
 
+    // m only (length ns)
     for(int i=0; i<ns; i++){
       logmbase(i) = log(meanM(MSYregime[i]));
     }
 
+    // m only (length nm)
     for(int i=0; i<nm; i++){
       logm(i) = log(meanM(i));
     }
-
     
-    // 
+    // mean of seasonal vector (for correcting ref levels)
     meanSP = exp(log(mvec) - logmbase).sum() / mvec.size();
-
-
     
     // seasonality without m
     vector<Type> SPvecnotM(nsp);
     for(int i=0; i<nsp; i++){
-      SPvecSnotM(i) = SPvec(i) - log(meanM);
+      SPvecSnotM(i) = SPvecS(i) - log(meanM(0));
     }
 
   }else{
@@ -372,6 +389,8 @@ Type objective_function<Type>::operator() ()
     }
   }
 
+  
+  // ms without seasonality for ref levels
   vector<Type> mnotP(nm);
   for(int i=0; i<nm; i++){
     mnotP(i) = exp(logm(i) + log(meanSP));
@@ -381,7 +400,13 @@ Type objective_function<Type>::operator() ()
     mvecnotP(i) = exp(logmbase(i) + log(meanSP));
   }
 
+  // for summary table
+  vector<Type> mSP(nm);
+  for(int i=0; i<nm; i++){
+    mSP(i) = mnotP(i);
+  }
 
+  
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
   vector<Type> Fmsyd(nm);
@@ -1146,7 +1171,10 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logalpha);
   ADREPORT(logbeta);
   ADREPORT(SPvec);
-  ADREPORT(SPvecS);  
+  ADREPORT(SPvecS);
+  ADREPORT(SPvecSnotM);
+  ADREPORT(mSP);
+  
   if(reportall){ 
     // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
     // B
