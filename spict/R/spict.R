@@ -274,6 +274,7 @@ make.datin <- function(inp, dbg=0){
                   stabilise=inp$stabilise,
                   MSYregime=inp$MSYregime,
                   seaprod=inp$seaprod,
+                  regimeIdx=inp$regimeIdx,
                   priorn=inp$priors$logn,
                   priorr=inp$priors$logr,
                   priorK=inp$priors$logK,

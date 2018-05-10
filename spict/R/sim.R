@@ -1133,8 +1133,6 @@ sim.spictSP <- function(input, nobs=100){
     m <- exp(pl$logm)    
 
     sdSP <- exp(pl$logsdSP)
-    deltaSP <- exp(pl$logdeltaSP)
-
 
     ## accounting for several regimes
     mvec <- numeric(nt)
@@ -1145,10 +1143,11 @@ sim.spictSP <- function(input, nobs=100){
     ## seasonal productivity
     SPvec <- inp$ini$SPvec
     if(inp$seaprod == 1){
-        nsp <- length(SPvec) + 1
+        nsp <- length(SPvec)
         SPvec <- sin(seq(1e-6 + inp$phaseSP,
                          2*pi + inp$phaseSP,
                          length.out = nsp)) * inp$ampSP
+        SPvec <- SPvec + inp$simlogm
         msea <- exp(SPvec)[inp$seasonindex+1]
         mvec <- mvec * msea
     }
@@ -1408,6 +1407,7 @@ sim.spictSP <- function(input, nobs=100){
     sim$true$e.b <- e.b
     sim$true$e.f <- e.f
     sim$true$SPvec <- SPvec
+    sim$seaprod <- inp$seaprod
 
     sign <- 1
     R <- (n-1)/n * gamma * mnotP / K 

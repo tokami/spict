@@ -1011,17 +1011,20 @@ check.inp <- function(inp){
 
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
     if(!'logsdSP' %in% names(inp$ini)) inp$ini$logsdSP <- -1
-    if(!'logdeltaSP' %in% names(inp$ini)) inp$ini$logdeltaSP <- -5
+
+    if(!'regimeIdx' %in% names(inp)) inp$regimeIdx <- as.factor(unique(inp$MSYregime))
     
 
-    inp$ini$SPvec <- rep(0, 1/inp$dteuler -1)
+    inp$ini$SPvec <- rep(0, 1/inp$dteuler)
 
+    if(inp$seaprod == 1) inp$ini$logm <- log(1)
 
 
     if(!'Fpattern' %in% names(inp)) inp$Fpattern <- 0
     if(!'Fmax' %in% names(inp)) inp$Fmax <- 0.5
     if(!'ampSP' %in% names(inp)) inp$ampSP <- 1
-    if(!'phaseSP' %in% names(inp)) inp$phaseSP <- 0    
+    if(!'phaseSP' %in% names(inp)) inp$phaseSP <- 0
+    if(!'simlogm' %in% names(inp)) inp$simlogm <- 0
     
     
     # Reorder parameter list
@@ -1053,8 +1056,7 @@ check.inp <- function(inp){
                         logitSARphi=inp$ini$logitSARphi,
                         logSdSAR=inp$ini$logSdSAR,
                         SPvec=inp$ini$SPvec,
-                        logsdSP=inp$ini$logsdSP,
-                        logdeltaSP=inp$ini$logdeltaSP)
+                        logsdSP=inp$ini$logsdSP)
 
 
     # -- PRIORS --
@@ -1212,7 +1214,7 @@ check.inp <- function(inp){
     if (inp$nseasons == 1){
         forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda',
                           'SARvec','logitSARphi','logSdSAR',
-                          'SPvec','logsdSP','logdeltaSP',
+                          'SPvec','logsdSP',
                           forcefixpars)
     } else {
         if (inp$seasontype == 1){ # Use spline
@@ -1225,8 +1227,11 @@ check.inp <- function(inp){
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
         if(inp$seaprod == 0){
-            forcefixpars <- c('SPvec', 'logsdSP', 'logdeltaSP', forcefixpars)
+            forcefixpars <- c('SPvec', 'logsdSP', forcefixpars)
         }
+        if(inp$seaprod == 1){
+            forcefixpars <- c('logm', forcefixpars)
+        }        
     }
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
         forcefixpars <- c('logitpp', 'logp1robfac', forcefixpars)
