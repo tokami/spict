@@ -1010,7 +1010,7 @@ check.inp <- function(inp){
 
 
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
-    if(!'logsdSP' %in% names(inp$ini)) inp$ini$logsdSP <- -2
+    if(!'logsdSP' %in% names(inp$ini)) inp$ini$logsdSP <- -1
     if(!'logdeltaSP' %in% names(inp$ini)) inp$ini$logdeltaSP <- -5
     
 
