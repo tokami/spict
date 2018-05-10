@@ -70,35 +70,6 @@ Type ilogit(Type x){
 }
 
 
-// function creating circular and mean 0 matrix for seaprod
-template<class Type> 
-matrix<Type> circCov(const int &nsp, const Type &deltaSP) {
-  // Circular precision
-  matrix<Type> Q(nsp, nsp);
-  Q.setZero();
-  for (int i=0; i<nsp; i++) {
-    Q(i,(i+1)%nsp) = -1.;
-    Q(i,i) = 2. + deltaSP;
-    Q((i+1)%nsp,i) = -1.;
-  }
-  // Transform
-  matrix<Type> B(nsp, nsp);
-  B.setIdentity();
-  for (int i=1; i<nsp; i++) {
-    B(i,0) = -1.;
-  }
-  matrix<Type> Q2 = B * Q * B.transpose();
-  // Remove first (sum)
-  matrix<Type> Q3 = Q2.block(1, 1, nsp-1 ,nsp-1);
-  // Get correlation matrix
-  matrix<Type> C = atomic::matinv(Q3);
-  C = C / C(0,0);
-  return C;
-}
-
-
-
-
 /* Main script */
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -157,6 +128,7 @@ Type objective_function<Type>::operator() ()
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
   DATA_INTEGER(seaprod);
+  DATA_FACTOR(regimeIdx);
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -222,7 +194,6 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
   PARAMETER_VECTOR(SPvec);
   PARAMETER(logsdSP);
-  PARAMETER(logdeltaSP);
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -336,19 +307,13 @@ Type objective_function<Type>::operator() ()
   vector<Type> logEpred(nobsE);
 
 
-  
   vector<Type> mvec(ns);  
   for(int i=0; i < ns; i++) mvec(i) = 1.0;
-  matrix<Type> CSP = circCov<Type>(nsp, deltaSP);
+
+  
   Type meanSP = 1;
 
   if(seaprod == 1){
-    using namespace density;
-    ans += SCALE(MVNORM(CSP), sdSP)(vector<Type>(SPvec));
-
-    Type spsum = SPvec.sum();
-    SPvec.conservativeResize(nsp);
-    SPvec(nsp-1) = -spsum;
 
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(seasonindex(i));
@@ -371,7 +336,7 @@ Type objective_function<Type>::operator() ()
 
   vector<Type> mnotP(nm);
   for(int i=0; i<nm; i++){
-    mnotP(i) = exp(logm(i) + log(meanSP));
+    mnotP(i) = exp((i) + log(meanSP));
   }
   vector<Type> mvecnotP(ns);
   for(int i=0; i<ns; i++){
