@@ -1150,11 +1150,14 @@ sim.spictSP <- function(input, nobs=100){
         SPvec <- SPvec + inp$simlogm
         msea <- exp(SPvec)[inp$seasonindex+1]
         mvec <- mvec * msea
+
+        ## mean m
+        m <- mean(mvec)
     }
 
     ## removing seasonality for reference points
-    meanP <- mean(exp(SPvec))
-    mnotP <- m * meanP
+##    meanP <- mean(exp(SPvec))
+    mnotP <- m ##* meanP
 
     # B[t] is biomass at the beginning of the time interval starting at time t
     # I[t] is an index of biomass (e.g. CPUE) at time t
@@ -1185,6 +1188,15 @@ sim.spictSP <- function(input, nobs=100){
             rawF <- c(seq(F0,inp$Fmax,length.out = floor(nt/2.5)),           ## increasing
                        rep(inp$Fmax,(nt-(floor(nt/2.5)+floor(nt/3)))),  ## stable 
                        seq(inp$Fmax,F0+0.1,length.out=floor(nt/3)))          ## decreasing
+            logFbase <- log(rawF) 
+            logFbase[2:nt] <- logFbase[2:nt] + e.f
+        }else if(inp$Fpattern == 4){  ## rollercoaser only in first years
+            rawF <- c(seq(0.01,inp$Fmax,length.out=32),
+                      rep(inp$Fmax,16),  ## stable
+                      seq(inp$Fmax,0.01,length.out=32),
+                      rep(0.01,32),  ## stable 
+                      seq(0.01,F0,length.out=48),
+                      rep(F0,nt-160))          ## decreasing
             logFbase <- log(rawF) 
             logFbase[2:nt] <- logFbase[2:nt] + e.f
         }
@@ -1407,6 +1419,7 @@ sim.spictSP <- function(input, nobs=100){
     sim$true$e.b <- e.b
     sim$true$e.f <- e.f
     sim$true$SPvec <- SPvec
+    sim$true$simlogm <- inp$simlogm
     sim$seaprod <- inp$seaprod
 
     sign <- 1

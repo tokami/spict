@@ -329,7 +329,7 @@ Type objective_function<Type>::operator() ()
     // for seasonal productivity and several regimes
     vector<Type> logmregime(nm);
     logmregime(0) = 0.0;
-    if(regimeIdx.size() > 1){
+    if(nm > 1){
       for(int i=1; i<nm; i++){
 	logmregime(i) = logmdiff(i-1);
       }
@@ -367,7 +367,7 @@ Type objective_function<Type>::operator() ()
     }
     
     // mean of seasonal vector (for correcting ref levels)
-    meanSP = exp(log(mvec) - logmbase).sum() / mvec.size();
+    // meanSP = exp(log(mvec) - logmbase).sum() / mvec.size();
     
     // seasonality without m
     vector<Type> SPvecnotM(nsp);
@@ -393,11 +393,11 @@ Type objective_function<Type>::operator() ()
   // ms without seasonality for ref levels
   vector<Type> mnotP(nm);
   for(int i=0; i<nm; i++){
-    mnotP(i) = exp(logm(i) + log(meanSP));
+    mnotP(i) = exp(logm(i));  //exp(logm(i) + log(meanSP));
   }
   vector<Type> mvecnotP(ns);
   for(int i=0; i<ns; i++){
-    mvecnotP(i) = exp(logmbase(i) + log(meanSP));
+    mvecnotP(i) = exp(logmbase(i));  // exp(logmbase(i) + log(meanSP));
   }
 
   // for summary table

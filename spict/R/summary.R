@@ -239,7 +239,11 @@ sumspict.parest <- function(rep, ndigits=8){
                 rcnms <- rep('rc  ', length(rep$inp$ini$logr))
             }
             if(rep$inp$seaprod == 1){
-                mSPnms <- paste0('mSP', 1:length(rep$inp$ini$logm))
+                if(length(levels(rep$inp$MSYregime)) > 1){
+                    mSPnms <- paste0('mSP', 1:length(rep$inp$ini$logm))
+                }else{
+                    mSPnms <- 'mSP  '
+                }
             }
             if (nalpha > 0){
                 if(nalpha > 1){
