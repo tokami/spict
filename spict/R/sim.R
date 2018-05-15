@@ -1147,12 +1147,14 @@ sim.spictSP <- function(input, nobs=100){
         SPvec <- sin(seq(1e-6 + inp$phaseSP,
                          2*pi + inp$phaseSP,
                          length.out = nsp)) * inp$ampSP
+        SPvec <- SPvec - log(mean(exp(SPvec)))
         SPvec <- SPvec + inp$simlogm
         msea <- exp(SPvec)[inp$seasonindex+1]
-        mvec <- mvec * msea
+        mvec <- mvec * msea  ## mvec = 1 if seaprod == 1
 
         ## mean m
-        m <- mean(mvec)
+        ## m <- mean(mvec)
+        m <- exp(inp$simlogm)  ## only works if mean(exp(SPvec)) == 1
     }
 
     ## removing seasonality for reference points
@@ -1206,6 +1208,7 @@ sim.spictSP <- function(input, nobs=100){
         # Impose seasons
         season <- numeric(length(logFbase))
         if (inp$seasontype == 1){ # Spline-based seasonality
+            seasonspline <- seasonspline - log(mean(exp(seasonspline)))
             season <- seasonspline[inp$seasonindex+1]
         }
         if (inp$seasontype == 2){ # This one should not be used yet!
@@ -1389,8 +1392,8 @@ sim.spictSP <- function(input, nobs=100){
     sim$dteuler <- inp$dteuler
     sim$splineorder <- inp$splineorder
     sim$euler <- inp$euler
-    sim$lamperti <- inp$lamperti
     sim$phases <- inp$phases
+    sim$lamperti <- inp$lamperti
     sim$priors <- inp$priors
     sim$outliers <- inp$outliers
     sim$recount <- recount
