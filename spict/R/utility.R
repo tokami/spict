@@ -536,3 +536,152 @@ get.cov <- function(rep, parname1, parname2, cor=FALSE){
         return(rep$cov[inds, inds])
     }
 }
+
+
+
+
+
+
+#' @name reduce.inp
+#' @title Reduce time series to get nested inp lists
+#' @param inp An input list containing data.
+#' @param nyears number of years to reduce to
+#' @param cutStart logical; should start or end of time series be cut?
+#' 
+#' @return Reduced inp list
+#' @export
+reduce.inp <- function(inp, nyears, cutStart = FALSE){
+    
+    inpin <- check.inp(inp)
+    inp <- inpin
+
+    if(nyears > length(unique(floor(inp$time)))){
+        stop(paste0("nyears has to be smaller than", length(unique(floor(inp$time)))))
+    }
+    
+    if(cutStart){
+        timeRed <- inp$time[(inp$ns-(nyears * (1/inp$dteuler))):inp$ns]
+    }else{
+        timeRed <- inp$time[1:(inp$ns-((nyears + 1) * (1/inp$dteuler)))]
+    }
+    yearsRed <- unique(floor(timeRed))
+    quartersRed <- inpin$timeC[floor(inpin$timeC) %in% yearsRed]
+
+    inp$obsC <- inp$obsC[inpin$timeC %in% quartersRed]
+    inp$timeC <- inp$timeC[inpin$timeC %in% quartersRed]
+
+    for(i in 1:length(inp$obsI)){
+        inp$obsI[[i]] <- inp$obsI[[i]][floor(inpin$timeI[[i]]) %in% yearsRed]
+        inp$timeI[[i]] <- inp$timeI[[i]][floor(inpin$timeI[[i]]) %in% yearsRed]        
+        inp$obsidI[[i]] <- inp$obsidI[[i]][floor(inpin$timeI[[i]]) %in% yearsRed]
+    }
+    if(!is.null(inp$stdevfacI)){
+        for(i in 1:length(inp$obsI)){
+            inp$stdevfacI[[i]] <- inp$stdevfacI[[i]][floor(inpin$timeI[[i]]) %in% yearsRed]
+        }   
+    }
+
+    inp$dtc <- inp$dtc[inpin$timeC %in% quartersRed]
+    inp$stdevfacC <- inp$stdevfacC[inpin$timeC %in% quartersRed]
+
+
+    ## setting those to NULL? and let check.inp do the work?
+    inp$nobsC <- length(inp$obsC)
+    inp$obsidC <- seq(length(inp$obsC))    
+    inp$nobsI <- length(inp$obsI[[1]])
+    ## add for effort data (need example of effort data)
+    if(FALSE){
+        inp$obsE
+        inp$timeE
+        inp$stdevfacE <- inp$stdevfacE[inpin$timeC %in% yearsRed]
+    }
+
+    timeobsall <- sort(c(inp$timeC, inp$timeC + inp$dtc,
+                         unlist(inp$timeI),
+                         inp$timeE, inp$timeE + inp$dte))
+    
+    # Time point to predict catches until
+    inp$timepredc <- max(timeobsall)
+    inp$timepredi <- max(timeobsall)
+
+    # This may give a problem if effort data has later time points than catches or index
+    if (inp$nobsE > 0 & sum(inp$nobsI) > 0){
+        if (max(inp$timeE) > max(unlist(inp$timeI), inp$timeC)){
+            stop('Effort data must overlap temporally with index or catches')
+        }
+    }
+    if ("eulertype" %in% names(inp)){
+        if (inp$eulertype == 'hard'){
+            # Hard Euler discretisation
+            if (inp$start.in.first.data.point){
+                time <- seq(min(timeobsall), max(inp$timepredi, inp$timepredc+inp$dtpredc),
+                            by=inp$dteuler)
+            } else {
+                # Here we take floor of time of first data point
+                # This can sometimes cause problems when estimating the random effect
+                # prior to the first data point, because of no data support
+                time <- seq(floor(min(timeobsall)), max(inp$timepredi, inp$timepredc+inp$dtpredc),
+                            by=inp$dteuler)
+            }
+            inp$time <- time
+        }
+        if (inp$eulertype == 'soft'){
+            # Include times of observations (including dtc)
+            time <- seq(ceiling(min(timeobsall)), max(inp$timepredi, inp$timepredc+inp$dtpredc), by=inp$dteuler)
+            inp$time <- sort(unique(c(timeobsall, time)))
+        }
+        if (!inp$eulertype %in% c('soft', 'hard'))
+            stop('inp$eulertype must be either "soft" or "hard"!')
+    }    
+    ##    inp$time <- timeRed
+    
+    inp$dt <- inp$dt[inpin$time %in% inp$time]
+    inp$ns <- length(inp$time)
+
+
+    inp$ffacvec <- inp$ffacvec[inpin$time %in% inp$time]
+    inp$fconvec <- inp$fconvec[inpin$time %in% inp$time]
+    inp$ini$logF <- inp$ini$logF[inpin$time %in% inp$time]
+    inp$ini$logu <- inp$ini$logu[,(inpin$time %in% inp$time)]
+    inp$ini$logB <- inp$ini$logB[inpin$time %in% inp$time]
+    inp$ini$logmre <- inp$ini$logmre[inpin$time %in% inp$time]
+    inp$ini$SARvec <- inp$ini$SARvec[inpin$time %in% inp$time]
+    inp$MSYregime <- inp$MSYregime[inpin$time %in% inp$time]
+    inp$regimeIdx <- NULL
+    inp$manstart <- NULL
+    inp$ir <- NULL
+    inp$ini$logr <- NULL
+
+    if("true" %in% names(inp)){
+        inp$true$logu <- inp$true$logu[,(inpin$time %in% inp$time)]
+        inp$true$logmre <- inp$true$logmre[inpin$time %in% inp$time]
+        inp$true$SARvec <- inp$true$SARvec[inpin$time %in% inp$time]
+        inp$true$time <- inp$true$time[inpin$time %in% inp$time]
+        inp$true$C <- inp$true$C[inpin$timeC %in% quartersRed]
+        inp$true$E <- inp$true$E[inpin$timeE %in% quartersRed]
+        for(i in 1:length(inp$true$I)){
+            inp$true$I[[i]] <- inp$true$I[[i]][floor(inpin$timeI[[i]]) %in% yearsRed]
+        }
+        inp$true$B <- inp$true$B[inpin$time %in% inp$time]
+        inp$true$F <- inp$true$F[inpin$time %in% inp$time]
+        inp$true$Fs <- inp$true$Fs[inpin$time %in% inp$time]
+        inp$true$e.c <- inp$true$e.c[inpin$timeC %in% quartersRed]
+        inp$true$e.e <- inp$true$e.e[inpin$timeE %in% quartersRed]
+        for(i in 1:length(inp$true$I)){
+            inp$true$e.i[[i]] <- inp$true$e.i[[i]][floor(inpin$timeI[[i]]) %in% yearsRed]
+        }
+        inp$true$e.b <- inp$true$e.b[inpin$time %in% inp$time]
+        inp$true$e.f <- inp$true$e.f[inpin$time %in% inp$time]
+        inp$true$BBmsy <- inp$true$BBmsy[inpin$time %in% inp$time]
+        inp$true$FFmsy <- inp$true$FFmsy[inpin$time %in% inp$time]
+        inp$true$logBBmsy <- inp$true$logBBmsy[inpin$time %in% inp$time]
+        inp$true$logFFmsy <- inp$true$logFFmsy[inpin$time %in% inp$time]
+        for(i in 1:length(inp$true$errI)){
+            inp$true$errI[[i]] <- inp$true$errI[[i]][floor(inpin$timeI[[i]]) %in% yearsRed]
+        }
+    }
+
+    inpout <- check.inp(inp)
+    return(inpout)
+}
+
