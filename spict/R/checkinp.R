@@ -821,7 +821,7 @@ check.inp <- function(inp){
     if(!'MSYregime' %in% names(inp)){
         inp$MSYregime<-factor(rep(1,length(inp$time)))
     } else if(length(inp$MSYregime)<length(inp$time)) { # manage changes number of time steps!
-        inp$MSYregime<-c( inp$MSYregime, rep( tail(inp$MSYregime,1), length(inp$time)-length(inp$MSYregime)) )
+        inp$MSYregime<-as.factor(c( inp$MSYregime, rep( tail(inp$MSYregime,1), length(inp$time)-length(inp$MSYregime)) ))
     }
     inp$noms<-nlevels(inp$MSYregime)
     inp$ir<-as.numeric(inp$MSYregime)
@@ -843,7 +843,8 @@ check.inp <- function(inp){
         #}
     }
     if(length(inp$ini$logm)!=inp$noms) inp$ini$logm <- rep(inp$ini$logm,noms)
-    
+
+
     if ('logr' %in% names(inp$ini)){
         nr <- length(inp$ini$logr)
         if (!'ir' %in% names(inp) | nr == 1){
