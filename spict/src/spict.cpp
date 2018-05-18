@@ -159,6 +159,7 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(priorF);         // Prior vector for F, [log(mean), stdev in log, useflag, year, if]
   DATA_VECTOR(priorBBmsy);     // Prior vector for B/Bmsy, [log(mean), stdev in log, useflag, year, ib]
   DATA_VECTOR(priorFFmsy);     // Prior vector for F/Fmsy, [log(mean), stdev in log, useflag, year, if]
+  DATA_VECTOR(priorsdSP);
 
   // Options
   DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
@@ -595,6 +596,9 @@ Type objective_function<Type>::operator() ()
     }
     if(priorsde(2) != 1){
       ans -= dnorm(logsde, Type(-0.9162907), Type(10.0), 1); // log(0.4) = -0.9162907
+    }
+    if(priorsdSP(2) != 1){
+      ans -= dnorm(logsdSP, Type(0.0), Type(5.0), 1);
     }
   }
 

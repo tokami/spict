@@ -1118,7 +1118,7 @@ check.inp <- function(inp){
                         'iqgamma', 'logqf', 'logbkfrac', 'logB', 'logF', 'logBBmsy',
                         'logFFmsy', 'logsdb', 'isdb2gamma', 'logsdf', 'isdf2gamma',
                         'logsdi', 'isdi2gamma', 'logsde', 'isde2gamma', 'logsdc',
-                        'isdc2gamma', 'logsdm', 'logpsi', 'mu')
+                        'isdc2gamma', 'logsdm', 'logpsi', 'mu', 'logsdSP')
     repriors <- c('logB', 'logF', 'logBBmsy', 'logFFmsy')
     matrixpriors <- c('logsdi','logq')
     npossiblepriors <- length(possiblepriors)
@@ -1145,6 +1145,9 @@ check.inp <- function(inp){
         inp$priors <- set.default(inp$priors, 'logsdm', c(log(0.2), wide))
         inp$priors <- set.default(inp$priors, 'logpsi', c(log(0.01), wide))
     }
+    if (inp$seaprod == 1){
+        inp$priors <- set.default(inp$priors, 'logsdSP', c(log(1), wide))
+    }    
     # Remaining priors, set to something, but will not be used
     if ("priors" %in% names(inp)){
         # Remove wrong priors names
