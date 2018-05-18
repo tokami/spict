@@ -695,38 +695,50 @@ reduce.inp <- function(inp, nyears, cutStart = FALSE){
 #' @param dteuler Vector with dteuler time steps to check against
 #' @return Relative difference between dteuler for reference levels and states
 #' @export
-check.euler <- function(rep, dteuler = c(1/16, 1/32, 1/64, 1/128)){
-
-    inp <- rep$inp
-
-    rep$inp$dteuler
-    names(rep$inp)
-
-    neuler <- length(dteuler)
-    estList <- vector("list", neuler)
-    for(i in 1:neuler){
-
-        inp$dteuler <- dteuler[i]
-        inp$ini$logF <- NULL
-        inp$ini$logB <- NULL
-        inp$ini$logu <- NULL
-        inp$ini$logmre <- NULL
-        inp$ini$SARvec <- NULL
-        
-        inp <- check.inp(inp)
-        tmp <- fit.spict(inp)
-
-        est <- as.data.frame(matrix(NA,ncol=5, nrow=5))
-        est[1,] <- get.par("Bmsy", tmp)
-        est[2,] <- get.par("Fmsy", tmp)
-        est[3,] <- get.par("MSY", tmp)
-        est[4,] <- get.par("logBlBmsy", tmp, exp = TRUE)
-        est[5,] <- get.par("logFlFmsy", tmp, exp = TRUE)
-        colnames(est) <- c("ll","est","ul","sd","cv")
-
-        estList[[i]] <- est
+checkeuler <- function(rep, dteuler = 1/128){
+    MSYiter <- function(rep, f, dteuler){
+        rep$inp$ini$logF0 <- log(f)
+        rep$inp$Fpattern <- 1
+        rep$inp$logsdf <- log(0.0001)
+        rep$inp$logsdc <- log(0.0001)
+        rep$inp$ini$logF <- NULL
+        rep$inp$ini$logB <- NULL
+        rep$inp$ini$logu <- NULL
+        rep$inp$ini$logmre <- NULL
+        rep$inp$ini$SARvec <- NULL
+        ## simulate
+        sim <- sim.spictSP(rep)
+        ## return catch
+        predcatch <- sim$true$C
+        ## account forquaterly catches
+        predcatchYearly <- aggregate(list(catch=predcatch), by=list(idx=floor(sim$timeC)), sum)
+        np <- length(predcatchYearly$catch)
+        mean(predcatchYearly$catch[min(np-1,10):np])
     }
+    ## fitted data
+    repin <- rep
+    ## used dteuler
+    dteulerin <- repin$inp$dteuler
+    ## F vector
+    fs <- c(seq(0.01,1,length.out = 10))
+    ## iterations
+    res <- unlist(parallel::mclapply(as.list(fs), MSYiter, inp=rep, dteuler=dteulerin))
+    ##resCT <- unlist(parallel::mclapply(as.list(fs), MSYiter, inp=rep, dteuler=dteuler))
+    ## refs in estimation time
+    msyiter <- max(res, na.rm = TRUE)
+    fmsyiter <- fs[which.max(res)]
+    bmsyiter <- msyiter / fmsyiter
+    ## refs in continuous time
+    msyiterCT <- get.par("MSY", repin)[,2] ## max(resCT, na.rm = TRUE)
+    fmsyiterCT <- get.par("logFmsy", repin, exp=TRUE)[,2] ## fs[which.max(resCT)]
+    bmsyiterCT <- get.par("logBmsy", repin, exp=TRUE)[,2] ## msyiterCT / fmsyiterCT
+    ## difference in reference levels
+    mbs <- c((msyiter - msyiterCT)/ msyiterCT,
+    (fmsyiter - fmsyiterCT)/ fmsyiterCT,
+    (bmsyiter - bmsyiterCT)/ bmsyiterCT)
+    names(mbs) <- c("MSY","Fmsy","Bmsy")
 
+    return(mbs)
 }
 
 
