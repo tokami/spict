@@ -1024,6 +1024,12 @@ check.inp <- function(inp){
     
     inp$ini$SPvec <- rep(0, 1/inp$dteuler)
 
+    if(inp$seaprod == 1){
+        inp$priors$logsdSP <- c(log(1), 5, 1)
+    }else{
+        inp$priors$logsdSP <- c(0, 0, 0)
+    }
+
     if(inp$seaprod == 1) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
 
     if(!'Fpattern' %in% names(inp)) inp$Fpattern <- 0
@@ -1145,9 +1151,6 @@ check.inp <- function(inp){
         inp$priors <- set.default(inp$priors, 'logsdm', c(log(0.2), wide))
         inp$priors <- set.default(inp$priors, 'logpsi', c(log(0.01), wide))
     }
-    if (inp$seaprod == 1){
-        inp$priors <- set.default(inp$priors, 'logsdSP', c(log(1), wide))
-    }    
     # Remaining priors, set to something, but will not be used
     if ("priors" %in% names(inp)){
         # Remove wrong priors names

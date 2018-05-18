@@ -597,9 +597,6 @@ Type objective_function<Type>::operator() ()
     if(priorsde(2) != 1){
       ans -= dnorm(logsde, Type(-0.9162907), Type(10.0), 1); // log(0.4) = -0.9162907
     }
-    if(priorsdSP(2) != 1){
-      ans -= dnorm(logsdSP, Type(0.0), Type(5.0), 1);
-    }
   }
 
   // PRIORS
@@ -711,6 +708,10 @@ Type objective_function<Type>::operator() ()
     ind = CppAD::Integer(priorFFmsy(4)-1);
     ans-= dnorm(logF(ind) - logFmsyvec(ind), priorFFmsy(0), priorFFmsy(1), 1); // Prior for logFFmsy
   }
+
+  if(priorsdSP(2) == 1){
+    ans-= dnorm(logsdSP, priorsdSP(0), priorsdSP(1), 1); // Prior for logsde
+  }  
 
   /*
   dt[i] is the length of the time interval between t_i and t_i+1
