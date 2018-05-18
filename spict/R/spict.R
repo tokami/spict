@@ -94,7 +94,10 @@ fit.spict <- function(inp, dbg=0){
         if (dbg<1){
             # Do estimation
             if (inp$optimiser == 'nlminb'){
+##                lowlims <- rep(-Inf, length(pl))
+##                lowlims[grep("logsdSP",names(pl))] <- -10
                 opt <- try(nlminb(obj$par, obj$fn, obj$gr, control=inp$optimiser.control))
+##                                  lower = lowlims))
                 if (class(opt)!='try-error'){
                     pl <- obj$env$parList(opt$par)
                 }
