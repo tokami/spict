@@ -695,7 +695,7 @@ reduce.inp <- function(inp, nyears, cutStart = FALSE){
 #' @param dteuler Vector with dteuler time steps to check against
 #' @return Relative difference between dteuler for reference levels and states
 #' @export
-checkeuler <- function(rep, dteuler = 1/128){
+check.euler <- function(rep, dteuler = 1/128){
     MSYiter <- function(rep, f, dteuler){
         rep$inp$ini$logF0 <- log(f)
         rep$inp$Fpattern <- 1
@@ -719,19 +719,21 @@ checkeuler <- function(rep, dteuler = 1/128){
     repin <- rep
     ## used dteuler
     dteulerin <- repin$inp$dteuler
+    ## Fmsy est
+    fmsyin <- as.numeric(get.par("logFmsy", repin, exp=TRUE)[,2])
     ## F vector
-    fs <- c(seq(0.01,1,length.out = 10))
+    fs <- c(seq(0.8*fmsyin,1.2*fmsyin,length.out = 500))
     ## iterations
-    res <- unlist(parallel::mclapply(as.list(fs), MSYiter, inp=rep, dteuler=dteulerin))
+    res <- unlist(parallel::mclapply(as.list(fs), MSYiter, rep=rep, dteuler=dteulerin))
     ##resCT <- unlist(parallel::mclapply(as.list(fs), MSYiter, inp=rep, dteuler=dteuler))
     ## refs in estimation time
     msyiter <- max(res, na.rm = TRUE)
     fmsyiter <- fs[which.max(res)]
     bmsyiter <- msyiter / fmsyiter
     ## refs in continuous time
-    msyiterCT <- get.par("MSY", repin)[,2] ## max(resCT, na.rm = TRUE)
-    fmsyiterCT <- get.par("logFmsy", repin, exp=TRUE)[,2] ## fs[which.max(resCT)]
-    bmsyiterCT <- get.par("logBmsy", repin, exp=TRUE)[,2] ## msyiterCT / fmsyiterCT
+    msyiterCT <- as.numeric(get.par("MSY", repin)[,2]) ## max(resCT, na.rm = TRUE)
+    fmsyiterCT <- as.numeric(get.par("logFmsy", repin, exp=TRUE)[,2]) ## fs[which.max(resCT)]
+    bmsyiterCT <- as.numeric(get.par("logBmsy", repin, exp=TRUE)[,2]) ## msyiterCT / fmsyiterCT
     ## difference in reference levels
     mbs <- c((msyiter - msyiterCT)/ msyiterCT,
     (fmsyiter - fmsyiterCT)/ fmsyiterCT,
