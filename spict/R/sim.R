@@ -1186,7 +1186,7 @@ sim.spictSP <- function(input, nobs=100){
         }else if(inp$Fpattern %in% c(1,2)){
             logFbase <- rep(log(F0), nt)
             if(inp$Fpattern == 2) logFbase[2:nt] <- logFbase[2:nt] + e.f
-        }else if(inp$Fpattern == 3){
+        }else if(inp$Fpattern == 3){ ## roller coaster spanning whole time series
             rawF <- c(seq(F0,inp$Fmax,length.out = floor(nt/2.5)),           ## increasing
                        rep(inp$Fmax,(nt-(floor(nt/2.5)+floor(nt/3)))),  ## stable 
                        seq(inp$Fmax,F0+0.1,length.out=floor(nt/3)))          ## decreasing
@@ -1200,6 +1200,16 @@ sim.spictSP <- function(input, nobs=100){
                       seq(0.01,F0,length.out=48),
                       rep(F0,nt-160))          ## decreasing
             logFbase <- log(rawF) 
+            logFbase[2:nt] <- logFbase[2:nt] + e.f
+        }else if(inp$Fpattern == 5){  ## rollercoaser constantly repeating
+            ## oneCycle = length = 240 (incl. dteuler 1/16)
+            repF <- ceiling(inp$ns/240)
+            oneCycle <- c(seq(0.01,inp$Fmax,length.out=80),
+                      rep(inp$Fmax,32),  ## stable
+                      seq(inp$Fmax,0.01,length.out=96),
+                      rep(0.01,32))  ## stable
+            rawF <- rep(oneCycle, repF)
+            logFbase <- log(rawF[1:nt]) 
             logFbase[2:nt] <- logFbase[2:nt] + e.f
         }
 
