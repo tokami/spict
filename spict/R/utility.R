@@ -1,4 +1,4 @@
-# Stochastic surplus Production model in Continuous-Time (SPiCT)
+g# Stochastic surplus Production model in Continuous-Time (SPiCT)
 #    Copyright (C) 2015-2016  Martin W. Pedersen, mawp@dtu.dk, wpsgodd@gmail.com
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -684,4 +684,56 @@ reduce.inp <- function(inp, nyears, cutStart = FALSE){
     inpout <- check.inp(inp)
     return(inpout)
 }
+
+
+
+
+
+#' @name check.ct
+#' @title Check robustness of assessment results vs time discretization
+#' @param rep Result of fit.spict().
+#' @param dteuler Vector with dteuler time steps to check against
+#' @return Relative difference between dteuler for reference levels and states
+#' @export
+check.ct <- function(rep, dteuler = c(1/16, 1/32, 1/64, 1/128)){
+
+    inp <- rep$inp
+
+    rep$inp$dteuler
+    names(rep$inp)
+
+    neuler <- length(dteuler)
+    estList <- vector("list", neuler)
+    for(i in 1:neuler){
+
+        i = 2
+        
+        inp$dteuler <- dteuler[i]
+        inp$ini$logF <- NULL
+        inp$ini$logB <- NULL
+        inp$ini$logu <- NULL
+        inp$ini$logmre <- NULL
+        inp$ini$SARvec <- NULL
+        
+        inp <- check.inp(inp)
+        tmp <- fit.spict(inp)
+
+        est <- as.data.frame(matrix(NA,ncol=5, nrow=5))
+        est[1,] <- get.par("Bmsy", tmp)
+        est[2,] <- get.par("Fmsy", tmp)
+        est[3,] <- get.par("MSY", tmp)
+        est[4,] <- get.par("logBlBmsy", tmp, exp = TRUE)
+        est[5,] <- get.par("logFlFmsy", tmp, exp = TRUE)
+        colnames(est) <- c("ll","est","ul","sd","cv")
+
+        estList[[i]] <- est
+    }
+
+
+    
+    
+
+
+}
+
 
