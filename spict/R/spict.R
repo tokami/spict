@@ -94,10 +94,10 @@ fit.spict <- function(inp, dbg=0){
         if (dbg<1){
             # Do estimation
             if (inp$optimiser == 'nlminb'){
-##                lowlims <- rep(-Inf, length(pl))
-##                lowlims[grep("logsdSP",names(pl))] <- -10
-                opt <- try(nlminb(obj$par, obj$fn, obj$gr, control=inp$optimiser.control))
-##                                  lower = lowlims))
+                lowlims <- rep(-Inf, length(obj$par))
+                lowlims[grep("logsdSP",names(obj$par))] <- -6
+                opt <- try(nlminb(obj$par, obj$fn, obj$gr, control=inp$optimiser.control,
+                                  lower = lowlims))
                 if (class(opt)!='try-error'){
                     pl <- obj$env$parList(opt$par)
                 }
@@ -305,7 +305,6 @@ make.datin <- function(inp, dbg=0){
                   priorF=inp$priors$logF,
                   priorBBmsy=inp$priors$logBBmsy,
                   priorFFmsy=inp$priors$logFFmsy,
-                  priorsdSP=inp$priors$logsdSP,
                   simple=inp$simple,
                   dbg=dbg)
     return(datin)

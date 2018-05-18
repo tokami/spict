@@ -159,7 +159,6 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(priorF);         // Prior vector for F, [log(mean), stdev in log, useflag, year, if]
   DATA_VECTOR(priorBBmsy);     // Prior vector for B/Bmsy, [log(mean), stdev in log, useflag, year, ib]
   DATA_VECTOR(priorFFmsy);     // Prior vector for F/Fmsy, [log(mean), stdev in log, useflag, year, if]
-  DATA_VECTOR(priorsdSP);
 
   // Options
   DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
@@ -708,10 +707,6 @@ Type objective_function<Type>::operator() ()
     ind = CppAD::Integer(priorFFmsy(4)-1);
     ans-= dnorm(logF(ind) - logFmsyvec(ind), priorFFmsy(0), priorFFmsy(1), 1); // Prior for logFFmsy
   }
-
-  if(priorsdSP(2) == 1){
-    ans-= dnorm(logsdSP, priorsdSP(0), priorsdSP(1), 1); // Prior for logsde
-  }  
 
   /*
   dt[i] is the length of the time interval between t_i and t_i+1

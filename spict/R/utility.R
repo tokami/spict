@@ -1,4 +1,4 @@
-g# Stochastic surplus Production model in Continuous-Time (SPiCT)
+# Stochastic surplus Production model in Continuous-Time (SPiCT)
 #    Copyright (C) 2015-2016  Martin W. Pedersen, mawp@dtu.dk, wpsgodd@gmail.com
 #
 #    This program is free software: you can redistribute it and/or modify
