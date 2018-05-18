@@ -1024,11 +1024,13 @@ check.inp <- function(inp){
     
     inp$ini$SPvec <- rep(0, 1/inp$dteuler)
 
+
     if(inp$seaprod == 1){
         inp$priors$logsdSP <- c(log(1), 5, 1)
     }else{
         inp$priors$logsdSP <- c(0, 0, 0)
     }
+
 
     if(inp$seaprod == 1) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
 
@@ -1124,7 +1126,7 @@ check.inp <- function(inp){
                         'iqgamma', 'logqf', 'logbkfrac', 'logB', 'logF', 'logBBmsy',
                         'logFFmsy', 'logsdb', 'isdb2gamma', 'logsdf', 'isdf2gamma',
                         'logsdi', 'isdi2gamma', 'logsde', 'isde2gamma', 'logsdc',
-                        'isdc2gamma', 'logsdm', 'logpsi', 'mu', 'logsdSP')
+                        'isdc2gamma', 'logsdm', 'logpsi', 'mu')
     repriors <- c('logB', 'logF', 'logBBmsy', 'logFFmsy')
     matrixpriors <- c('logsdi','logq')
     npossiblepriors <- length(possiblepriors)

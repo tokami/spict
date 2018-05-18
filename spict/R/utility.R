@@ -689,13 +689,13 @@ reduce.inp <- function(inp, nyears, cutStart = FALSE){
 
 
 
-#' @name check.ct
+#' @name check.euler
 #' @title Check robustness of assessment results vs time discretization
 #' @param rep Result of fit.spict().
 #' @param dteuler Vector with dteuler time steps to check against
 #' @return Relative difference between dteuler for reference levels and states
 #' @export
-check.ct <- function(rep, dteuler = c(1/16, 1/32, 1/64, 1/128)){
+check.euler <- function(rep, dteuler = c(1/16, 1/32, 1/64, 1/128)){
 
     inp <- rep$inp
 
@@ -706,8 +706,6 @@ check.ct <- function(rep, dteuler = c(1/16, 1/32, 1/64, 1/128)){
     estList <- vector("list", neuler)
     for(i in 1:neuler){
 
-        i = 2
-        
         inp$dteuler <- dteuler[i]
         inp$ini$logF <- NULL
         inp$ini$logB <- NULL
@@ -728,11 +726,6 @@ check.ct <- function(rep, dteuler = c(1/16, 1/32, 1/64, 1/128)){
 
         estList[[i]] <- est
     }
-
-
-    
-    
-
 
 }
 
