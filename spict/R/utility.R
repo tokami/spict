@@ -687,8 +687,6 @@ reduce.inp <- function(inp, nyears, cutStart = FALSE){
 
 
 
-
-
 #' @name check.euler
 #' @title Check robustness of assessment results vs time discretization
 #' @param rep Result of fit.spict().
@@ -697,17 +695,32 @@ reduce.inp <- function(inp, nyears, cutStart = FALSE){
 #' @export
 check.euler <- function(rep, dteuler = 1/128){
     MSYiter <- function(rep, f, dteuler){
+        rep$inp$dteuler <- dteuler
         rep$inp$ini$logF0 <- log(f)
         rep$inp$Fpattern <- 1
         rep$inp$logsdf <- log(0.0001)
         rep$inp$logsdc <- log(0.0001)
+        rep$inp$logsdb <- log(0.0001)
+        if(length(rep$inp$logsdi) > 1){
+            for(i in 1:length(rep$inp$logsdi)){
+                rep$inp$logsdi[[i]] <- log(0.0001)                    
+            }
+        }else{
+            rep$inp$logsdi <- log(0.0001)
+        }
         rep$inp$ini$logF <- NULL
         rep$inp$ini$logB <- NULL
         rep$inp$ini$logu <- NULL
         rep$inp$ini$logmre <- NULL
         rep$inp$ini$SARvec <- NULL
+        rep$inp$nobsC <- 100
+        rep$inp$timeC <- 1:rep$inp$nobsC
+        rep$inp$obsC <- rep(10, rep$inp$nobsC) # Insert dummy, req by check.inp().
+        rep$inp$stdevfacC <- rep(1, rep$inp$nobsC) # Insert dummy, req by check.inp().
+        rep$inp$dtc <- rep(1,rep$inp$nobsC)
         ## simulate
         sim <- sim.spictSP(rep)
+        ##plotspict.data(sim)
         ## return catch
         predcatch <- sim$true$C
         ## account forquaterly catches
@@ -722,10 +735,12 @@ check.euler <- function(rep, dteuler = 1/128){
     ## Fmsy est
     fmsyin <- as.numeric(get.par("logFmsy", repin, exp=TRUE)[,2])
     ## F vector
-    fs <- c(seq(0.8*fmsyin,1.2*fmsyin,length.out = 500))
+    fs <- c(seq(0.6*fmsyin,1.4*fmsyin,length.out = 10))
     ## iterations
-    res <- unlist(parallel::mclapply(as.list(fs), MSYiter, rep=rep, dteuler=dteulerin))
-    ##resCT <- unlist(parallel::mclapply(as.list(fs), MSYiter, inp=rep, dteuler=dteuler))
+    res <- unlist(parallel::mclapply(as.list(fs), function(x) MSYiter(f=x, rep=rep, dteuler=dteuler)))
+##    res <- unlist(lapply(as.list(fs), function(x) MSYiter(f=x, rep=rep, dteuler=dteuler)))
+    ## development
+    plot(fs, res, ty='o')
     ## refs in estimation time
     msyiter <- max(res, na.rm = TRUE)
     fmsyiter <- fs[which.max(res)]
