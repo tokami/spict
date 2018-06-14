@@ -1022,7 +1022,7 @@ check.inp <- function(inp){
     }
     if(!'regimeIdx' %in% names(inp)) inp$regimeIdx <- as.factor(levels(inp$MSYregime))
     
-    inp$ini$SPvec <- rep(0, 1/inp$dteuler)
+    inp$ini$SPvec <- rep(unname(log(guess.m(inp))), 1/inp$dteuler)
 
     if(inp$seaprod == 1) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
 

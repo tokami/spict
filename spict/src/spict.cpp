@@ -388,12 +388,12 @@ Type objective_function<Type>::operator() ()
 
     // m only (length ns)
     for(int i=0; i<ns; i++){
-      logmbase(i) = log(meanM(MSYregime[i])) + mu*logmcov(i) + logmre(i);
+      logmbase(i) = log(meanM(MSYregime[i])) + mu*logmcov(i);
     }
 
     // ms without seasonality for ref levels
     for(int i=0; i<ns; i++){
-      mvecnotP(i) = exp(logmbase(i));  // exp(logmbase(i) + log(meanSP));
+      mvecnotP(i) = exp(logmbase(i) + logmre(i));  // exp(logmbase(i) + log(meanSP));
     }
 
 
