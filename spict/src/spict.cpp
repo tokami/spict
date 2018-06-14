@@ -309,14 +309,18 @@ Type objective_function<Type>::operator() ()
   // seaprod initialise vectors
   vector<Type> mvec(ns);  
   for(int i=0; i < ns; i++) mvec(i) = 1.0;
+  vector<Type> mvec0(ns);  
+  for(int i=0; i < ns; i++) mvec0(i) = 1.0;  
   vector<Type> logmbase(ns);
   for(int i=0; i < ns; i++) logmbase(i) = logm(MSYregime[i]);
   Type meanSP = 1;
   vector<Type> SPvecS(nsp);
   for(int i=0; i < nsp; i++) SPvecS(i) = 0.0;  
   vector<Type> SPvecSnotM(nsp);
-  for(int i=0; i < nsp; i++) SPvecSnotM(i) = 0.0;  
-
+  for(int i=0; i < nsp; i++) SPvecSnotM(i) = 0.0;
+  vector<Type> mvecnotP(ns);
+  for(int i=0; i < ns; i++) mvecnotP(i) = 1.0;
+  
   // seaprod calculations
   if(seaprod == 1){
     // constraints
@@ -339,7 +343,7 @@ Type objective_function<Type>::operator() ()
     int indSP;
     for(int i=0; i<ns; i++){
       indSP = CppAD::Integer(seasonindex(i));      
-      mvec(i) = exp(SPvecS(indSP) + logmregime(MSYregime[i]));
+      mvec0(i) = exp(SPvecS(indSP) + logmregime(MSYregime[i]));
     }
 
     // extract m from seasonal vector
@@ -349,16 +353,11 @@ Type objective_function<Type>::operator() ()
       Type tmp = 0;
       int regimeSize = 0;
       while((ind < (ns-1)) & (MSYregime(ind) == regimeIdx(i))){
-	tmp += mvec(ind);
+	tmp += mvec0(ind);
 	ind += 1;
 	regimeSize += 1;
       }
       meanM(i) = tmp / (regimeSize+1);
-    }
-
-    // m only (length ns)
-    for(int i=0; i<ns; i++){
-      logmbase(i) = log(meanM(MSYregime[i]));
     }
 
     // m only (length nm)
@@ -367,13 +366,36 @@ Type objective_function<Type>::operator() ()
     }
     
     // mean of seasonal vector (for correcting ref levels)
-    // meanSP = exp(log(mvec) - logmbase).sum() / mvec.size();
+    // meanSP = exp(log(mvec0) - logmbase).sum() / mvec0.size();
     
     // seasonality without m
     vector<Type> SPvecnotM(nsp);
     for(int i=0; i<nsp; i++){
       SPvecSnotM(i) = SPvecS(i) - log(meanM(0));
     }
+
+    // Covariate for m
+    vector<Type> logmc(ns);
+    for(int i=0; i < ns; i++){
+      logmc(i) = log(mvec0(i)) + mu*logmcov(i);
+    }
+
+    // Reference points
+    for(int i=0; i < ns; i++){
+      //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
+      mvec(i) = exp(logmc(i) + logmre(i));
+    }
+
+    // m only (length ns)
+    for(int i=0; i<ns; i++){
+      logmbase(i) = log(meanM(MSYregime[i])) + mu*logmcov(i) + logmre(i);
+    }
+
+    // ms without seasonality for ref levels
+    for(int i=0; i<ns; i++){
+      mvecnotP(i) = exp(logmbase(i));  // exp(logmbase(i) + log(meanSP));
+    }
+
 
   }else{
     // Covariate for m
@@ -387,17 +409,19 @@ Type objective_function<Type>::operator() ()
       //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
       mvec(i) = exp(logmc(i) + logmre(i));
     }
+    
+    // copy for ref levels
+    for(int i=0; i<ns; i++){
+      mvecnotP(i) = mvec(i); 
+    }
+    
   }
 
-  
+
   // ms without seasonality for ref levels
   vector<Type> mnotP(nm);
   for(int i=0; i<nm; i++){
     mnotP(i) = exp(logm(i));  //exp(logm(i) + log(meanSP));
-  }
-  vector<Type> mvecnotP(ns);
-  for(int i=0; i<ns; i++){
-    mvecnotP(i) = exp(logmbase(i));  // exp(logmbase(i) + log(meanSP));
   }
 
   // for summary table
