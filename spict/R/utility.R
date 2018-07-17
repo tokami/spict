@@ -679,6 +679,8 @@ reduce.inp <- function(inp, nyears, cutStart = FALSE){
         for(i in 1:length(inp$true$errI)){
             inp$true$errI[[i]] <- inp$true$errI[[i]][floor(inpin$timeI[[i]]) %in% yearsRed]
         }
+        inp$true$MSYvec <- inp$true$MSYvec[inpin$time %in% inp$time]
+        inp$true$Fmsyvec <- inp$true$Fmsyvec[inpin$time %in% inp$time]        
     }
 
     inpout <- check.inp(inp)

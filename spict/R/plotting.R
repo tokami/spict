@@ -1021,8 +1021,13 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
         }
         if ('true' %in% names(inp)){
             lines(inp$true$time, inp$true$Fs, col=true.col()) # Plot true
-            abline(h=inp$true$Fmsy, col=true.col(), lty=1)
-            abline(h=inp$true$Fmsy, col='black', lty=3)
+            if (tvgflag){
+                lines(time, inp$true$Fmsyvec[inp$indest], col = true.col(), lty=1)
+                lines(time, inp$true$Fmsyvec[inp$indest], col = 'black', lty=3)
+            }else{
+                abline(h=inp$true$Fmsy, col=true.col(), lty=1)
+                abline(h=inp$true$Fmsy, col='black', lty=3)                
+            }
         }
         maincol <- 'blue'
         if (!absflag) lines(time, cl, col=maincol, lwd=1.5, lty=2)
@@ -1246,7 +1251,7 @@ plotspict.fb <- function(rep, logax=FALSE, plot.legend=TRUE, man.legend=TRUE, ex
         }
         Fl <- tail(unname(fff), 1)
         Bl <- tail(unname(bbb), 1)
-        EBinf <- get.EBinf(rep)/bscal
+        EBinf <- spict:::get.EBinf(rep)/bscal
         # Limits
         if (is.null(xlim)){
             xlim <- range(c(exp(cl[,1]), Best[,2], EBinf)/bscal, na.rm=TRUE)
@@ -1499,8 +1504,13 @@ plotspict.catch <- function(rep, main='Catch', ylim=NULL, qlegend=TRUE, lcol='bl
             points(inp$timeC[inds], inp$obsC[inds]/Cscal, pch=21, cex=0.9, bg=cols[inds])
         }
         if ('true' %in% names(inp)){
-            abline(h=inp$true$MSY, col=true.col(), lty=1)
-            abline(h=inp$true$MSY, col='black', lty=3)
+            if (tvgflag){
+                lines(inp$time, inp$true$MSYvec, col = true.col(), lty=1)
+                lines(inp$time, inp$true$MSYvec, col = 'black', lty=3)
+            }else{
+                abline(h=inp$true$MSY, col=true.col(), lty=1)
+                abline(h=inp$true$MSY, col='black', lty=3)
+            }
         }
         lines(inp$time, MSYvec$msy)
         lines(time, c, col=lcol, lwd=1.5)
@@ -2520,7 +2530,7 @@ plotspict.seaprod <- function(rep, stamp=get.version()){
         }
         if ("true" %in% names(rep$inp)){
             ttrue <- seq(0, 1, length=length(rep$inp$true$SPvec))
-            ytrue <- exp(rep$inp$true$SPvec - rep$inp$true$simlogm)
+            ytrue <- exp(rep$inp$true$SPvec)## - rep$inp$true$simlogm)
             ylim <- range(c(ylim, ytrue))
         }
         plot(t, y, typ='n', xaxt='n', xlab='Time of year', ylab='Seasonal factor',

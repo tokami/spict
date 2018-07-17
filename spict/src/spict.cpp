@@ -129,6 +129,7 @@ Type objective_function<Type>::operator() ()
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
   DATA_INTEGER(seaprod);
   DATA_FACTOR(regimeIdx);
+  DATA_INTEGER(tvgAR);
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -195,6 +196,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(SPvec);
   PARAMETER(logsdSP);
   PARAMETER_VECTOR(logmdiff);
+  PARAMETER(logitARm);  
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -292,6 +294,7 @@ Type objective_function<Type>::operator() ()
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
   Type sdSP = exp(logsdSP);
+  Type ARm = ilogit(logitARm);  
 
   // Initialise vectors
   vector<Type> P(ns-1);
@@ -365,9 +368,6 @@ Type objective_function<Type>::operator() ()
       logm(i) = log(meanM(i));
     }
     
-    // mean of seasonal vector (for correcting ref levels)
-    // meanSP = exp(log(mvec0) - logmbase).sum() / mvec0.size();
-    
     // seasonality without m
     vector<Type> SPvecnotM(nsp);
     for(int i=0; i<nsp; i++){
@@ -384,8 +384,8 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i < ns; i++){
       //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
       mvec(i) = exp(logmc(i) + logmre(i));
-    }
-
+    }        
+    
     // m only (length ns)
     for(int i=0; i<ns; i++){
       logmbase(i) = log(meanM(MSYregime[i])) + mu*logmcov(i);
@@ -419,9 +419,11 @@ Type objective_function<Type>::operator() ()
 
 
   // ms without seasonality for ref levels
+  Type meantvg;
+  meantvg = exp(logmre).sum() / logmre.size();
   vector<Type> mnotP(nm);
   for(int i=0; i<nm; i++){
-    mnotP(i) = exp(logm(i));  //exp(logm(i) + log(meanSP));
+    mnotP(i) = exp(logm(i) + log(meantvg));
   }
 
   // for summary table
@@ -713,7 +715,7 @@ Type objective_function<Type>::operator() ()
     ans-= dnorm(logbeta, priorbeta(0), priorbeta(1), 1); // Prior for logbeta
   }
   if(priorpsi(2) == 1){ 
-    ans-= dnorm(logpsi, priorpsi(0), priorpsi(1), 1); // Prior for logsdm
+    ans-= dnorm(logpsi, priorpsi(0), priorpsi(1), 1); // Prior for logspsi
   }
   if(priorB(2) == 1){
     ind = CppAD::Integer(priorB(4)-1);
@@ -853,23 +855,29 @@ Type objective_function<Type>::operator() ()
 
 
   // GROWTH RATE (modelled as time-varying m)
+  using namespace density; 
+  //  AR1_t<N01<Type> > nldensm(ARm);
   if (timevaryinggrowth == 1){
-    if (dbg > 0){
-      std::cout << "--- DEBUG: logmre loop start --- ans: " << ans << std::endl;
-    }
-    // Compare initial value with stationary distribution of OU
-    likval = dnorm(logmre(0), Type(0.0), sdm/sqrt(2.0*psi), 1);
-    //likval = dnorm(logmre(0), logm(0), sdm/sqrt(2.0*psi), 1);
-    ans -= likval;
-    for (int i=1; i < ns; i++){
-      Type logmrepred = predictm(logmre(i-1), dt(i-1), sdm2, psi);
-      likval = dnorm(logmre(i), logmrepred, sqrt(dt(i-1))*sdm, 1);      
-      //likval = dnorm(logmre(i), logmre(i-1), sqrt(dt(i-1))*sdm, 1);
-      ans -= likval;
-      // DEBUGGING
-      if (dbg > 1){
-	std::cout << "-- i: " << i << " -   logmre(i-1): " << logmre(i-1) << "  sdm: " << sdm << "  likval: " << likval << "  ans:" << ans << std::endl;
+    if(tvgAR == 1){
+      ans += SCALE(AR1(ARm),sdm)(vector<Type>(logmre));
+    }else{
+      if (dbg > 0){
+	std::cout << "--- DEBUG: logmre loop start --- ans: " << ans << std::endl;
       }
+      // Compare initial value with stationary distribution of OU
+      likval = dnorm(logmre(0), Type(0.0), sdm/sqrt(2.0*psi), 1);
+      //likval = dnorm(logmre(0), logm(0), sdm/sqrt(2.0*psi), 1);
+      ans -= likval;
+      for (int i=1; i < ns; i++){
+	Type logmrepred = predictm(logmre(i-1), dt(i-1), sdm2, psi);
+	likval = dnorm(logmre(i), logmrepred, sqrt(dt(i-1))*sdm, 1);      
+	//likval = dnorm(logmre(i), logmre(i-1), sqrt(dt(i-1))*sdm, 1);
+	ans -= likval;
+	// DEBUGGING
+	if (dbg > 1){
+	  std::cout << "-- i: " << i << " -   logmre(i-1): " << logmre(i-1) << "  sdm: " << sdm << "  likval: " << likval << "  ans:" << ans << std::endl;
+	}
+      }      
     }
   }
 
@@ -1198,6 +1206,9 @@ Type objective_function<Type>::operator() ()
   ADREPORT(SPvecS);
   ADREPORT(SPvecSnotM);
   ADREPORT(mSP);
+  ADREPORT(mvec0);
+  ADREPORT(mvec);
+  ADREPORT(mvecnotP);  
   
   if(reportall){ 
     // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.

@@ -917,7 +917,7 @@ check.inp <- function(inp){
         logmaxE <- 0        
     }
     #logmaxE <- ifelse(length(inp$obsE)==0, 0, log(max(inp$obsE[[1]])))
-    if (!'logqf' %in% names(inp$ini)) inp$ini$logqf <- inp$ini$logr - logmaxE
+    if (!'logqf' %in% names(inp$ini)) inp$ini$logqf <- inp$ini$logr[1] - logmaxE  ## HACK: but logr can be longer than 1 with regime shifts
     #if (sum(inp$nobsE)>0) inp <- check.mapped.ini(inp, 'logqf', 'nqf')
     inp$isdf <- rep(1, inp$ns)
     if (!is.null(inp$sdfsplityear)){
@@ -1031,6 +1031,12 @@ check.inp <- function(inp){
     if(!'ampSP' %in% names(inp)) inp$ampSP <- 1
     if(!'phaseSP' %in% names(inp)) inp$phaseSP <- 0
     if(!'simlogm' %in% names(inp)) inp$simlogm <- 0
+    if(!'MREpattern' %in% names(inp)) inp$MREpattern <- 0    
+    if(!'simlogmre' %in% names(inp)) inp$simlogmre <- rep(0,inp$ns)
+    if(!'simlogmre0' %in% names(inp)) inp$simlogmre0 <- inp$simlogm 
+
+    if(!"tvgAR" %in% names(inp)) inp$tvgAR <- FALSE
+    if (!'logitARm' %in% names(inp$ini)) inp$ini$logitARm <- 0       
     
     
     # Reorder parameter list
@@ -1063,7 +1069,8 @@ check.inp <- function(inp){
                         logSdSAR=inp$ini$logSdSAR,
                         SPvec=inp$ini$SPvec,
                         logsdSP=inp$ini$logsdSP,
-                        logmdiff=inp$ini$logmdiff)
+                        logmdiff=inp$ini$logmdiff,
+                        logitARm=inp$ini$logitARm)
 
 
     # -- PRIORS --
@@ -1118,7 +1125,7 @@ check.inp <- function(inp){
                         'iqgamma', 'logqf', 'logbkfrac', 'logB', 'logF', 'logBBmsy',
                         'logFFmsy', 'logsdb', 'isdb2gamma', 'logsdf', 'isdf2gamma',
                         'logsdi', 'isdi2gamma', 'logsde', 'isde2gamma', 'logsdc',
-                        'isdc2gamma', 'logsdm', 'logpsi', 'mu')
+                        'isdc2gamma', 'logsdm', 'logpsi', 'mu', 'logitARm')
     repriors <- c('logB', 'logF', 'logBBmsy', 'logFFmsy')
     matrixpriors <- c('logsdi','logq')
     npossiblepriors <- length(possiblepriors)
@@ -1143,7 +1150,11 @@ check.inp <- function(inp){
     }
     if (inp$timevaryinggrowth){
         inp$priors <- set.default(inp$priors, 'logsdm', c(log(0.2), wide))
-        inp$priors <- set.default(inp$priors, 'logpsi', c(log(0.01), wide))
+        if(!inp$tvgAR){
+            inp$priors <- set.default(inp$priors, 'logpsi', c(log(0.01), wide))
+        }else{
+            inp$priors <- set.default(inp$priors, 'logitARm', c(log(0.01/(1-0.01)), wide))
+        }
     }
     # Remaining priors, set to something, but will not be used
     if ("priors" %in% names(inp)){
@@ -1221,7 +1232,7 @@ check.inp <- function(inp){
     if (inp$nseasons == 1){
         forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda',
                           'SARvec','logitSARphi','logSdSAR',
-                          'SPvec','logsdSP', 'logmdiff',
+                          'SPvec','logsdSP', 'logmdiff','logitARm',
                           forcefixpars)
     } else {
         if (inp$seasontype == 1){ # Use spline
@@ -1259,7 +1270,13 @@ check.inp <- function(inp){
         forcefixpars <- c('mu', forcefixpars)
     }
     if (!inp$timevaryinggrowth){
-        forcefixpars <- c('logmre', 'logsdm', 'logpsi', forcefixpars)
+        forcefixpars <- c('logmre', 'logsdm', 'logpsi','logitARm', forcefixpars)
+    }
+    if (inp$timevaryinggrowth & inp$tvgAR){
+        forcefixpars <- c('logpsi', forcefixpars)
+    }
+    if (inp$timevaryinggrowth & !inp$tvgAR){
+        forcefixpars <- c('logitARm', forcefixpars)
     }
     # Determine phases
     if (!"phases" %in% names(inp)){
