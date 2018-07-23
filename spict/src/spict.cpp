@@ -1130,6 +1130,10 @@ Type objective_function<Type>::operator() ()
     logFFmsynotS(i) = logFnotS(i) - logFmsyvec(i); 
   }
 
+  // report scaled biomass and fishing mortality relative to mean for comparison with SAM, SMS and Co
+  vector<Type> Bscaled = log(exp(logB)/(sum(exp(logB))/logB.size()));
+  vector<Type> Fscaled = log(exp(logF)/(sum(exp(logF))/logF.size()));  
+
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
   
@@ -1208,7 +1212,9 @@ Type objective_function<Type>::operator() ()
   ADREPORT(mSP);
   ADREPORT(mvec0);
   ADREPORT(mvec);
-  ADREPORT(mvecnotP);  
+  ADREPORT(mvecnotP);
+  ADREPORT(Bscaled);
+  ADREPORT(Fscaled);  
   
   if(reportall){ 
     // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
