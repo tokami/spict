@@ -951,9 +951,9 @@ check.inp <- function(inp){
         m <- rep( r * K / (n^(n/(n-1))), inp$noms)
     }
     logm <- inp$ini$logm # Store this to be able to set logmre later
-    if (inp$timevaryinggrowth){
-        inp$ini$logm <- log(1)
-    }
+##    if (inp$timevaryinggrowth){
+##        inp$ini$logm <- log(1)
+##    }
     # Fill in unspecified (more rarely user defined) model parameter values
     inp$ini <- set.default(inp$ini, 'logpsi', log(1e-8))
     inp$ini <- set.default(inp$ini, 'mu', 0)
