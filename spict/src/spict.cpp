@@ -371,12 +371,6 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<nm; i++){
       logm(i) = log(meanM(i));
     }
-    
-    // seasonality without m
-    vector<Type> SPvecnotM(nsp);
-    for(int i=0; i<nsp; i++){
-      SPvecSnotM(i) = SPvecS(i) - log(meanM(0));
-    }
 
     // Covariate for m
     vector<Type> logmc(ns);

@@ -1011,6 +1011,7 @@ check.inp <- function(inp){
 
 
 
+    ## seaprod estimation
     if(!'seaprod' %in% names(inp)) inp$seaprod <- 0
     if(!'logsdSP' %in% names(inp$ini)) inp$ini$logsdSP <- 0
     if(!'logmdiff' %in% names(inp$ini)){
@@ -1025,8 +1026,55 @@ check.inp <- function(inp){
     if(!'SPvec' %in% names(inp$ini))
         inp$ini$SPvec <- rep(unname(log(guess.m(inp))), 1/inp$dteuler)
 
-    if(inp$seaprod == 1) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
+    if(inp$seaprod %in% c(1,2)) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
 
+    # Seasons for productivity
+    if (!"nseasonsSP" %in% names(inp)){
+        expnseasonsSP <- 1/min(inp$dtc)
+        if (expnseasonsSP >= 4){
+            inp$nseasonsSP <- 4
+        } else {
+            inp$nseasonsSP <- 1
+        }
+    }
+    if ("nseasonsSP" %in% names(inp)){
+       if (!inp$nseasonsSP %in% c(1, 2, 4)){
+           stop('inp$nseasonsSP (=', inp$nseasonsSP, ') must be either 1, 2 or 4.')
+       }
+    }
+    if (inp$nseasonsSP == 1) inp$seaprod <- 0 # seasontype = 0 means seasons are disabled.
+    # Calculate seasonal spline for productivity
+    if ("splineorderSP" %in% names(inp)){
+        if (inp$nseasonsSP < 4 & inp$splineorderSP > 2){
+            inp$splineorderSP <- 2
+        }
+    } else {
+        inp$splineorderSP <- ifelse(inp$nseasonsSP < 4, 2, 3)
+    }
+    inp$splinematSP <- make.splinemat(inp$nseasonsSP, inp$splineorderSP, dtfine=inp$dteuler)
+    inp$splinematfineSP <- make.splinemat(inp$nseasonsSP, inp$splineorderSP, dtfine=1/100)
+    inp$seasonindexSP <- 1/inp$dteuler*(inp$time %% 1)
+    inp$seasonsSP <- rep(0, inp$ns)
+    for (i in 1:inp$nseasonsSP){
+        frac <- 1/inp$nseasonsSP
+        modtime <- inp$time %% 1
+        inds <- which(modtime>=((i-1)*frac) & modtime<(i*frac))
+        inp$seasonsSP[inds] <- i
+    }
+    if ("logphiSP" %in% names(inp$ini)){
+        if (length(inp$ini$logphiSP)+1 != dim(inp$splinematSP)[2]){
+            cat('Mismatch between length of ini$logphiSP and number of columns of splinematSP! removing prespecified ini$logphiSP and setting default.\n')
+            inp$ini$logphiSP <- NULL
+        }
+    }
+    if (!"logphiSP" %in% names(inp$ini)) inp$ini$logphiSP <- rep(0, inp$nseasonsSP-1)
+
+    ##    if (!"pensdSP" %in% names(inp)) inp$pensdSP <- 1
+
+    
+    
+
+    ## seaprod simulation
     if(!'Fpattern' %in% names(inp)) inp$Fpattern <- 0
     if(!'Fmax' %in% names(inp)) inp$Fmax <- 0.5
     if(!'ampSP' %in% names(inp)) inp$ampSP <- 1
@@ -1071,7 +1119,8 @@ check.inp <- function(inp){
                         SPvec=inp$ini$SPvec,
                         logsdSP=inp$ini$logsdSP,
                         logmdiff=inp$ini$logmdiff,
-                        logitARm=inp$ini$logitARm)
+                        logitARm=inp$ini$logitARm,
+                        logphiSP=inp$ini$logphiSP)                        
 
 
     # -- PRIORS --
@@ -1233,7 +1282,7 @@ check.inp <- function(inp){
     if (inp$nseasons == 1){
         forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda',
                           'SARvec','logitSARphi','logSdSAR',
-                          'SPvec','logsdSP', 'logmdiff','logitARm',
+                          'SPvec','logsdSP', 'logmdiff','logitARm','logphiSP',
                           forcefixpars)
     } else {
         if (inp$seasontype == 1){ # Use spline
@@ -1246,10 +1295,13 @@ check.inp <- function(inp){
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
         if(inp$seaprod == 0){
-            forcefixpars <- c('SPvec', 'logsdSP','logmdiff', forcefixpars)
+            forcefixpars <- c('SPvec', 'logsdSP','logmdiff','loghpiSP', forcefixpars)
         }
         if(inp$seaprod == 1){
-            forcefixpars <- c('logm', forcefixpars)
+            forcefixpars <- c('logm','SPvec','logsdSP', forcefixpars)
+        }        
+        if(inp$seaprod == 2){
+            forcefixpars <- c('logm','logphiSP', forcefixpars)
         }
         if(length(levels(inp$MSYregime)) == 1){
             forcefixpars <- c('logmdiff', forcefixpars)
