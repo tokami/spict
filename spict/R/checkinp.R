@@ -1295,12 +1295,12 @@ check.inp <- function(inp){
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
         if(inp$seaprod == 0){
-            forcefixpars <- c('SPvec', 'logsdSP','logmdiff','loghpiSP', forcefixpars)
+            forcefixpars <- c('SPvec', 'logsdSP','logmdiff','logphiSP', forcefixpars)
         }
-        if(inp$seaprod == 1){
+        if(inp$seaprod == 1){ # Use spline
             forcefixpars <- c('logm','SPvec','logsdSP', forcefixpars)
         }        
-        if(inp$seaprod == 2){
+        if(inp$seaprod == 2){ # Use random walk
             forcefixpars <- c('logm','logphiSP', forcefixpars)
         }
         if(length(levels(inp$MSYregime)) == 1){

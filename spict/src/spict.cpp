@@ -130,7 +130,12 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(seaprod);
   DATA_FACTOR(regimeIdx);
   DATA_INTEGER(tvgAR);
-  
+  DATA_VECTOR(seasonsSP);
+  DATA_INTEGER(nseasonsSP);
+  DATA_VECTOR(seasonindexSP);
+  DATA_MATRIX(splinematSP);
+  DATA_MATRIX(splinematfineSP);
+
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -339,11 +344,6 @@ Type objective_function<Type>::operator() ()
   
   // seaprod calculations
   if(seaprod == 1){  // cyclic B-spline approach
-    int indSP;
-    for(int i=0; i<ns; i++){
-      indSP = CppAD::Integer(seasonindex(i));
-      mvec0(i) = exp(seasonsplineSP(indSP) + logmregime(MSYregime[i]));
-    }
 
     // for seasonal productivity and several regimes
     vector<Type> logmregime(nm);
@@ -352,6 +352,12 @@ Type objective_function<Type>::operator() ()
       for(int i=1; i<nm; i++){
 	logmregime(i) = logmdiff(i-1);
       }
+    }
+
+    int indSP;
+    for(int i=0; i<ns; i++){
+      indSP = CppAD::Integer(seasonindexSP(i));
+      mvec0(i) = exp(seasonsplineSP(indSP) + logmregime(MSYregime[i]));
     }
 
     // extract m from seasonal vector
