@@ -279,6 +279,7 @@ make.datin <- function(inp, dbg=0){
                   seaprod=inp$seaprod,
                   regimeIdx=inp$regimeIdx,
                   tvgAR=as.numeric(inp$tvgAR),
+                  
                   priorn=inp$priors$logn,
                   priorr=inp$priors$logr,
                   priorK=inp$priors$logK,
