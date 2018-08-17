@@ -325,7 +325,7 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i < ns; i++) mvecnotP(i) = 1.0;
   
   // seaprod calculations
-  if(seaprod == 1){
+  if(seaprod == 2){
     // constraints
     for(int i=1; i<nsp; i++) ans -= dnorm(SPvec(i),SPvec(i-1),Type(1),true);  // RW
     ans -= dnorm(SPvec(0),SPvec(nsp-1),Type(1),true);                         // circular
