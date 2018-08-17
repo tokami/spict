@@ -130,6 +130,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(seaprod);
   DATA_FACTOR(regimeIdx);
   DATA_INTEGER(tvgAR);
+  
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
