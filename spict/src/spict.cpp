@@ -345,6 +345,7 @@ Type objective_function<Type>::operator() ()
   // seaprod calculations
   if(seaprod == 1){  // cyclic B-spline approach
 
+    /*
     // for seasonal productivity and several regimes
     vector<Type> logmregime(nm);
     logmregime(0) = 0.0;
@@ -353,13 +354,15 @@ Type objective_function<Type>::operator() ()
 	logmregime(i) = logmdiff(i-1);
       }
     }
+    */
 
     int indSP;
     for(int i=0; i<ns; i++){
       indSP = CppAD::Integer(seasonindexSP(i));
-      mvec0(i) = exp(seasonsplineSP(indSP) + logmregime(MSYregime[i]));
+      mvec0(i) = exp(seasonsplineSP(indSP) + logmbase(i)); // logmregime(MSYregime[i]));
     }
 
+    /*
     // extract m from seasonal vector
     vector<Type> meanM(nm);
     int ind = 0;    
@@ -378,6 +381,7 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<nm; i++){
       logm(i) = log(meanM(i));
     }
+    */
 
     // Covariate for m
     vector<Type> logmc(ns);
@@ -390,16 +394,23 @@ Type objective_function<Type>::operator() ()
       //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
       mvec(i) = exp(logmc(i) + logmre(i));
     }        
-    
+
+    /*
     // m only (length ns)
     for(int i=0; i<ns; i++){
       logmbase(i) = log(meanM(MSYregime[i])) + mu*logmcov(i);
     }
+    */
 
+    /*
     // ms without seasonality for ref levels
     for(int i=0; i<ns; i++){
       mvecnotP(i) = exp(logmbase(i) + logmre(i));  // exp(logmbase(i) + log(meanSP));
     }
+    */
+    for(int i=0; i<ns; i++){
+      mvecnotP(i) = exp(log(mvec0(i)) + logmre(i));  // exp(logmbase(i) + log(meanSP));
+    }    
 
     // old: meanSP = exp(log(mvec) - logmbase).sum() / mvec.size();
     
@@ -964,12 +975,12 @@ Type objective_function<Type>::operator() ()
     std::cout << "--- DEBUG: B loop start --- ans: " << ans << std::endl;
   }
   vector<Type> logBpred(ns);
-  //  vector<Type> logBprednotP(ns);  
+  vector<Type> logBprednotP(ns);  
   for(int i=0; i<(ns-1); i++){
     // To predict B(i) use dt(i-1), which is the time interval from t_i-1 to t_i
     if(simple==0){
       logBpred(i+1) = predictlogB(B(i), F(i), gamma, mvec(i), K, dt(i), n, sdb2);
-      //      logBprednotP(i+1) = predictlogB(B(i), F(i), gamma, mvecnotP(i), K, dt(i), n, sdb2);      
+      logBprednotP(i+1) = predictlogB(B(i), F(i), gamma, mvecnotP(i), K, dt(i), n, sdb2);      
     } else {
       Type Ftmp = 0.0;
       // Use naive approach
@@ -1214,9 +1225,9 @@ Type objective_function<Type>::operator() ()
   vector<Type> logBnotS(ns);
   vector<Type> logBBmsynotS(ns);
   
-  Type meanSm = (exp(logBpred - logB)).sum() / logB.size(); 
+  //Type meanSm = (exp(logBpred - logB)).sum() / logB.size(); 
   for(int i=0; i<ns; i++){
-    logBnotS(i) = logB(i) + log(meanSm);
+    logBnotS(i) = logBprednotP(i);
     logBBmsynotS(i) = logBnotS(i) - logBmsyvec(i); 
   }  
 

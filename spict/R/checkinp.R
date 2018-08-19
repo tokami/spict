@@ -1298,7 +1298,7 @@ check.inp <- function(inp){
             forcefixpars <- c('SPvec', 'logsdSP','logmdiff','logphiSP', forcefixpars)
         }
         if(inp$seaprod == 1){ # Use spline
-            forcefixpars <- c('logm','SPvec','logsdSP', forcefixpars)
+            forcefixpars <- c('logmdiff','SPvec','logsdSP', forcefixpars)
         }        
         if(inp$seaprod == 2){ # Use random walk
             forcefixpars <- c('logm','logphiSP', forcefixpars)
