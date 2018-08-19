@@ -1026,7 +1026,7 @@ check.inp <- function(inp){
     if(!'SPvec' %in% names(inp$ini))
         inp$ini$SPvec <- rep(unname(log(guess.m(inp))), 1/inp$dteuler)
 
-    if(inp$seaprod %in% c(1,2)) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
+    if(inp$seaprod %in% c(1,2,3)) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
 
     # Seasons for productivity
     if (!"nseasonsSP" %in% names(inp)){
@@ -1298,7 +1298,7 @@ check.inp <- function(inp){
             forcefixpars <- c('SPvec', 'logsdSP','logmdiff','logphiSP', forcefixpars)
         }
         if(inp$seaprod == 1){ # Use spline
-            forcefixpars <- c('logmdiff','SPvec','logsdSP', forcefixpars)
+            forcefixpars <- c('logm','SPvec','logsdSP', forcefixpars)
         }        
         if(inp$seaprod == 2){ # Use random walk
             forcefixpars <- c('logm','logphiSP', forcefixpars)
@@ -1350,6 +1350,7 @@ check.inp <- function(inp){
             inp$phases[[forcefixpars[i]]] <- -1
         }
     }
+
     # Assign phase 1 to parameters without a phase
     nms <- names(inp$parlist)
     nnms <- length(nms)
@@ -1405,6 +1406,7 @@ check.inp <- function(inp){
     if (!is.null(inp)){
         class(inp) <- "spictcls"
     }
+
     return(inp)
 }
 

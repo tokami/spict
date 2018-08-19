@@ -761,3 +761,20 @@ check.euler <- function(rep, dteuler = 1/128){
 }
 
 
+
+
+#' @name get.splineSP
+#' @title Get the values of the seasonal spline for m.
+#' @param logphi Values of the phi vector.
+#' @param order Order of the spline.
+#' @param dtfine Time between points where spline is evaluated.
+#' @return Spline values at the points between 0 and 1 with dtfine as time step.
+#' @export
+get.splineSP <- function(logphi, order, dtfine=1/100){
+    logphipar <- logphi
+    nseasons <- length(logphipar)
+    d <- make.splinemat(nseasons, order, dtfine)
+    spline <- as.vector(d %*% logphipar)
+    spline <- c(spline, spline[1])
+    return(spline)
+}

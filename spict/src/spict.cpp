@@ -345,7 +345,6 @@ Type objective_function<Type>::operator() ()
   // seaprod calculations
   if(seaprod == 1){  // cyclic B-spline approach
 
-    /*
     // for seasonal productivity and several regimes
     vector<Type> logmregime(nm);
     logmregime(0) = 0.0;
@@ -354,15 +353,13 @@ Type objective_function<Type>::operator() ()
 	logmregime(i) = logmdiff(i-1);
       }
     }
-    */
 
     int indSP;
     for(int i=0; i<ns; i++){
       indSP = CppAD::Integer(seasonindexSP(i));
-      mvec0(i) = exp(seasonsplineSP(indSP) + logmbase(i)); // logmregime(MSYregime[i]));
+      mvec0(i) = exp(seasonsplineSP(indSP) + logmregime(MSYregime[i]));
     }
 
-    /*
     // extract m from seasonal vector
     vector<Type> meanM(nm);
     int ind = 0;    
@@ -381,7 +378,6 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<nm; i++){
       logm(i) = log(meanM(i));
     }
-    */
 
     // Covariate for m
     vector<Type> logmc(ns);
@@ -395,22 +391,15 @@ Type objective_function<Type>::operator() ()
       mvec(i) = exp(logmc(i) + logmre(i));
     }        
 
-    /*
     // m only (length ns)
     for(int i=0; i<ns; i++){
       logmbase(i) = log(meanM(MSYregime[i])) + mu*logmcov(i);
     }
-    */
 
-    /*
     // ms without seasonality for ref levels
     for(int i=0; i<ns; i++){
       mvecnotP(i) = exp(logmbase(i) + logmre(i));  // exp(logmbase(i) + log(meanSP));
     }
-    */
-    for(int i=0; i<ns; i++){
-      mvecnotP(i) = exp(log(mvec0(i)) + logmre(i));  // exp(logmbase(i) + log(meanSP));
-    }    
 
     // old: meanSP = exp(log(mvec) - logmbase).sum() / mvec.size();
     
@@ -434,7 +423,7 @@ Type objective_function<Type>::operator() ()
     // extend seasonal vector to time series
     int indSP;
     for(int i=0; i<ns; i++){
-      indSP = CppAD::Integer(seasonindex(i));      
+      indSP = CppAD::Integer(seasonindexSP(i));      
       mvec0(i) = exp(SPvecS(indSP) + logmregime(MSYregime[i]));
     }
 
@@ -485,6 +474,8 @@ Type objective_function<Type>::operator() ()
       mvecnotP(i) = exp(logmbase(i) + logmre(i));  // exp(logmbase(i) + log(meanSP));
     }
 
+
+  }else if(seaprod == 3){ // Matrix approach
 
   }else{
     // Covariate for m
