@@ -1328,6 +1328,8 @@ Type objective_function<Type>::operator() ()
     }
     ADREPORT(logFnotS);
     ADREPORT(logFFmsynotS);
+    ADREPORT(logBnotS);
+    ADREPORT(logBBmsynotS);    
   }
   ADREPORT( logBmsyPluslogFmsy ) ;
   

@@ -2512,7 +2512,67 @@ plotspict.seaprod <- function(rep, stamp=get.version()){
     if (!'par.fixed' %in% names(rep)){
         stop('Input object was not a valid output from fit.spict()!')
     }
-    if (!'sderr' %in% names(rep) & 'logphi' %in% names(rep$par.fixed)){
+    if (!'sderr' %in% names(rep) & 'logphiSP' %in% names(rep$par.fixed)){
+        jan <- as.POSIXct("2015-01-01 00:00:01 UTC", tz='UTC')
+        apr <- jan+(31+28+31)*24*60*60
+        jul <- apr+(30+31+30)*24*60*60
+        oct <- jul+(31+31+30)*24*60*60
+        logphiSP <- get.par('logphiSP', rep)
+        naflag <- any(is.na(logphiSP[, 1]))
+        inds <- which(colnames(rep$cov.fixed) == 'logphiSP')
+        ssf <- get.par('seasonsplinefineSP', rep)
+        ##covmat <- rep$cov.fixed[inds, inds]
+        seasonsplineest <- get.spline(logphiSP[, 2],
+                                      order=rep$inp$splineorderSP,
+                                      dtfine=rep$inp$dteuler)
+        test <- seq(0, 1, length=length(seasonsplineest))
+        yest <- exp(seasonsplineest)
+        seasonsplinesmoo <-  ssf[, 2]
+        sssl <- exp(ssf[, 1])
+        sssu <- exp(ssf[, 3])
+        nsss <- length(seasonsplinesmoo)
+        t <- seq(0, 1, length=nsss)
+        y <- exp(seasonsplinesmoo)
+        ylim <- range(yest, y)
+        if (!naflag){
+            ylim <- range(yest, y, sssl, sssu)
+        }
+        if ("true" %in% names(rep$inp)){
+            seasonsplinetrue <- get.spline(rep$inp$true$logphiSP, order=rep$inp$true$splineorderSP,
+                                           dtfine=rep$inp$true$dteuler)
+            ttrue <- seq(0, 1, length=length(seasonsplinetrue))
+            ytrue <- exp(seasonsplinetrue) # Don't add mean F
+            ylim <- range(c(yest, y, ytrue))
+        }
+        plot(t, y, typ='n', xaxt='n', xlab='Time of year', ylab='Seasonal productivity spline',
+             main=paste('Productivity spline order:',rep$inp$splineorderSP), ylim=ylim)
+        cicol2 <- rgb(0, 0, 1, 0.1)
+        cicol3 <- rgb(0, 0, 1, 0.2)
+        polygon(c(t, rev(t)), c(sssl, rev(sssu)), col=cicol2, border=cicol2)
+        if (!naflag){
+            lines(t, sssl, col=cicol3)
+            lines(t, sssu, col=cicol3)
+        }
+        lab <- strftime(c(jan, apr, jul, oct, jan), format='%b')
+        ats <- c(0, 0.25, 0.5, 0.75, 1)
+        abline(v=ats, lty=3, col='lightgray')
+        ats2 <- pretty(c(sssl, sssu))
+        if ("true" %in% names(rep$inp)){
+            ats2 <- pretty(c(sssl, sssu, ytrue))
+        }
+        abline(h=ats2, lty=3, col='lightgray')
+        lines(t, y, lwd=1, col='green')
+        lines(test, yest, lwd=1.5, col=4, typ='s')
+        if ("true" %in% names(rep$inp)){
+            lines(ttrue, ytrue, lwd=1, col=true.col(), typ='s')
+        }
+        axis(1, at=ats, labels=lab)
+        box(lwd=1.5)
+        if (rep$opt$convergence != 0){
+            warning.stamp()
+        }
+        txt.stamp(stamp)
+    }else if (!'sderr' %in% names(rep)){
         jan <- as.POSIXct("2015-01-01 00:00:01 UTC", tz='UTC')
         apr <- jan+(31+28+31)*24*60*60
         jul <- apr+(30+31+30)*24*60*60
@@ -2561,5 +2621,8 @@ plotspict.seaprod <- function(rep, stamp=get.version()){
         }
         txt.stamp(stamp)
     }
+
 }
+
+
 
