@@ -135,6 +135,7 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(seasonindexSP);
   DATA_MATRIX(splinematSP);
   DATA_MATRIX(splinematfineSP);
+  DATA_VECTOR(sinFac);
 
 
   // Priors
@@ -203,7 +204,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logsdSP);
   PARAMETER_VECTOR(logphiSP);  // phi for B splines of seaprod
   PARAMETER_VECTOR(logmdiff);
-  PARAMETER(logitARm);  
+  PARAMETER(logitARm);
+  PARAMETER(logamp);
+  PARAMETER(tphase);
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -322,8 +325,9 @@ Type objective_function<Type>::operator() ()
   vector<Type> mvec0(ns);  
   for(int i=0; i < ns; i++) mvec0(i) = 1.0;  
   vector<Type> logmbase(ns);
-  for(int i=0; i < ns; i++) logmbase(i) = logm(MSYregime[i]);
-  Type meanSP = 1;
+  for(int i=0; i < ns; i++){
+    logmbase(i) = logm(MSYregime(i));
+  }
   vector<Type> SPvecS(nsp);
   for(int i=0; i < nsp; i++) SPvecS(i) = 0.0;  
   vector<Type> SPvecSnotM(nsp);
@@ -339,46 +343,30 @@ Type objective_function<Type>::operator() ()
   seasonsplineSP = splinematSP * logphiparSP;
   vector<Type> tempfineSP = splinematfineSP.col(0);
   vector<Type> seasonsplinefineSP(tempfineSP.size());
-  seasonsplinefineSP = splinematfineSP * logphiparSP;  
+  seasonsplinefineSP = splinematfineSP * logphiparSP;
+  Type phase = (2 * PI) / (1 + exp(-tphase));  // transform phase between 0 and 2pi
 
   
   // seaprod calculations
-  if(seaprod == 1){  // cyclic B-spline approach
+  if(seaprod == 1){  // cyclic B-spline approach with logm + phi
 
-    // for seasonal productivity and several regimes
-    vector<Type> logmregime(nm);
-    logmregime(0) = 0.0;
-    if(nm > 1){
-      for(int i=1; i<nm; i++){
-	logmregime(i) = logmdiff(i-1);
-      }
+    for(int i=0; i<nsp; i++) SPvecS(i) += seasonsplineSP(i);
+
+    /*
+    // scale to mean zero
+    Type meanSP = exp(SPvecS).sum()/SPvecS.size();
+    for(int i=0; i<nsp; i++){
+      SPvecS(i) = SPvecS(i) - log(meanSP);
     }
-
+    */
+    
+    // extend seasonal vector to time series
     int indSP;
     for(int i=0; i<ns; i++){
-      indSP = CppAD::Integer(seasonindexSP(i));
-      mvec0(i) = exp(seasonsplineSP(indSP) + logmregime(MSYregime[i]));
+      indSP = CppAD::Integer(seasonindexSP(i));      
+      mvec0(i) = exp(SPvecS(indSP) + logmbase(i));
     }
-
-    // extract m from seasonal vector
-    vector<Type> meanM(nm);
-    int ind = 0;    
-    for(int i=0; i<nm; i++){
-      Type tmp = 0;
-      int regimeSize = 0;
-      while((ind < (ns-1)) & (MSYregime(ind) == regimeIdx(i))){
-	tmp += mvec0(ind);
-	ind += 1;
-	regimeSize += 1;
-      }
-      meanM(i) = tmp / (regimeSize+1);
-    }
-
-    // m only (length nm)
-    for(int i=0; i<nm; i++){
-      logm(i) = log(meanM(i));
-    }
-
+    
     // Covariate for m
     vector<Type> logmc(ns);
     for(int i=0; i < ns; i++){
@@ -391,17 +379,10 @@ Type objective_function<Type>::operator() ()
       mvec(i) = exp(logmc(i) + logmre(i));
     }        
 
-    // m only (length ns)
-    for(int i=0; i<ns; i++){
-      logmbase(i) = log(meanM(MSYregime[i])) + mu*logmcov(i);
-    }
-
     // ms without seasonality for ref levels
     for(int i=0; i<ns; i++){
-      mvecnotP(i) = exp(logmbase(i) + logmre(i));  // exp(logmbase(i) + log(meanSP));
+      mvecnotP(i) = exp(logmbase(i) + logmre(i));
     }
-
-    // old: meanSP = exp(log(mvec) - logmbase).sum() / mvec.size();
     
   }else if(seaprod == 2){ // Random walk approach
     // constraints
@@ -475,7 +456,50 @@ Type objective_function<Type>::operator() ()
     }
 
 
-  }else if(seaprod == 3){ // Matrix approach
+  }else if(seaprod == 3){ // sinus approach
+
+    // sinus function with variable phase and amplitude
+    for(int i=0; i<nsp; i++){
+      SPvecS(i) = sin(sinFac(i) + phase) * exp(logamp);
+    }
+
+    // scale to mean zero (exp sin not mean zero)
+    Type meanSP = exp(SPvecS).sum()/SPvecS.size();
+    for(int i=0; i<nsp; i++){
+      SPvecS(i) = SPvecS(i) - log(meanSP);
+    }
+    
+    // extend seasonal vector to time series
+    int indSP;
+    for(int i=0; i<ns; i++){
+      indSP = CppAD::Integer(seasonindexSP(i));      
+      mvec0(i) = exp(SPvecS(indSP) + logmbase(i));
+    }
+
+    // seasonality without m
+    vector<Type> SPvecnotM(nsp);
+    for(int i=0; i<nsp; i++){
+      SPvecSnotM(i) = SPvecS(i) - logmbase(0);
+    }
+
+    // Covariate for m
+    vector<Type> logmc(ns);
+    for(int i=0; i < ns; i++){
+      logmc(i) = log(mvec0(i)) + mu*logmcov(i);
+    }
+
+    // Reference points
+    for(int i=0; i < ns; i++){
+      //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
+      mvec(i) = exp(logmc(i) + logmre(i));
+    }        
+    
+    // ms without seasonality for ref levels
+    for(int i=0; i<ns; i++){
+      mvecnotP(i) = exp(logmbase(i) + logmre(i));  // exp(logmbase(i) + log(meanSP));
+      //      std::cout << "logmbase(i) " << logmbase(i) << std::endl;
+      //      std::cout << "mvecnotP(i) " << mvecnotP(i) << std::endl;            
+    }    
 
   }else{
     // Covariate for m
@@ -926,7 +950,7 @@ Type objective_function<Type>::operator() ()
 	//for(int i=0; i<ns; i++) logFs(i) += logu(2*j, i); // Sum diffusion and seasonal component
 	for(int i=0; i<ns; i++) logS(i) += logu(2*j, i); // Sum diffusion and seasonal component
       }
-    }
+   }
   } else {
     for(int i=0; i<ns; i++) logS(i) = -30; // If using simple set fishing mortality to something small.
   }
@@ -966,12 +990,10 @@ Type objective_function<Type>::operator() ()
     std::cout << "--- DEBUG: B loop start --- ans: " << ans << std::endl;
   }
   vector<Type> logBpred(ns);
-  vector<Type> logBprednotP(ns);  
   for(int i=0; i<(ns-1); i++){
     // To predict B(i) use dt(i-1), which is the time interval from t_i-1 to t_i
     if(simple==0){
       logBpred(i+1) = predictlogB(B(i), F(i), gamma, mvec(i), K, dt(i), n, sdb2);
-      logBprednotP(i+1) = predictlogB(B(i), F(i), gamma, mvecnotP(i), K, dt(i), n, sdb2);      
     } else {
       Type Ftmp = 0.0;
       // Use naive approach
@@ -1215,10 +1237,14 @@ Type objective_function<Type>::operator() ()
   // seaprod biomas without seasonality
   vector<Type> logBnotS(ns);
   vector<Type> logBBmsynotS(ns);
-  
-  //Type meanSm = (exp(logBpred - logB)).sum() / logB.size(); 
+  logBnotS(0) = log(B(0));
+  for(int i=0; i<(ns-1); i++){
+    logBnotS(i+1) = predictlogB(exp(logBnotS(i)), exp(logFnotS(i)),
+				gamma, mvecnotP(i), K, dt(i), n, sdb2);
+  }
+  Type meanSm = (exp(log(B) - logBnotS)).sum() / logBnotS.size(); 
   for(int i=0; i<ns; i++){
-    logBnotS(i) = logBprednotP(i);
+    logBnotS(i) = logBnotS(i) + log(meanSm);
     logBBmsynotS(i) = logBnotS(i) - logBmsyvec(i); 
   }  
 
@@ -1347,6 +1373,17 @@ Type objective_function<Type>::operator() ()
   REPORT(logFFmsy);
   REPORT(logB);
   REPORT(logF);
+
+  // might want to remove again:
+  REPORT(logFnotS);
+  REPORT(logFFmsynotS);      
+  REPORT(logBnotS);  
+  REPORT(logBBmsynotS);
+  REPORT(logFs);
+  REPORT(mvecnotP);
+  REPORT(mvec);
+  REPORT(meanSm);  
+  
 
   return ans;
 }

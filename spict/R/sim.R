@@ -1143,10 +1143,13 @@ sim.spictSP <- function(input, nobs=100){
     ## seasonal productivity
     SPvec <- inp$ini$SPvec
     if(inp$seaprod == 1){
+
+        mvec <- rep(1, nt)  ## hack
+
         nsp <- length(SPvec)
         SPvec <- sin(seq(1e-6 + inp$phaseSP,
                          2*pi + inp$phaseSP,
-                         length.out = nsp)) * inp$ampSP
+                         length.out = nsp+1)[-(nsp+1)]) * exp(inp$ampSP)  ## sinus curve should not be closed within 1/dteuler
         SPvec <- SPvec - log(mean(exp(SPvec)))
         SPvec <- SPvec + inp$simlogm
         msea <- exp(SPvec)[inp$seasonindex+1]
@@ -1160,6 +1163,7 @@ sim.spictSP <- function(input, nobs=100){
     ## removing seasonality for reference points
 ##    meanP <- mean(exp(SPvec))
     mnotP <- m ##* meanP
+    mvecnotP <- rep(exp(inp$simlogm),nt)
 
     # B[t] is biomass at the beginning of the time interval starting at time t
     # I[t] is an index of biomass (e.g. CPUE) at time t
@@ -1259,10 +1263,16 @@ sim.spictSP <- function(input, nobs=100){
         # - Biomass -
         B <- numeric(nt)
         B[1] <- B0
+##        BnotS <- numeric(nt)
+##        BnotS[1] <- B0        
         e.b <- exp(rnorm(nt-1, 0, sdb*sqrt(dt)))
         for (t in 2:nt){
-            B[t] <- predict.b(B[t-1], F[t-1], gamma, mvec[t], K, n, dt, sdb, inp$btype) * e.b[t-1]
+            B[t] <- predict.b(B[t-1], F[t-1], gamma, mvec[t],
+                              K, n, dt, sdb, inp$btype) * e.b[t-1]
+##            BnotS[t] <- predict.b(BnotS[t-1], exp(logFbase[t-1]),
+##                                  gamma, mvecnotP[t], K, n, dt, sdb, inp$btype) * e.b[t-1]
         }
+        
         flag <- any(B <= 0) # Negative biomass not allowed
         recount <- recount+1
         if (recount > 10){
@@ -1365,6 +1375,18 @@ sim.spictSP <- function(input, nobs=100){
     FnotS <- exp(logFbase + log(meanS))
 
     
+    BnotS <- numeric(nt)
+    BnotS[1] <- B0        
+    for (t in 2:nt){
+        BnotS[t] <- predict.b(BnotS[t-1], FnotS[t-1],
+                              gamma, mvecnotP[t], K, n, dt, sdb, inp$btype) * e.b[t-1]
+    }
+    
+    meanSm <- mean(exp(log(B) - log(BnotS)))
+    BnotS <- exp(log(BnotS) + log(meanSm))
+
+
+    
     sim <- list()
     sim$obsC <- obsC
     sim$timeC <- inp$timeC
@@ -1421,7 +1443,8 @@ sim.spictSP <- function(input, nobs=100){
     sim$true$C <- C
     sim$true$E <- E
     sim$true$I <- Itrue
-    sim$true$B <- B
+    sim$true$B <- BnotS
+    sim$true$Bs <- B
     sim$true$F <- FnotS
     sim$true$Fs <- F
     sim$true$gamma <- gamma
@@ -1462,8 +1485,9 @@ sim.spictSP <- function(input, nobs=100){
     ## Calculate relative B and F
 
     FFmsynotS <- FnotS/sim$true$Fmsy
+    BBmsynotS <- BnotS/sim$true$Bmsy    
 
-    sim$true$BBmsy <- B/sim$true$Bmsy
+    sim$true$BBmsy <- BBmsynotS
     sim$true$FFmsy <- FFmsynotS
     # include the log of some quantities
     lognames <- c('B', 'F', 'Bmsy', 'Fmsy', 'MSY', 'FFmsy', 'BBmsy')
@@ -1702,7 +1726,7 @@ sim.spictSPRSTVG <- function(input, nobs=100){
     ## accounting for several regimes
     mvec <- numeric(nt)
     for(i in 1:nt){
-        mvec[i] <- m[inp$ir[i]]
+        mvec[i] <- exp(inp$simlogm)[inp$ir[i]]
     }
     ## Always run this even when timevaryinggrowth == FALSE to obtain same random numbers
     logmre <- rep(inp$simlogmre0, inp$ns)
@@ -1717,7 +1741,7 @@ sim.spictSPRSTVG <- function(input, nobs=100){
     
     ## seasonal productivity
     SPvec <- inp$ini$SPvec
-    if(inp$seaprod == 1){
+    if(inp$seaprod %in% c(1,2)){
         nsp <- length(SPvec)
         SPvec <- sin(seq(1e-6 + inp$phaseSP,
                          2*pi + inp$phaseSP,
@@ -1738,7 +1762,7 @@ sim.spictSPRSTVG <- function(input, nobs=100){
         mvecnotP <- mvec        
         
         mvec <- mvec * msea  ## mvec = 1 if seaprod == 1
-        
+
         ## mean m
         ## m <- mean(mvec)
         m <- exp(inp$simlogm)  ## only works if mean(exp(SPvec)) == 1

@@ -356,6 +356,13 @@ invlogit <- function(a) 1/(1+exp(-a))
 #' @export
 invlogp1 <- function(a) 1 + exp(a)
 
+#' @name invlogit2pi
+#' @title Inverse logit 2pi transform
+#' @param a Value to take inverse logit2pi of.
+#' @return Inverse logit2pi.
+#' @export
+invlogit2pi <- function(a) (2*pi)/(1+exp(-a))
+
 
 #' @name guess.m
 #' @title Use a simple linear regression to guess m (MSY).

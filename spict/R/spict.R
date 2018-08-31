@@ -91,6 +91,7 @@ fit.spict <- function(inp, dbg=0){
         if (inp$nphases > 1) cat(paste('Estimating - phase', i, '\n'))
         # Create TMB object
         obj <- make.obj(datin, pl, inp, phase=i)
+        if(dbg == -1) return(obj)
         if (dbg<1){
             # Do estimation
             if (inp$optimiser == 'nlminb'){
@@ -285,6 +286,7 @@ make.datin <- function(inp, dbg=0){
                   splinematSP=inp$splinematSP,
                   splinematfineSP=inp$splinematfineSP,
                   regimeIdx=inp$regimeIdx,
+                  sinFac=inp$sinFac,
 ##                  pensdSP=inp$pensdSP,                 
                   priorn=inp$priors$logn,
                   priorr=inp$priors$logr,

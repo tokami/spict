@@ -1026,7 +1026,11 @@ check.inp <- function(inp){
     if(!'SPvec' %in% names(inp$ini))
         inp$ini$SPvec <- rep(unname(log(guess.m(inp))), 1/inp$dteuler)
 
-    if(inp$seaprod %in% c(1,2,3)) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
+    if(!"logm" %in% names(inp$ini)){
+        if(inp$seaprod %in% c(2)) inp$ini$logm <- rep(log(1), length(levels(inp$MSYregime)))
+        if(inp$seaprod %in% c(1,3)) inp$ini$logm <- rep(unname(log(guess.m(inp))),
+                                                        length(levels(inp$MSYregime)))
+    }
 
     # Seasons for productivity
     if (!"nseasonsSP" %in% names(inp)){
@@ -1073,6 +1077,11 @@ check.inp <- function(inp){
 
     
     
+    if (!"logamp" %in% names(inp$ini)) inp$ini$logamp <- 0
+    if (!"tphase" %in% names(inp$ini)) inp$ini$tphase <- 0
+    if (!"sinFac" %in% names(inp))
+        inp$sinFac <- seq(0,2*pi,length.out=1/inp$dteuler+1)[-length(1/inp$dteuler+1)]
+    
 
     ## seaprod simulation
     if(!'Fpattern' %in% names(inp)) inp$Fpattern <- 0
@@ -1118,9 +1127,11 @@ check.inp <- function(inp){
                         logSdSAR=inp$ini$logSdSAR,
                         SPvec=inp$ini$SPvec,
                         logsdSP=inp$ini$logsdSP,
+                        logphiSP=inp$ini$logphiSP,
                         logmdiff=inp$ini$logmdiff,
-                        logitARm=inp$ini$logitARm,
-                        logphiSP=inp$ini$logphiSP)                        
+                        logitARm=inp$ini$logitARm,                        
+                        logamp=inp$ini$logamp,
+                        tphase=inp$ini$tphase)
 
 
     # -- PRIORS --
@@ -1282,7 +1293,6 @@ check.inp <- function(inp){
     if (inp$nseasons == 1){
         forcefixpars <- c('logphi', 'logu', 'logsdu', 'loglambda',
                           'SARvec','logitSARphi','logSdSAR',
-                          'SPvec','logsdSP', 'logmdiff','logitARm','logphiSP',
                           forcefixpars)
     } else {
         if (inp$seasontype == 1){ # Use spline
@@ -1294,19 +1304,29 @@ check.inp <- function(inp){
         if(inp$seasontype == 3){ # Use spline + AR
             forcefixpars <- c('logu', 'logsdu', 'loglambda', forcefixpars)
         }
+    }
+    if (inp$nseasonsSP == 1){
+        forcefixpars <- c('SPvec','logsdSP', 'logmdiff',
+                          'logitARm','logphiSP','logamp','tphase',
+                          forcefixpars)
+    } else {
         if(inp$seaprod == 0){
-            forcefixpars <- c('SPvec', 'logsdSP','logmdiff','logphiSP', forcefixpars)
+            forcefixpars <- c('SPvec', 'logsdSP','logmdiff','logphiSP','logamp','tphase',
+                              forcefixpars)
         }
         if(inp$seaprod == 1){ # Use spline
-            forcefixpars <- c('logm','SPvec','logsdSP', forcefixpars)
+            forcefixpars <- c('SPvec','logsdSP','logamp','tphase','logmdiff', forcefixpars)
         }        
         if(inp$seaprod == 2){ # Use random walk
-            forcefixpars <- c('logm','logphiSP', forcefixpars)
+            forcefixpars <- c('logm','logphiSP','logamp','tphase', forcefixpars)
         }
+        if(inp$seaprod == 3){ # Use sinus function
+            forcefixpars <- c('logphiSP','SPvec','logsdSP','logmdiff', forcefixpars)
+        }        
         if(length(levels(inp$MSYregime)) == 1){
             forcefixpars <- c('logmdiff', forcefixpars)
         }                
-    }
+    }    
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
         forcefixpars <- c('logitpp', 'logp1robfac', forcefixpars)
     }
