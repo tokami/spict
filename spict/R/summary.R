@@ -135,23 +135,19 @@ sumspict.parest <- function(rep, ndigits=8){
         loginds <- grep('log', nms)
         logp1inds <- grep('logp1',nms)
         logitinds <- grep('logit',nms)
-        logit2piinds <- grep('tphase',nms)
-        loginds <- setdiff(loginds, c(logp1inds, logitinds, logit2piinds))
+        loginds <- setdiff(loginds, c(logp1inds, logitinds))
         est <- rep$par.fixed
         est[loginds] <- exp(est[loginds])
         est[logitinds] <- invlogit(est[logitinds])
         est[logp1inds] <- invlogp1(est[logp1inds])
-        est[logit2piinds] <- invlogit2pi(est[logit2piinds])        
         cilow <- rep$par.fixed-1.96*sd
         cilow[loginds] <- exp(cilow[loginds])
         cilow[logitinds] <- invlogit(cilow[logitinds])
         cilow[logp1inds] <- invlogp1(cilow[logp1inds])
-        cilow[logit2piinds] <- invlogit2pi(cilow[logit2piinds])                
         ciupp <- rep$par.fixed+1.96*sd
         ciupp[loginds] <- exp(ciupp[loginds])
         ciupp[logitinds] <- invlogit(ciupp[logitinds])
         ciupp[logp1inds] <- invlogp1(ciupp[logp1inds])
-        ciupp[logit2piinds] <- invlogit2pi(ciupp[logit2piinds])                
         if('true' %in% names(rep$inp)){
             npar <- length(nms)
             unms <- unique(nms)
@@ -171,7 +167,6 @@ sumspict.parest <- function(rep, ndigits=8){
             truepar[loginds] <- exp(truepar[loginds])
             truepar[logitinds] <- invlogit(truepar[logitinds])
             truepar[logp1inds] <- invlogp1(truepar[logp1inds])
-            truepar[logit2piinds] <- invlogit2pi(truepar[logit2piinds])            
             ci <- rep(0, npar)
             for(i in 1:npar){
                 ci[i] <- as.numeric(truepar[i] > cilow[i] & truepar[i] < ciupp[i])
@@ -191,7 +186,6 @@ sumspict.parest <- function(rep, ndigits=8){
         nms[loginds] <- sub('log', '', names(rep$par.fixed[loginds]))
         nms[logitinds] <- sub('logit', '', names(rep$par.fixed[logitinds]))
         nms[logp1inds] <- sub('logp1', '', names(rep$par.fixed[logp1inds]))
-        nms[logit2piinds] <- sub('t', '', names(rep$par.fixed[logit2piinds]))        
         unms <- unique(nms)
         for(inm in unms){
             nn <- sum(inm==nms)
@@ -495,25 +489,19 @@ sumspict.fixedpars <- function(rep, ndigits=8){
     }    
     ## seaprod
     if (rep$inp$seaprod == 1){
-        nms <- nms[-match(c('logsdSP','tphase','logamp'),  nms)]
-        if (length(levels(rep$inp$MSYregime)) == 1){
-            nms <- nms[-match(c('logmdiff'),  nms)]
-        }
+        nms <- nms[-match(c('logsdSP','phase','logamp','logmdiff'),  nms)]
     }    
     if (rep$inp$seaprod == 2){
-        nms <- nms[-match(c('logm','logamp','tphase','logphiSP'),  nms)]
+        nms <- nms[-match(c('logm','logamp','phase','logphiSP'),  nms)]
         if (length(levels(rep$inp$MSYregime)) == 1){
             nms <- nms[-match(c('logmdiff'),  nms)]
         }
     }
     if (rep$inp$seaprod == 3){
-        nms <- nms[-match(c('logsdSP','logphiSP'),  nms)]
-        if (length(levels(rep$inp$MSYregime)) == 1){
-            nms <- nms[-match(c('logmdiff'),  nms)]
-        }
+        nms <- nms[-match(c('logsdSP','logphiSP','logmdiff'),  nms)]
     }    
     if (rep$inp$seaprod == 0){
-        nms <- nms[-match(c('logsdSP','logmdiff','tphase','logamp','logphiSP'),  nms)]
+        nms <- nms[-match(c('logsdSP','logmdiff','phase','logamp','logphiSP'),  nms)]
     }        
     nnms <- length(nms)
     if(nnms > 0){
@@ -560,18 +548,15 @@ trans2real <- function(vals, nms, chgnms=TRUE){
     loginds <- grep('log', nms)
     logp1inds <- grep('logp1',nms)
     logitinds <- grep('logit',nms)
-    logit2piinds <- grep('tphase',nms)    
-    loginds <- setdiff(loginds, c(logp1inds, logitinds, logit2piinds))
+    loginds <- setdiff(loginds, c(logp1inds, logitinds))
     vals[loginds] <- exp(vals[loginds])
     vals[logitinds] <- invlogit(vals[logitinds])
     vals[logp1inds] <- invlogp1(vals[logp1inds])
-    vals[logit2piinds] <- invlogit2pi(vals[logit2piinds])    
     if(chgnms){
         valnms <- names(vals)
         valnms[logitinds] <- gsub('logit', '', valnms[logitinds])
         valnms[logp1inds] <- gsub('logp1', '', valnms[logp1inds])
         valnms[loginds] <- gsub('log', '', valnms[loginds])
-        valnms[logit2piinds] <- gsub('t', '', valnms[logit2piinds])            
         names(vals) <- valnms
     }
     return(vals)

@@ -206,7 +206,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logmdiff);
   PARAMETER(logitARm);
   PARAMETER(logamp);
-  PARAMETER(tphase);
+  PARAMETER(phase);
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
    if(dbg > 0){
@@ -344,7 +344,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> tempfineSP = splinematfineSP.col(0);
   vector<Type> seasonsplinefineSP(tempfineSP.size());
   seasonsplinefineSP = splinematfineSP * logphiparSP;
-  Type phase = (2 * PI) / (1 + exp(-tphase));  // transform phase between 0 and 2pi
+  //  Type phase = tphase; // (2 * PI) / (1 + exp(-tphase));  // transform phase between 0 and 2pi
 
   
   // seaprod calculations
@@ -461,6 +461,7 @@ Type objective_function<Type>::operator() ()
     // sinus function with variable phase and amplitude
     for(int i=0; i<nsp; i++){
       SPvecS(i) = sin(sinFac(i) + phase) * exp(logamp);
+      //      std::cout << "SPvecS(i) " << SPvecS(i) << std::endl;            
     }
 
     // scale to mean zero (exp sin not mean zero)
@@ -468,18 +469,44 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<nsp; i++){
       SPvecS(i) = SPvecS(i) - log(meanSP);
     }
+
+    /*
+    // scale SP that SP is not exceeding exp(logmbase)
+    Type minM = exp(logmbase(0));
+    if(logm.size() > 1){
+      for(int i=1; i<logm.size(); i++){
+	if(minM > exp(logmbase(i))){
+	  minM = exp(logmbase(i));	  
+	}
+      }
+    }
+
+    Type minSP = SPvecS(0);
+    for(int i=1; i<nsp; i++){
+      if(minSP > SPvecS(i)){
+	minSP = SPvecS(i);	  
+      }
+    }
+    if(minSP < 0) minSP = minSP * -1;    
+
+    std::cout << "minM " << minM << std::endl;
+    std::cout << "minSP " << minSP << std::endl;                  	
+
+    for(int i=0; i<nsp; i++){
+      Type absDiff = minSP/minM;
+      if(minM > minSP) absDiff = 1;
+      SPvecS(i) = SPvecS(i)/absDiff;
+      std::cout << "SPvecS(i) scaled:" << SPvecS(i) << std::endl;                  
+    }
+    */
     
     // extend seasonal vector to time series
     int indSP;
     for(int i=0; i<ns; i++){
-      indSP = CppAD::Integer(seasonindexSP(i));      
+      indSP = CppAD::Integer(seasonindexSP(i));
+      //      std::cout << "exp(logmbase(i)) " << exp(logmbase(i)) << std::endl;
+      //      std::cout << "logmbase(i) " << logmbase(i) << std::endl;            
       mvec0(i) = exp(SPvecS(indSP) + logmbase(i));
-    }
-
-    // seasonality without m
-    vector<Type> SPvecnotM(nsp);
-    for(int i=0; i<nsp; i++){
-      SPvecSnotM(i) = SPvecS(i) - logmbase(0);
     }
 
     // Covariate for m
@@ -883,7 +910,8 @@ Type objective_function<Type>::operator() ()
 	Fpredtmp = predictF2(logF(i-1), dt(i), sdf2(iisdf), delta, logeta);
       }
       Type logFpred = log( ffacvec(i) * Fpredtmp + fconvec(i) );
-      likval = dnorm(logF(i), logFpred, sqrt(dt(i-1))*sdf(iisdf), 1);
+      //      likval = dnorm(logF(i), logFpred, sqrt(dt(i-1))*sdf(iisdf), 1);
+      likval = dnorm(logFpred, logF(i), sqrt(dt(i-1))*sdf(iisdf), 1);      
       ans-=likval;
       // DEBUGGING
       if(dbg>1){
@@ -956,6 +984,9 @@ Type objective_function<Type>::operator() ()
   }
   vector<Type> F = exp(logS + logF); // This is the fishing mortality used to calculate catch
   vector<Type> logFs = log(F);
+
+  //  for(int i=0; i<ns; i++) std::cout << "logF: " << logF(i) << std::endl;
+  // for(int i=0; i<ns; i++) std::cout << "logS: " << logS(i) << std::endl;  
 
 
   // GROWTH RATE (modelled as time-varying m)
@@ -1230,6 +1261,7 @@ Type objective_function<Type>::operator() ()
   
   Type meanS = (exp(logFs - logF)).sum() / logF.size(); 
   for(int i=0; i<ns; i++){
+    //    std::cout << "logF: " << logF(i) << std::endl;
     logFnotS(i) = logF(i) + log(meanS);
     logFFmsynotS(i) = logFnotS(i) - logFmsyvec(i); 
   }
@@ -1382,7 +1414,9 @@ Type objective_function<Type>::operator() ()
   REPORT(logFs);
   REPORT(mvecnotP);
   REPORT(mvec);
-  REPORT(meanSm);  
+  REPORT(meanSm);
+  REPORT(SPvec);
+  REPORT(SPvecS);
   
 
   return ans;

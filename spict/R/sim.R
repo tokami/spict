@@ -1142,28 +1142,52 @@ sim.spictSP <- function(input, nobs=100){
 
     ## seasonal productivity
     SPvec <- inp$ini$SPvec
-    if(inp$seaprod == 1){
-
-        mvec <- rep(1, nt)  ## hack
-
-        nsp <- length(SPvec)
-        SPvec <- sin(seq(1e-6 + inp$phaseSP,
-                         2*pi + inp$phaseSP,
-                         length.out = nsp+1)[-(nsp+1)]) * exp(inp$ampSP)  ## sinus curve should not be closed within 1/dteuler
-        SPvec <- SPvec - log(mean(exp(SPvec)))
-        SPvec <- SPvec + inp$simlogm
-        msea <- exp(SPvec)[inp$seasonindex+1]
-        mvec <- mvec * msea  ## mvec = 1 if seaprod == 1
-
-        ## mean m
-        ## m <- mean(mvec)
+    nsp <- length(SPvec)    
+    SPvecS <- SPvec
+    
+    if(inp$seaprod %in% 1:3){
+        SPvec <- sin(inp$sinFac + inp$phaseSP) * inp$ampSP
+        SPvecS <- SPvec - log(mean(exp(SPvec)))
+        SPvecSM <- exp(SPvecS + inp$simlogm)
+        mvec <- SPvecSM[inp$seasonindex+1]
         m <- exp(inp$simlogm)  ## only works if mean(exp(SPvec)) == 1
     }
+    ## removing seasonality for reference points
+    mnotP <- m
+    mvecnotP <- rep(exp(inp$simlogm),nt)
+
+
+    ##### old:
+    if(FALSE){
+    ## accounting for several regimes
+    mvec0 <- numeric(nt)
+    for(i in 1:nt){
+        mvec0[i] <- m[inp$ir[i]]
+    }
+
+    ## seasonal productivity
+    SPvec <- inp$ini$SPvec
+    nsp <- length(SPvec)    
+    SPvecS <- SPvec
+    msea <- rep(1, nt)
+    
+    if(inp$seaprod %in% 1:3){
+##        mvec <- rep(1, nt)  ## hack
+        SPvec <- sin(inp$sinFac + inp$phaseSP) * inp$ampSP
+        SPvecS <- SPvec - log(mean(exp(SPvec)))
+##        SPvecSM <- exp(SPvecS + inp$simlogm)
+        msea <- exp(SPvecS)[inp$seasonindex+1]
+##        mvec <- mvec * msea  ## mvec = 1 if seaprod == 1
+        ## mean m
+##        m <- exp(inp$simlogm)  ## only works if mean(exp(SPvec)) == 1
+    }
+    mvec <- mvec0 + log(msea)
 
     ## removing seasonality for reference points
-##    meanP <- mean(exp(SPvec))
-    mnotP <- m ##* meanP
-    mvecnotP <- rep(exp(inp$simlogm),nt)
+    mnotP <- m
+    mvecnotP <- mvec0 ## rep(exp(inp$simlogm),nt)
+    }
+    
 
     # B[t] is biomass at the beginning of the time interval starting at time t
     # I[t] is an index of biomass (e.g. CPUE) at time t
@@ -1245,6 +1269,10 @@ sim.spictSP <- function(input, nobs=100){
             }
         }
         F <- exp(logFbase + season)
+
+##        print(logFbase)
+        print(season)
+        
         # - Growth (time-varying via RW) -
         # Always run this even when timevaryinggrowth == FALSE to obtain same random numbers
         #e.m <- matrix(0, inp$nstocks, nt-1)
@@ -1263,14 +1291,10 @@ sim.spictSP <- function(input, nobs=100){
         # - Biomass -
         B <- numeric(nt)
         B[1] <- B0
-##        BnotS <- numeric(nt)
-##        BnotS[1] <- B0        
         e.b <- exp(rnorm(nt-1, 0, sdb*sqrt(dt)))
         for (t in 2:nt){
             B[t] <- predict.b(B[t-1], F[t-1], gamma, mvec[t],
                               K, n, dt, sdb, inp$btype) * e.b[t-1]
-##            BnotS[t] <- predict.b(BnotS[t-1], exp(logFbase[t-1]),
-##                                  gamma, mvecnotP[t], K, n, dt, sdb, inp$btype) * e.b[t-1]
         }
         
         flag <- any(B <= 0) # Negative biomass not allowed
@@ -1378,13 +1402,13 @@ sim.spictSP <- function(input, nobs=100){
     BnotS <- numeric(nt)
     BnotS[1] <- B0        
     for (t in 2:nt){
+##        if(t<10)print(BnotS[t-1])
         BnotS[t] <- predict.b(BnotS[t-1], FnotS[t-1],
                               gamma, mvecnotP[t], K, n, dt, sdb, inp$btype) * e.b[t-1]
     }
     
     meanSm <- mean(exp(log(B) - log(BnotS)))
     BnotS <- exp(log(BnotS) + log(meanSm))
-
 
     
     sim <- list()
@@ -1441,6 +1465,7 @@ sim.spictSP <- function(input, nobs=100){
     sim$true$splineorder <- inp$splineorder
     sim$true$time <- time
     sim$true$C <- C
+    sim$true$Csub <- Csub
     sim$true$E <- E
     sim$true$I <- Itrue
     sim$true$B <- BnotS
@@ -1455,8 +1480,11 @@ sim.spictSP <- function(input, nobs=100){
     sim$true$e.b <- e.b
     sim$true$e.f <- e.f
     sim$true$SPvec <- SPvec
+    sim$true$SPvecS <- SPvecS
     sim$true$simlogm <- inp$simlogm
     sim$seaprod <- inp$seaprod
+    sim$true$mvec <- mvec
+    sim$true$mvecnotP <- mvecnotP
 
     sign <- 1
     R <- (n-1)/n * gamma * mnotP / K 

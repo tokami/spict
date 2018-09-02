@@ -1075,12 +1075,10 @@ check.inp <- function(inp){
 
     ##    if (!"pensdSP" %in% names(inp)) inp$pensdSP <- 1
 
-    
-    
-    if (!"logamp" %in% names(inp$ini)) inp$ini$logamp <- 0
-    if (!"tphase" %in% names(inp$ini)) inp$ini$tphase <- 0
+    if (!"logamp" %in% names(inp$ini)) inp$ini$logamp <- -4
+    if (!"phase" %in% names(inp$ini)) inp$ini$phase <- 0
     if (!"sinFac" %in% names(inp))
-        inp$sinFac <- seq(0,2*pi,length.out=1/inp$dteuler+1)[-length(1/inp$dteuler+1)]
+        inp$sinFac <- seq(0,2*pi,length.out=1/inp$dteuler+1)[-(1/inp$dteuler+1)]
     
 
     ## seaprod simulation
@@ -1131,7 +1129,7 @@ check.inp <- function(inp){
                         logmdiff=inp$ini$logmdiff,
                         logitARm=inp$ini$logitARm,                        
                         logamp=inp$ini$logamp,
-                        tphase=inp$ini$tphase)
+                        phase=inp$ini$phase)
 
 
     # -- PRIORS --
@@ -1307,25 +1305,25 @@ check.inp <- function(inp){
     }
     if (inp$nseasonsSP == 1){
         forcefixpars <- c('SPvec','logsdSP', 'logmdiff',
-                          'logitARm','logphiSP','logamp','tphase',
+                          'logitARm','logphiSP','logamp','phase',
                           forcefixpars)
     } else {
         if(inp$seaprod == 0){
-            forcefixpars <- c('SPvec', 'logsdSP','logmdiff','logphiSP','logamp','tphase',
+            forcefixpars <- c('SPvec', 'logsdSP','logmdiff','logphiSP','logamp','phase',
                               forcefixpars)
         }
         if(inp$seaprod == 1){ # Use spline
-            forcefixpars <- c('SPvec','logsdSP','logamp','tphase','logmdiff', forcefixpars)
+            forcefixpars <- c('SPvec','logsdSP','logamp','phase','logmdiff', forcefixpars)
         }        
         if(inp$seaprod == 2){ # Use random walk
-            forcefixpars <- c('logm','logphiSP','logamp','tphase', forcefixpars)
+            forcefixpars <- c('logm','logphiSP','logamp','phase', forcefixpars)
         }
         if(inp$seaprod == 3){ # Use sinus function
             forcefixpars <- c('logphiSP','SPvec','logsdSP','logmdiff', forcefixpars)
         }        
         if(length(levels(inp$MSYregime)) == 1){
             forcefixpars <- c('logmdiff', forcefixpars)
-        }                
+        }
     }    
     if (inp$robflagc == 0 & inp$robflagi == 0 & inp$robflage == 0){
         forcefixpars <- c('logitpp', 'logp1robfac', forcefixpars)
