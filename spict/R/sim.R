@@ -1271,7 +1271,7 @@ sim.spictSP <- function(input, nobs=100){
         F <- exp(logFbase + season)
 
 ##        print(logFbase)
-        print(season)
+##        print(season)
         
         # - Growth (time-varying via RW) -
         # Always run this even when timevaryinggrowth == FALSE to obtain same random numbers

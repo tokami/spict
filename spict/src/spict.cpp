@@ -1278,7 +1278,14 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i<ns; i++){
     logBnotS(i) = logBnotS(i) + log(meanSm);
     logBBmsynotS(i) = logBnotS(i) - logBmsyvec(i); 
-  }  
+  }
+
+  // Biomass and fishing mortality at last time point (not seasonal)
+  Type logBlnotS = logBnotS(indlastobs-1);
+  Type logBlBmsynotS = logBlnotS - logBmsyvec(indlastobs-1);
+  Type logBlKnotS = logBlnotS - logK;
+  Type logFlnotS = logFnotS(indlastobs-1);
+  Type logFlFmsynotS = logFlnotS - logFmsyvec(indlastobs-1);  
 
   // report scaled biomass and fishing mortality relative to mean for comparison with SAM, SMS and Co
   vector<Type> Bscaled = log(exp(logB)/(sum(exp(logB))/logB.size()));
@@ -1389,7 +1396,14 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFnotS);
     ADREPORT(logFFmsynotS);
     ADREPORT(logBnotS);
-    ADREPORT(logBBmsynotS);    
+    ADREPORT(logBBmsynotS);
+
+    // NEW:
+    ADREPORT(logBlnotS);
+    ADREPORT(logBlBmsynotS);
+    ADREPORT(logBlKnotS);
+    ADREPORT(logFlnotS);    
+    ADREPORT(logFlFmsynotS);
   }
   ADREPORT( logBmsyPluslogFmsy ) ;
   
