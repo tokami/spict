@@ -1512,11 +1512,13 @@ sim.spictSP <- function(input, nobs=100){
     }
     ## Calculate relative B and F
 
+    BBmsynotS <- BnotS/sim$true$Bmsy        
     FFmsynotS <- FnotS/sim$true$Fmsy
-    BBmsynotS <- BnotS/sim$true$Bmsy    
 
     sim$true$BBmsy <- BBmsynotS
     sim$true$FFmsy <- FFmsynotS
+    sim$true$BsBmsy <- B/sim$true$Bmsy
+    sim$true$FsFmsy <- F/sim$true$Fmsy
     # include the log of some quantities
     lognames <- c('B', 'F', 'Bmsy', 'Fmsy', 'MSY', 'FFmsy', 'BBmsy')
     for (pn in lognames){

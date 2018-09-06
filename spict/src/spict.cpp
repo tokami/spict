@@ -1431,8 +1431,29 @@ Type objective_function<Type>::operator() ()
   REPORT(meanSm);
   REPORT(SPvec);
   REPORT(SPvecS);
-  
+  REPORT(logBl);  
+  REPORT(logBlnotS);
+  REPORT(logBlBmsynotS);
+  REPORT(logBlKnotS);
+  REPORT(logFl);    
+  REPORT(logFlnotS);    
+  REPORT(logFlFmsynotS);  
 
   return ans;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
