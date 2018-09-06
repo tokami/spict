@@ -1407,8 +1407,9 @@ sim.spictSP <- function(input, nobs=100){
                               gamma, mvecnotP[t], K, n, dt, sdb, inp$btype) * e.b[t-1]
     }
     
-    meanSm <- mean(exp(log(B) - log(BnotS)))
-    BnotS <- exp(log(BnotS) + log(meanSm))
+##    meanSm <- mean(exp(log(B) - log(BnotS)))
+##    BnotS <- exp(log(BnotS) + log(meanSm))
+
 
     
     sim <- list()

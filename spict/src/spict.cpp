@@ -1274,11 +1274,15 @@ Type objective_function<Type>::operator() ()
     logBnotS(i+1) = predictlogB(exp(logBnotS(i)), exp(logFnotS(i)),
 				gamma, mvecnotP(i), K, dt(i), n, sdb2);
   }
+
+  /*
+  // not needed
   Type meanSm = (exp(log(B) - logBnotS)).sum() / logBnotS.size(); 
   for(int i=0; i<ns; i++){
     logBnotS(i) = logBnotS(i) + log(meanSm);
     logBBmsynotS(i) = logBnotS(i) - logBmsyvec(i); 
   }
+  */
 
   // Biomass and fishing mortality at last time point (not seasonal)
   Type logBlnotS = logBnotS(indlastobs-1);
@@ -1428,7 +1432,7 @@ Type objective_function<Type>::operator() ()
   REPORT(logFs);
   REPORT(mvecnotP);
   REPORT(mvec);
-  REPORT(meanSm);
+  //  REPORT(meanSm);
   REPORT(SPvec);
   REPORT(SPvecS);
   REPORT(logBl);  
