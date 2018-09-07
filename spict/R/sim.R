@@ -1772,15 +1772,12 @@ sim.spictSPRSTVG <- function(input, nobs=100){
     
     ## seasonal productivity
     SPvec <- inp$ini$SPvec
-    if(inp$seaprod %in% c(1,2)){
-        nsp <- length(SPvec)
-        SPvec <- sin(seq(1e-6 + inp$phaseSP,
-                         2*pi + inp$phaseSP,
-                         length.out = nsp)) * inp$ampSP
-        SPvec <- SPvec - log(mean(exp(SPvec)))
+    nsp <- length(SPvec)    
+    SPvecS <- SPvec    
+    if(inp$seaprod %in% 1:3){
+        SPvec <- sin(inp$sinFac + inp$phaseSP) * inp$ampSP
+        SPvecS <- SPvec - log(mean(exp(SPvec)))
         msea <- exp(SPvec)[inp$seasonindex+1]
-
-
         if(inp$timevaryinggrowth){
             mvec <- exp(logmre)
         }else{
@@ -1790,12 +1787,10 @@ sim.spictSPRSTVG <- function(input, nobs=100){
         }
 
         ## mvec without seasonality (for reference levels)
-        mvecnotP <- mvec        
-        
+        mvecnotP <- mvec                
         mvec <- mvec * msea  ## mvec = 1 if seaprod == 1
 
         ## mean m
-        ## m <- mean(mvec)
         m <- exp(inp$simlogm)  ## only works if mean(exp(SPvec)) == 1
         
     }else{
@@ -1968,7 +1963,7 @@ sim.spictSPRSTVG <- function(input, nobs=100){
                 inp$outliers$indsoutE <- sample(1:inp$nobsE, inp$outliers$noutE)
                 obsE[inp$outliers$indsoutE] <- exp(log(obsE[inp$outliers$indsoutE]) + rnorm(inp$outliers$noutE, 0, fac*sde))
             }
-        }
+    p    }
     }
     # - Index observations -
     obsI <- list()
@@ -2013,6 +2008,17 @@ sim.spictSPRSTVG <- function(input, nobs=100){
     meanS <- mean(exp(log(F) - logFbase))
     FnotS <- exp(logFbase + log(meanS))
 
+    BnotS <- numeric(nt)
+    BnotS[1] <- B0        
+    for (t in 2:nt){
+##        if(t<10)print(BnotS[t-1])
+        BnotS[t] <- predict.b(BnotS[t-1], FnotS[t-1],
+                              gamma, mvecnotP[t], K, n, dt, sdb, inp$btype) * e.b[t-1]
+    }
+    
+##    meanSm <- mean(exp(log(B) - log(BnotS)))
+##    BnotS <- exp(log(BnotS) + log(meanSm))
+    
     
     sim <- list()
     sim$obsC <- obsC
@@ -2084,6 +2090,7 @@ sim.spictSPRSTVG <- function(input, nobs=100){
     sim$true$simlogm <- inp$simlogm
     sim$seaprod <- inp$seaprod
     sim$true$mvec <- mvec
+    sim$true$mvecnotP <- mvecnotP    
     sim$nt <- nt
     sim$MSYregime <- as.factor(inp$MSYregime)
     sim$timevaryinggrowth <- inp$timevaryinggrowth
@@ -2114,19 +2121,38 @@ sim.spictSPRSTVG <- function(input, nobs=100){
         sim$true$Fmsy <- sim$true$Fmsyd
         sim$true$MSY <- sim$true$MSYd
     }
-    ## for time-varying growth
-    sim$true$Fmsyvec <- mvecnotP / sim$true$Bmsyd    
-    ## Calculate relative B and F
-    FFmsynotS <- numeric(nt)
-    for(i in 1:nt){
-        FFmsynotS[i] <- FnotS[i]/sim$true$Fmsy[inp$ir[i]]
+
+
+    MSYvec <- mvecnotP
+    
+    ## Calculate relative B and F    
+    if(inp$timevaryinggrowth){
+        ## for time-varying growth
+        Fmsyvec <- mvecnotP / sim$true$Bmsyd
+        Bmsyvec <- rep(sim$true$Bmsyd, nt)        
+    }else{
+        ## fish mort
+        Fmsyvec <- numeric(nt)
+        for(i in 1:nt){
+            Fmsyvec[i] <- sim$true$Fmsy[inp$ir[i]]
+        }
+        ## biomass
+        Bmsyvec <- numeric(nt)
+        for(i in 1:nt){
+            Bmsyvec[i] <- sim$true$Bmsy[inp$ir[i]]
+        }
     }
-    sim$true$FFmsy <- FFmsynotS
-    BBmsy <- numeric(nt)
-    for(i in 1:nt){
-        BBmsy[i] <- B[i]/sim$true$Bmsy[inp$ir[i]]
-    }
-    sim$true$BBmsy <- BBmsy
+
+    FsFmsy <- F/Fmsyvec
+    FFmsynotS <- FnotS/Fmsyvec
+    BsBmsy <- B/Bmsyvec
+    BBmsynotS <- BnotS/Bmsyvec
+    
+    sim$true$FsFmsy <- FsFmsy
+    sim$true$FFmsy <- FFmsynotS    
+    sim$true$BsFmsy <- BsBmsy    
+    sim$true$BBmsy <- BBmsynotS
+    
     # include the log of some quantities
     lognames <- c('B', 'F', 'Bmsy', 'Fmsy', 'MSY', 'FFmsy', 'BBmsy', 'mre')
     for (pn in lognames){
