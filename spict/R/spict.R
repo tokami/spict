@@ -97,6 +97,7 @@ fit.spict <- function(inp, dbg=0){
             if (inp$optimiser == 'nlminb'){
                 lowlims <- rep(-Inf, length(obj$par))
                 lowlims[grep("logsdSP",names(obj$par))] <- -8
+                lowlims[grep("logamp",names(obj$par))] <- -8                
                 opt <- try(nlminb(obj$par, obj$fn, obj$gr, control=inp$optimiser.control,
                                   lower = lowlims))
                 if (class(opt)!='try-error'){
