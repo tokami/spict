@@ -1168,7 +1168,7 @@ sim.spictSP <- function(input, nobs=100){
     ## seasonal productivity
     SPvec <- inp$ini$SPvec
     nsp <- length(SPvec)    
-    SPvecS <- SPvec
+    SPvecS <- rep(0, length(SPvec))
     msea <- rep(1, nt)
     
     if(inp$seaprod %in% 1:3){

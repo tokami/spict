@@ -460,14 +460,14 @@ Type objective_function<Type>::operator() ()
 
     // sinus function with variable phase and amplitude
     for(int i=0; i<nsp; i++){
-      SPvecS(i) = sin(sinFac(i) + phase) * exp(logamp);
+      SPvec(i) = sin(sinFac(i) + phase) * exp(logamp);
       //      std::cout << "SPvecS(i) " << SPvecS(i) << std::endl;            
     }
 
     // scale to mean zero (exp sin not mean zero)
-    Type meanSP = exp(SPvecS).sum()/SPvecS.size();
+    Type meanSP = exp(SPvec).sum()/SPvec.size();
     for(int i=0; i<nsp; i++){
-      SPvecS(i) = SPvecS(i) - log(meanSP);
+      SPvecS(i) = SPvec(i) - log(meanSP);
     }
 
     /*
