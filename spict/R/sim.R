@@ -2076,7 +2076,8 @@ sim.spictSPRSTVG <- function(input, nobs=100){
     sim$true$C <- C
     sim$true$E <- E
     sim$true$I <- Itrue
-    sim$true$B <- B
+    sim$true$B <- BnotS
+    sim$true$Bs <- B    
     sim$true$F <- FnotS
     sim$true$Fs <- F
     sim$true$gamma <- gamma
@@ -2150,7 +2151,7 @@ sim.spictSPRSTVG <- function(input, nobs=100){
     
     sim$true$FsFmsy <- FsFmsy
     sim$true$FFmsy <- FFmsynotS    
-    sim$true$BsFmsy <- BsBmsy    
+    sim$true$BsBmsy <- BsBmsy    
     sim$true$BBmsy <- BBmsynotS
     
     # include the log of some quantities

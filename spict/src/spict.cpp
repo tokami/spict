@@ -1441,7 +1441,10 @@ Type objective_function<Type>::operator() ()
   REPORT(logBlKnotS);
   REPORT(logFl);    
   REPORT(logFlnotS);    
-  REPORT(logFlFmsynotS);  
+  REPORT(logFlFmsynotS);
+  Type tmptmp = logFmsyvec(indlastobs-1);
+  REPORT(tmptmp);
+  REPORT(logFmsyvec);
 
   return ans;
 }
