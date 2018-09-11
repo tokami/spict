@@ -1297,6 +1297,10 @@ Type objective_function<Type>::operator() ()
 
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
+
+  // Blim for PA
+  vector<Type> logBlim(nm);  
+  logBlim = log(Bmsy/2);
   
   // ADREPORTS
   ADREPORT(Bmsy);  
@@ -1445,6 +1449,15 @@ Type objective_function<Type>::operator() ()
   Type tmptmp = logFmsyvec(indlastobs-1);
   REPORT(tmptmp);
   REPORT(logFmsyvec);
+
+  // for PA
+  REPORT(Bp);
+  REPORT(logBp);
+  REPORT(logBlim);
+  ADREPORT(logBlim);
+  REPORT(logFp);
+  REPORT(B);
+  REPORT(logFs);
 
   return ans;
 }

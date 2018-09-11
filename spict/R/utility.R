@@ -777,3 +777,40 @@ get.splineSP <- function(logphi, order, dtfine=1/100){
     spline <- c(spline, spline[1])
     return(spline)
 }
+
+
+
+
+#' @name PAnll
+#' @title Get the values of the seasonal spline for m.
+#' @param repin Result list as output from fit.spict().
+#' @param ffac Projection are made using F = ffac * F_last.
+#' @param logBpHat Log of aimed for predicted biomass.
+#' @param dbg Debugging option. Will print out runtime information useful for debugging if set to 1. 
+#' @return Negative log likelihood value for predicted biomass vs. aimed for predicted biomass
+PAnll <- function(repin, fac, logBpHat, dbg=0){
+    inpin <- list()
+    inpin$dteuler <- repin$inp$dteuler
+    inpin$timeC <- repin$inp$timeC
+    inpin$obsC <- repin$inp$obsC
+    inpin$timeI <- repin$inp$timeI
+    inpin$obsI <- repin$inp$obsI
+    timelastobs <- repin$inp$time[repin$inp$indlastobs]
+    # Always predict at least two years
+    inpin$timepredc <- repin$inp$timepredc
+    inpin$timepredi <- repin$inp$timepredi
+    inpt <- check.inp(inpin)
+    # Set F fac
+    inpt <- make.ffacvec(inpt, fac)
+    # Make object
+    datint <- make.datin(inpt, dbg=dbg)
+    plt <- repin$obj$env$parList(repin$opt$par)
+    objt <- make.obj(datint, plt, inpt, phase=1)
+    objt$fn(repin$opt$par)
+    est <- objt$report()$logBp
+    nll = -dnorm(logBpHat, est, 1, log = TRUE)
+    return(nll)
+}
+
+
+
