@@ -2577,7 +2577,7 @@ plotspict.seaprod <- function(rep, stamp=get.version()){
         apr <- jan+(31+28+31)*24*60*60
         jul <- apr+(30+31+30)*24*60*60
         oct <- jul+(31+31+30)*24*60*60
-        spvec <- get.par('SPvecSnotM', rep)
+        spvec <- get.par('SPvecS', rep)
         naflag <- any(is.na(spvec[, 1]))
         y <- exp(spvec[,2])
         yl <- exp(spvec[, 1])
@@ -2589,12 +2589,12 @@ plotspict.seaprod <- function(rep, stamp=get.version()){
             ylim <- range(y, yl, yu)
         }
         if ("true" %in% names(rep$inp)){
-            ttrue <- seq(0, 1, length=length(rep$inp$true$SPvec))
-            ytrue <- exp(rep$inp$true$SPvec)## - rep$inp$true$simlogm)
+            ttrue <- seq(0, 1, length=length(rep$inp$true$SPvecS))
+            ytrue <- exp(rep$inp$true$SPvecS)
             ylim <- range(c(ylim, ytrue))
         }
         plot(t, y, typ='n', xaxt='n', xlab='Time of year', ylab='Seasonal factor',
-             main=paste('RW model'), ylim=ylim)
+             main=paste('Sinus model'), ylim=ylim)
         cicol2 <- rgb(0, 0, 1, 0.1)
         cicol3 <- rgb(0, 0, 1, 0.2)
         polygon(c(t, rev(t)), c(yl, rev(yu)), col=cicol2, border=cicol2)
