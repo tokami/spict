@@ -1075,7 +1075,7 @@ check.inp <- function(inp){
 
     ##    if (!"pensdSP" %in% names(inp)) inp$pensdSP <- 1
 
-    if (!"logamp" %in% names(inp$ini)) inp$ini$logamp <- 0
+    if (!"logamp" %in% names(inp$ini)) inp$ini$logamp <- log(1e-8)
     if (!"phase" %in% names(inp$ini)) inp$ini$phase <- 0
     if (!"sinFac" %in% names(inp))
         inp$sinFac <- seq(0,2*pi,length.out=1/inp$dteuler+1)[-(1/inp$dteuler+1)]
