@@ -1495,7 +1495,7 @@ sim.spictSP <- function(input, nobs=100){
     sim$true$logr <- log(mnotP / K * n^(n/(n-1.0)))
     sim$true$logrc <- log(2 * R)
     # Deterministic reference points
-    sim$true$Bmsyd <- K/(n^(1/(n-1)))
+    sim$true$Bmsyd <- rep(K/(n^(1/(n-1))),length(mnotP))
     sim$true$MSYd <- mnotP
     sim$true$Fmsyd <- sim$true$MSYd/sim$true$Bmsyd
     # Stochastic reference points from Bordet & Rivest (2014)
@@ -2106,7 +2106,7 @@ sim.spictSPRSTVG <- function(input, nobs=100){
     sim$true$logr <- log(mnotP / K * n^(n/(n-1.0)))
     sim$true$logrc <- log(2 * R)
     # Deterministic reference points
-    sim$true$Bmsyd <- K/(n^(1/(n-1)))
+    sim$true$Bmsyd <- rep(K/(n^(1/(n-1))),length(mnotP))
     sim$true$MSYd <- mnotP
     sim$true$Fmsyd <- sim$true$MSYd/sim$true$Bmsyd
     # Stochastic reference points from Bordet & Rivest (2014)
@@ -2144,16 +2144,16 @@ sim.spictSPRSTVG <- function(input, nobs=100){
         }
     }
 
-    FsFmsy <- F/Fmsyvec
+    FsFmsy <- sim$true$Fs/Fmsyvec
     FFmsynotS <- FnotS/Fmsyvec
-    BsBmsy <- B/Bmsyvec
+    BsBmsy <- sim$true$Bs/Bmsyvec
     BBmsynotS <- BnotS/Bmsyvec
     
     sim$true$FsFmsy <- FsFmsy
     sim$true$FFmsy <- FFmsynotS    
     sim$true$BsBmsy <- BsBmsy    
     sim$true$BBmsy <- BBmsynotS
-    
+
     # include the log of some quantities
     lognames <- c('B', 'F', 'Bmsy', 'Fmsy', 'MSY', 'FFmsy', 'BBmsy', 'mre')
     for (pn in lognames){
