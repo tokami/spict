@@ -288,6 +288,7 @@ make.datin <- function(inp, dbg=0){
                   splinematfineSP=inp$splinematfineSP,
                   regimeIdx=inp$regimeIdx,
                   sinFac=inp$sinFac,
+                  MSEmode=inp$MSEmode,
 ##                  pensdSP=inp$pensdSP,                 
                   priorn=inp$priors$logn,
                   priorr=inp$priors$logr,

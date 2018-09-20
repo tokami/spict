@@ -348,7 +348,7 @@ mansummary <- function(repin, ypred=1, include.EBinf=FALSE, include.unc=TRUE, ve
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more ourput.
 #' @return A vector containing predicted catch (possibly with uncertainty).
 #' @export
-pred.catch <- function(repin, fmsyfac=1, ffac=NULL, get.sd=FALSE, exp=FALSE, dbg=0){
+pred.catch <- function(repin, fmsyfac=1, ffac=NULL, MSEmode=TRUE, get.sd=FALSE, exp=FALSE, dbg=0){
     inpin <- list()
     inpin$dteuler <- repin$inp$dteuler
     inpin$timeC <- repin$inp$timeC
@@ -371,6 +371,7 @@ pred.catch <- function(repin, fmsyfac=1, ffac=NULL, get.sd=FALSE, exp=FALSE, dbg
     inpt <- make.ffacvec(inpt, fac)
     # Make object
     datint <- make.datin(inpt, dbg=dbg)
+    datint$MSEmode <- MSEmode    
     plt <- repin$obj$env$parList(repin$opt$par)
     objt <- make.obj(datint, plt, inpt, phase=1)
     objt$fn(repin$opt$par)

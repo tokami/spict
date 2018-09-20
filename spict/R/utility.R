@@ -814,3 +814,43 @@ PAnll <- function(repin, fac, logBpHat, dbg=0){
 
 
 
+#' @name probdev
+#' @title Get the fishing mortality to be below certain biomass threshold
+#' @param repin Result list as output from fit.spict().
+#' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
+#' @param prob Probability to above threshold (bbmsyfrac)
+#' @param MSEmode logical; indicating if uncertainty should only be estimated for logBlBmsy and logFlFmsy (default).
+#' @return g
+probdev<-function(fac, repin, bbmsyfrac=0.5, prob=0.95, MSEmode = 1, getFrac=FALSE, verbose=FALSE){
+    ## get F fac
+    inpt <- make.ffacvec(repin$inp, fac)
+    repin$obj$env$data$ffacvec <- inpt$ffacvec
+    repin$obj$env$data$MSEmode <- MSEmode
+    repin$obj$retape()
+    repin$obj$fn(repin$opt$par)
+    sdr<-sdreport(repin$obj)
+    last.state <- get.par("logBpBmsy",sdr)
+    ll <- qnorm(1-prob,last.state[,2],last.state[,4])
+    dev<- (exp(ll) - bbmsyfrac)^2
+    if(verbose)  cat("exp(ll): ",exp(ll),"fac: ",fac, " dev: ",dev,"\n")
+    if(getFrac) dev<-exp(ll)
+    dev
+}
+
+
+#' @name getPAffac
+#' @title Get the fishing mortality to be below certain biomass threshold
+#' @param repin Result list as output from fit.spict().
+#' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
+#' @param prob Probability to above threshold (bbmsyfrac)
+#' @param MSEmode logical; indicating if uncertainty should only be estimated for logBlBmsy and logFlFmsy (default).
+#' @return g
+#' @export
+getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95,MSEmode=1){
+    ## see if is possible even with zero F  
+    dev0 <- probdev(fac=1e-6,repin=repin,getFrac=TRUE)
+    if( (bbmsyfrac-dev0) > 0.01 ) { cat("Not possible even with zero F\n"); return(1e-6) }
+    offac <- optimize(probdev,c(1e-6,10),tol=1e-2, repin=repin,
+                      bbmsyfrac=bbmsyfrac,prob=prob,MSEmode=MSEmode)
+    offac$minimum
+}

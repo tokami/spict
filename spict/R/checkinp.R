@@ -1092,7 +1092,10 @@ check.inp <- function(inp){
     if(!'simlogmre0' %in% names(inp)) inp$simlogmre0 <- inp$simlogm 
 
     if(!"tvgAR" %in% names(inp)) inp$tvgAR <- FALSE
-    if (!'logitARm' %in% names(inp$ini)) inp$ini$logitARm <- 0       
+    if (!'logitARm' %in% names(inp$ini)) inp$ini$logitARm <- 0
+
+    ## MSE
+    if(!"MSEmode" %in% names(inp)) inp$MSEmode <- FALSE
     
     
     # Reorder parameter list
