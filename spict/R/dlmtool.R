@@ -106,7 +106,6 @@ spict2DLMtool <- function(fractileC = 0.5,
             Index <- Data@Ind[x,]
             inp <- list(timeC=time, obsC=Catch, 
                         timeI=time, obsI=Index,
-                        ## timepredc = max(time) + 1,
                         dteuler = 1 / 16,
                         do.sd.report=TRUE,
                         getReportCovariance = FALSE)
@@ -123,22 +122,25 @@ spict2DLMtool <- function(fractileC = 0.5,
                 fm <- exp( qnorm( fi, logFFmsy[2], logFFmsy[4] ) )
                 fm5 <- exp( qnorm( 0.5, logFFmsy[2], logFFmsy[4] ) )
                 red <- fm5 / fm            
-                ## Uncertainty cap
-                if(uncertaintyCap){
-                    red[red < lower] <- lower
-                    red[red > upper] <- upper
-                }
-                ## additional precautionary approach
+
+                ## precautionary approach
                 if(pa == 1){
                     Fmsy <- get.par("logFmsy", rep, exp=TRUE)[2]
                     Flast <- get.par("logF", rep, exp=TRUE)[rep$inp$indpred[1], 2]            
                     ffac <- (red + 1e-6) * Fmsy / Flast
-                    bbmsyQuant005 <- spict:::probdev(ffac, rep, bbmsyfrac=fractileBBmsy,
+                    bbmsyQ5 <- spict:::probdev(ffac, rep, bbmsyfrac=fractileBBmsy,
                                                      prob=prob, MSEmode=1, getFrac=TRUE)
-                    if((0.5 - bbmsyQuant005) > 0.001){
-                        red <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy,
+                    if((0.5 - bbmsyQ5) > 0.001){
+                        fy <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy,
                                                  prob=prob, MSEmode=1)
+                        red <- fy * Flast / Fmsy
                     }
+
+                }
+                ## Uncertainty cap
+                if(uncertaintyCap){
+                    red[red < lower] <- lower
+                    red[red > upper] <- upper
                 }
                 predcatch <- try(spict::pred.catch(rep, MSEmode = 1,
                                                    get.sd = TRUE, exp = FALSE, fmsyfac = red),
