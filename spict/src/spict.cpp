@@ -127,6 +127,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  DATA_INTEGER(MSEmode);
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -1007,97 +1008,104 @@ Type objective_function<Type>::operator() ()
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
   
   // ADREPORTS
-  ADREPORT(Bmsy);  
-  ADREPORT(Bmsyd);
-  ADREPORT(Bmsys);
-  ADREPORT(Bmsy2);
-  ADREPORT(logBmsy);
-  ADREPORT(logBmsyd);
-  ADREPORT(logBmsys);
-  ADREPORT(logBp);
-  ADREPORT(logBpBmsy);
-  ADREPORT(logBpK);
-  ADREPORT(logBl);
-  ADREPORT(logBlBmsy);
-  ADREPORT(logBlK);
-  ADREPORT(Fmsy);
-  ADREPORT(Fmsyd);
-  ADREPORT(Fmsys);
-  ADREPORT(logFmsy);
-  ADREPORT(logFmsyd);
-  ADREPORT(logFmsys);
-  ADREPORT(logFp);
-  ADREPORT(logFpFmsy);
-  ADREPORT(logFl);
-  ADREPORT(logFlFmsy);
-  ADREPORT(MSY);
-  ADREPORT(MSYd);
-  ADREPORT(MSYs);
-  ADREPORT(logMSY);
-  ADREPORT(logMSYd);
-  ADREPORT(logMSYs);
-  ADREPORT(Emsy);
-  ADREPORT(Emsy2);
-  ADREPORT(logEmsy);
-  ADREPORT(logEmsy2);
-  ADREPORT(logbkfrac);
-  ADREPORT(seasonsplinefine);
-  // PREDICTIONS
-  ADREPORT(Cp);
-  ADREPORT(logIp);
-  ADREPORT(logCp);
-  ADREPORT(logEp);
-  // PARAMETERS
-  ADREPORT(r);
-  ADREPORT(logr);
-  ADREPORT(rc);
-  ADREPORT(logrc);
-  //ADREPORT(rp);
-  //ADREPORT(logrp);
-  ADREPORT(rold);
-  ADREPORT(logrold);
-  ADREPORT(K);
-  ADREPORT(q);
-  //ADREPORT(logq);
-  ADREPORT(logq2);
-  ADREPORT(p);
-  ADREPORT(gamma);
-  ADREPORT(m);
-  ADREPORT(sdf);
-  ADREPORT(sdc);
-  ADREPORT(sde);
-  ADREPORT(sdb);
-  ADREPORT(sdi);
-  ADREPORT(isdf2);
-  ADREPORT(isdc2);
-  ADREPORT(isde2);
-  ADREPORT(isdb2);
-  ADREPORT(isdi2);
-  ADREPORT(logalpha);
-  ADREPORT(logbeta);
-  if(reportall){ 
-    // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
-    // B
-    ADREPORT(logBBmsy);
-    // F
-    ADREPORT(logFFmsy); // Vector of size ns
-    ADREPORT(logFs);    // Vector of size ns
-    // C
-    ADREPORT(logCpred);
-    // I
-    ADREPORT(logIpred);
-    // E
-    ADREPORT(logEpred);
-    // Time varying growth
-    if ((timevaryinggrowth == 1) | (logmcovflag == 1)){
-      ADREPORT(logrre); // r random effect
-      ADREPORT(logFmsyvec);
-      ADREPORT(logMSYvec);
+  if(MSEmode == 1){
+    ADREPORT(logBpBmsy);
+    ADREPORT(logFpFmsy);
+    ADREPORT(logCp);    
+  }else{
+    ADREPORT(Bmsy);  
+    ADREPORT(Bmsyd);
+    ADREPORT(Bmsys);
+    ADREPORT(Bmsy2);
+    ADREPORT(logBmsy);
+    ADREPORT(logBmsyd);
+    ADREPORT(logBmsys);
+    ADREPORT(logBp);
+    ADREPORT(logBpBmsy);
+    ADREPORT(logBpK);
+    ADREPORT(logBl);
+    ADREPORT(logBlBmsy);
+    ADREPORT(logBlK);
+    ADREPORT(Fmsy);
+    ADREPORT(Fmsyd);
+    ADREPORT(Fmsys);
+    ADREPORT(logFmsy);
+    ADREPORT(logFmsyd);
+    ADREPORT(logFmsys);
+    ADREPORT(logFp);
+    ADREPORT(logFpFmsy);
+    ADREPORT(logFl);
+    ADREPORT(logFlFmsy);
+    ADREPORT(MSY);
+    ADREPORT(MSYd);
+    ADREPORT(MSYs);
+    ADREPORT(logMSY);
+    ADREPORT(logMSYd);
+    ADREPORT(logMSYs);
+    ADREPORT(Emsy);
+    ADREPORT(Emsy2);
+    ADREPORT(logEmsy);
+    ADREPORT(logEmsy2);
+    ADREPORT(logbkfrac);
+    ADREPORT(seasonsplinefine);
+    // PREDICTIONS
+    ADREPORT(Cp);
+    ADREPORT(logIp);
+    ADREPORT(logCp);
+    ADREPORT(logEp);
+    // PARAMETERS
+    ADREPORT(r);
+    ADREPORT(logr);
+    ADREPORT(rc);
+    ADREPORT(logrc);
+    //ADREPORT(rp);
+    //ADREPORT(logrp);
+    ADREPORT(rold);
+    ADREPORT(logrold);
+    ADREPORT(K);
+    ADREPORT(q);
+    //ADREPORT(logq);
+    ADREPORT(logq2);
+    ADREPORT(p);
+    ADREPORT(gamma);
+    ADREPORT(m);
+    ADREPORT(sdf);
+    ADREPORT(sdc);
+    ADREPORT(sde);
+    ADREPORT(sdb);
+    ADREPORT(sdi);
+    ADREPORT(isdf2);
+    ADREPORT(isdc2);
+    ADREPORT(isde2);
+    ADREPORT(isdb2);
+    ADREPORT(isdi2);
+    ADREPORT(logalpha);
+    ADREPORT(logbeta);
+    if(reportall){ 
+      // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
+      // B
+      ADREPORT(logBBmsy);
+      // F
+      ADREPORT(logFFmsy); // Vector of size ns
+      ADREPORT(logFs);    // Vector of size ns
+      // C
+      ADREPORT(logCpred);
+      // I
+      ADREPORT(logIpred);
+      // E
+      ADREPORT(logEpred);
+      // Time varying growth
+      if ((timevaryinggrowth == 1) | (logmcovflag == 1)){
+	ADREPORT(logrre); // r random effect
+	ADREPORT(logFmsyvec);
+	ADREPORT(logMSYvec);
+      }
+      ADREPORT(logFnotS);
+      ADREPORT(logFFmsynotS);
     }
-    ADREPORT(logFnotS);
-    ADREPORT(logFFmsynotS);
+    ADREPORT( logBmsyPluslogFmsy ) ;
+    
   }
-  ADREPORT( logBmsyPluslogFmsy ) ;
   
   // REPORTS (these don't require sdreport to be output)
   REPORT(Cp);
