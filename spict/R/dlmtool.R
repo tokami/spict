@@ -110,7 +110,7 @@ spict2DLMtool <- function(fractileC = 0.5,
                         do.sd.report=TRUE,
                         getReportCovariance = FALSE)
             inp <- check.inp(inp)
-            inp$timepredi <- inp$timepredc + interval
+            inp$timepredi <- inp$timepredc + ',interval,'
             rep <- try(spict::fit.spict(inp),silent=TRUE)
             if(is(rep, "try-error") || rep$opt$convergence != 0) {
                 TAC <- rep(NA, reps)
