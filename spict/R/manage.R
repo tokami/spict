@@ -423,7 +423,7 @@ get.TAC  <- function(repin, reps = 1,
     rep <- try(spict::fit.spict(inp),silent=TRUE)
     if(is(rep, "try-error") || rep$opt$convergence != 0){
         TAC <- rep(NA, reps)
-    } else {
+    }else{
         logFpFmsy <- spict::get.par("logFpFmsy", rep)
         logBpBmsy <- get.par("logBpBmsy",rep)
         Fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
@@ -437,20 +437,25 @@ get.TAC  <- function(repin, reps = 1,
         ## precautionary approach
         if(pa == 1){
             ffac <- (red + 1e-6) * Fmsy / Flast            
-            inpx <- make.ffacvec(repin$inp, ffac)
-            repin$obj$env$data$ffacvec <- inpx$ffacvec
-            repin$obj$env$data$MSEmode <- 1
-            repin$obj$retape()
-            repin$obj$fn(repin$opt$par)
-            sdr<-sdreport(repin$obj)                             ## necessary because ffac updated
-            logBpBmsyPA <- get.par("logBpBmsy",sdr)
-            ll <- qnorm(1-prob,logBpBmsyPA[,2],logBpBmsyPA[,4])
-            bbmsyQ5 <- exp(ll) 
-            if((0.5 - bbmsyQ5) > 0.001){
-                fy <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy, ## fractile here or another argument?
-                                        prob=prob, MSEmode=1)
-                red <- fy * Flast / Fmsy
-            }
+            inpx <- make.ffacvec(rep$inp, ffac)
+            rep$obj$env$data$ffacvec <- inpx$ffacvec
+            rep$obj$env$data$MSEmode <- 1
+            rep$obj$retape()
+            rep$obj$fn(rep$opt$par)
+            sdr <- try(sdreport(rep$obj),silent=TRUE)      ## necessary because ffac updated
+            if(is(sdr, "try-error")) {
+                print("pa problems")
+                return(rep(NA, reps))
+            }else{
+                logBpBmsyPA <- get.par("logBpBmsy",sdr)
+                ll <- qnorm(1-prob,logBpBmsyPA[,2],logBpBmsyPA[,4])
+                bbmsyQ5 <- exp(ll) 
+                if((0.5 - bbmsyQ5) > 0.001){
+                    fy <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy, ## fractile here or another argument?
+                                            prob=prob, MSEmode=1)
+                    red <- fy * Flast / Fmsy
+                }    
+            }            
         }
         ## Uncertainty cap
         if(uncertaintyCap){
@@ -459,9 +464,9 @@ get.TAC  <- function(repin, reps = 1,
         }        
         predcatch <- try(spict::pred.catch(rep, MSEmode = 1,
                                            get.sd = TRUE, exp = FALSE, fmsyfac = red),silent=TRUE)
-        if(is(predcatch, "try-error")) {
+        if(is(predcatch, "try-error")){
             TAC <- rep(NA, reps)
-        } else {
+        }else{
             TACi <- exp(qnorm(fractileC, predcatch[2], predcatch[4]))
             ## Reduction based on B/Bmsy. Default = median
             predBBtrigger <- 2 * exp(qnorm(fractileBBmsy, logBpBmsy[2], logBpBmsy[4]))  ## if pa should that be updated or not?
