@@ -383,3 +383,93 @@ pred.catch <- function(repin, fmsyfac=1, MSEmode = TRUE, get.sd=FALSE, exp=FALSE
     }
     return(Cp)
 }
+
+
+
+#' @name get.TAC
+#' @title Estimate TAC
+#' @param rep Result list as output from fit.spict().
+#' @param fmsyfac Projection are made using F = fmsyfac * Fmsy.
+#' @param MSEmode logical; if TRUE (default) only rel predicted states and catches are ADreported
+#' @param get.sd Get uncertainty of the predicted catch.
+#' @param exp If TRUE report exp of log predicted catch.
+#' @param dbg Debug flag, dbg=1 some output, dbg=2 more ourput.
+#' @return A vector containing predicted catch (possibly with uncertainty).
+#' @export
+get.TAC  <- function(repin, reps = 1,
+                      fractileC = 0.5,
+                      fractileFFmsy=0.5,
+                      fractileBBmsy=0.5,
+                      pa=0,
+                      prob=0.95,
+                      uncertaintyCap=FALSE,
+                      lower=0.8,
+                      upper=1.2,
+                      interval = 1,
+                     getFit = FALSE){
+    inp <- repin$inp
+    inp$do.sd.report <- TRUE
+    inp$getReportCovariance <- FALSE
+    inp$MSEmode <- TRUE
+    inp <- check.inp(inp)
+    inp$timepredi <- inp$timepredc + interval
+    rep <- try(spict::fit.spict(inp),silent=TRUE)
+    if(is(rep, "try-error") || rep$opt$convergence != 0){
+        TAC <- rep(NA, reps)
+    } else {
+        logFpFmsy <- spict::get.par("logFpFmsy", rep)
+        logBpBmsy <- get.par("logBpBmsy",rep)
+        Fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
+        Flast <- get.par('logFl', rep, exp=TRUE)[2]
+        ## Reduction based on uncertainty in Fmsy. Default = median        
+        fi <- 1-fractileFFmsy
+        fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
+        fm5 <- exp(qnorm(0.5, logFpFmsy[2], logFpFmsy[4]))
+        red <- fm5 / fm
+        fy <- (red + 1e-6) * Fmsy / Flast
+        ## precautionary approach
+        if(pa == 1){
+            ffac <- (red + 1e-6) * Fmsy / Flast            
+            inpx <- make.ffacvec(repin$inp, ffac)
+            repin$obj$env$data$ffacvec <- inpx$ffacvec
+            repin$obj$env$data$MSEmode <- 1
+            repin$obj$retape()
+            repin$obj$fn(repin$opt$par)
+            sdr<-sdreport(repin$obj)                             ## necessary because ffac updated
+            logBpBmsyPA <- get.par("logBpBmsy",sdr)
+            ll <- qnorm(1-prob,logBpBmsyPA[,2],logBpBmsyPA[,4])
+            bbmsyQ5 <- exp(ll) 
+            if((0.5 - bbmsyQ5) > 0.001){
+                fy <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy, ## fractile here or another argument?
+                                        prob=prob, MSEmode=1)
+                red <- fy * Flast / Fmsy
+            }
+        }
+        ## Uncertainty cap
+        if(uncertaintyCap){
+            red[red < lower] <- lower
+            red[red > upper] <- upper
+        }        
+        predcatch <- try(spict::pred.catch(rep, MSEmode = 1,
+                                           get.sd = TRUE, exp = FALSE, fmsyfac = red),silent=TRUE)
+        if(is(predcatch, "try-error")) {
+            TAC <- rep(NA, reps)
+        } else {
+            TACi <- exp(qnorm(fractileC, predcatch[2], predcatch[4]))
+            ## Reduction based on B/Bmsy. Default = median
+            predBBtrigger <- 2 * exp(qnorm(fractileBBmsy, logBpBmsy[2], logBpBmsy[4]))  ## if pa should that be updated or not?
+            TACi <- TACi * min(1, predBBtrigger)
+            TAC <- rep(TACi, reps)  ## hack to guarantee compatibility with other MPs (DLMtool takes median, thus rep no effect)
+        }
+    }
+    if(getFit){
+        inpt <- make.ffacvec(rep$inp, fy)
+        inpt$MSEmode <- FALSE
+        fit <- fit.spict(inpt)
+        return(fit)
+    }
+    return(TAC)
+}
+
+
+

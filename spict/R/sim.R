@@ -270,6 +270,7 @@ sim.spict <- function(input, nobs=100){
     sde <- exp(pl$logsde)
     lambda <- exp(pl$loglambda)
     omega <- inp$omega
+    Fmax <- exp(inp$sim$logFmax)    
     
     # B[t] is biomass at the beginning of the time interval starting at time t
     # I[t] is an index of biomass (e.g. CPUE) at time t
@@ -289,11 +290,37 @@ sim.spict <- function(input, nobs=100){
         logFbase <- numeric(nt)
         logFbase[1] <- log(F0)
         e.f <- rnorm(nt-1, 0, sdf*sqrt(dt))
-        for (t in 2:nt){
-            logFbase[t] <- predict.logf(logFbase[t-1], dt, sdf, inp$efforttype) + e.f[t-1]
+        
+        if(inp$sim$Ftype == 1){
+            for (t in 2:nt){
+                logFbase[t] <- predict.logf(logFbase[t-1], dt, sdf, inp$efforttype) + e.f[t-1]
+            }
+            #ef <- arima.sim(inp$armalistF, nt-1) * sdf*sqrt(dt) # Used to simulate other than white noise in F
+            #logFbase <- c(log(F0), log(F0) + cumsum(ef)) # Fishing mortality            
+        }else if(inp$sim$Ftype == 2){
+            logFbase <- rep(log(F0), nt)
+        }else if(inp$sim$Ftype == 3){
+            logFbase <- rep(log(F0), nt)            
+            logFbase[2:nt] <- logFbase[2:nt] + e.f                        
+        }else if(inp$sim$Ftype == 4){   ## roller coaster over whole time series
+            rawF <- c(seq(F0,Fmax,length.out = floor(nt/2.5)),           ## increasing
+                      rep(Fmax,(nt-(floor(nt/2.5)+floor(nt/3)))),  ## stable 
+                      seq(Fmax,F0,length.out=floor(nt/3)))          ## decreasing
+            logFbase <- log(rawF) 
+            logFbase[2:nt] <- logFbase[2:nt] + e.f
+        }else if(inp$sim$Ftype == 5){  ## roller coaster scenario in first years (at least 10 years)
+            rawF <- c(seq(0.01,Fmax,length.out=32),
+                      rep(Fmax,16),  ## stable
+                      seq(Fmax,0.01,length.out=32),
+                      rep(0.01,32),  ## stable 
+                      seq(0.01,F0,length.out=48),
+                      rep(F0,nt-160))          ## decreasing
+            logFbase <- log(rawF) 
+            logFbase[2:nt] <- logFbase[2:nt] + e.f            
+        }else{
+            stop("sim$Ftype not known. Choose between 1 to 5.")
         }
-        #ef <- arima.sim(inp$armalistF, nt-1) * sdf*sqrt(dt) # Used to simulate other than white noise in F
-        #logFbase <- c(log(F0), log(F0) + cumsum(ef)) # Fishing mortality
+        
         # Impose seasons
         season <- numeric(length(logFbase))
         if (inp$seasontype == 1){ # Spline-based seasonality

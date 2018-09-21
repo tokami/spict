@@ -1008,6 +1008,12 @@ check.inp <- function(inp){
     #}
     inp$ini$SARvec <- rep(0, max(inp$seasonindex2))
 
+
+    ## for new sim.spict
+    if (!"Ftype" %in% names(inp$sim)) inp$sim$Ftype <- 1
+    if (!"logFmax" %in% names(inp$sim)) inp$sim$logFmax <- log(0.5)
+
+    ## faster fitting for MSEs
     if (!"MSEmode" %in% names(inp)) inp$MSEmode <- FALSE
     
     # Reorder parameter list

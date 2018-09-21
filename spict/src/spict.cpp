@@ -1011,7 +1011,9 @@ Type objective_function<Type>::operator() ()
   if(MSEmode == 1){
     ADREPORT(logBpBmsy);
     ADREPORT(logFpFmsy);
-    ADREPORT(logCp);    
+    ADREPORT(logCp);
+    ADREPORT(logFl);
+    ADREPORT(logFmsy);            
   }else{
     ADREPORT(Bmsy);  
     ADREPORT(Bmsyd);
