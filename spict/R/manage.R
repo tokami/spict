@@ -388,24 +388,31 @@ pred.catch <- function(repin, fmsyfac=1, MSEmode = TRUE, get.sd=FALSE, exp=FALSE
 
 #' @name get.TAC
 #' @title Estimate TAC
-#' @param rep Result list as output from fit.spict().
-#' @param fmsyfac Projection are made using F = fmsyfac * Fmsy.
-#' @param MSEmode logical; if TRUE (default) only rel predicted states and catches are ADreported
-#' @param get.sd Get uncertainty of the predicted catch.
-#' @param exp If TRUE report exp of log predicted catch.
-#' @param dbg Debug flag, dbg=1 some output, dbg=2 more ourput.
-#' @return A vector containing predicted catch (possibly with uncertainty).
+#' @param repin Result list as output from fit.spict().
+#' @param reps the number of stochastic samples of the TAC recommendation (not used for this HCR).
+#' @param fractileC The fractile of the catch distribution to be used for setting TAC. Default
+#'   is median (0.5).
+#' @param fractileFFmsy The fractile of the distribution of F/Fmsy. Default is 0.5 (median).
+#' @param fractileBBmsy The fractile of the distribution of B/Bmsy. Default is 0.5 (median).
+#' @param pa Logical; indicating if the precautionary approach should be applied (reduce F if P(B<Blim) < prob). Default is FALSE.
+#' @param prob Probability for the precautionary approach (see argument 'pa', default is 0.95).
+#' @param uncertaintyCap Logical; If true TAC is bound between two values set in lower and upper. Default: FALSE.
+#' @param lower lower bound of the uncertainty cap. Default is 0.8, used if uncertaintyCap = TRUE.
+#' @param upper upper bound of the uncertainty cap. Default is 1.2, used if uncertaintyCap = TRUE.
+#' @param interval Assessment interval. Default is 1, which indicates annual assessments.
+#' @param getFit Logical; if TRUE the fitted results list with adjusted fsihing mortality value is returned. Default is FALSE.
+#' @return A vector with estimated TAC based on harvest control rule settings or the fitted rep list with adjusted fishing mortality values if getFit = TRUE.
 #' @export
 get.TAC  <- function(repin, reps = 1,
-                      fractileC = 0.5,
-                      fractileFFmsy=0.5,
-                      fractileBBmsy=0.5,
-                      pa=0,
-                      prob=0.95,
-                      uncertaintyCap=FALSE,
-                      lower=0.8,
-                      upper=1.2,
-                      interval = 1,
+                     fractileC = 0.5,
+                     fractileFFmsy=0.5,
+                     fractileBBmsy=0.5,
+                     pa=0,
+                     prob=0.95,
+                     uncertaintyCap=FALSE,
+                     lower=0.8,
+                     upper=1.2,
+                     interval = 1,
                      getFit = FALSE){
     inp <- repin$inp
     inp$do.sd.report <- TRUE
