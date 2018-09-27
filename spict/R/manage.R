@@ -421,7 +421,7 @@ get.TAC  <- function(repin, reps = 1,
     inp <- check.inp(inp)
     inp$timepredi <- inp$timepredc + interval
     rep <- try(spict::fit.spict(inp),silent=TRUE)
-    if(is(rep, "try-error") || rep$opt$convergence != 0){
+    if(is(rep, "try-error") || rep$opt$convergence != 0 || any(is.infinite(rep$sd))){
         TAC <- rep(NA, reps)
     }else{
         logFpFmsy <- spict::get.par("logFpFmsy", rep)
@@ -450,7 +450,7 @@ get.TAC  <- function(repin, reps = 1,
                 logBpBmsyPA <- get.par("logBpBmsy",sdr)
                 ll <- qnorm(1-prob,logBpBmsyPA[,2],logBpBmsyPA[,4])
                 bbmsyQ5 <- exp(ll)
-                if(!is.na(bbmsyQ5) & is.finite(bbmsyQ5)){
+                if(is.finite(bbmsyQ5)){
                     if((0.5 - bbmsyQ5) > 0.001){
                         fy <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy, ## fractile here or another argument?
                                                 prob=prob, MSEmode=1)
