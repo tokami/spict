@@ -659,6 +659,7 @@ get.MP <- function(fractileC = 0.5,
                    lower = 0.8,
                    upper = 1.2,
                    interval = 1,
+                   dteuler = 1/16,
                    env = globalenv(),
                    package="dlmtool"){
 
@@ -691,7 +692,7 @@ get.MP <- function(fractileC = 0.5,
             Index <- Data@Ind[x,]
             inp <- list(timeC=time, obsC=Catch, 
                         timeI=time, obsI=Index,
-                        dteuler = 1 / 16,
+                        dteuler = ',dteuler,',
                         do.sd.report=TRUE,
                         getReportCovariance = FALSE)
             inp <- check.inp(inp)
