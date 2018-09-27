@@ -449,12 +449,16 @@ get.TAC  <- function(repin, reps = 1,
             }else{
                 logBpBmsyPA <- get.par("logBpBmsy",sdr)
                 ll <- qnorm(1-prob,logBpBmsyPA[,2],logBpBmsyPA[,4])
-                bbmsyQ5 <- exp(ll) 
-                if((0.5 - bbmsyQ5) > 0.001){
-                    fy <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy, ## fractile here or another argument?
-                                            prob=prob, MSEmode=1)
-                    red <- fy * Flast / Fmsy
-                }    
+                bbmsyQ5 <- exp(ll)
+                if(!is.na(bbmsQ5) & is.finite(bbmsyQ5)){
+                    if((0.5 - bbmsyQ5) > 0.001){
+                        fy <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy, ## fractile here or another argument?
+                                                prob=prob, MSEmode=1)
+                        red <- fy * Flast / Fmsy
+                    }                        
+                }else{
+                    return(rep(NA, reps))                    
+                }
             }            
         }
         ## Uncertainty cap
