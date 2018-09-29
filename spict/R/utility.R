@@ -571,19 +571,62 @@ probdev<-function(fac, repin, bbmsyfrac=0.5, prob=0.95, MSEmode = 1, getFrac=FAL
 #' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
 #' @param prob Probability to above threshold (bbmsyfrac)
 #' @param MSEmode logical; indicating if uncertainty should only be estimated for logBlBmsy and logFlFmsy (default).
-#' @return g
+#' @return Optimised F for P(Bp<Blim)
 #' @export
 getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95,MSEmode=1){
     ## see if is possible even with zero F  
     dev0 <- probdev(fac=1e-6,repin=repin,getFrac=TRUE, prob=prob,
                     bbmsyfrac=bbmsyfrac, MSEmode=MSEmode)
-    if(!is.finite(dev0) || (bbmsyfrac-dev0) > 0.01){
+    if(!is.finite(dev0) || (bbmsyfrac-dev0) > 0.001){
         cat("Not possible even with zero F\n"); return(1e-6)
     }
     offac <- optimize(probdev,c(1e-6,10),tol=1e-2, repin=repin,
                       bbmsyfrac=bbmsyfrac,prob=prob,MSEmode=MSEmode)
     offac$minimum
 }
+
+
+#' @name uncertCap
+#' @title Apply uncertainty cap to F or F multiplier
+#' @param ffac F factor, multiplier or F to apply uncertainty cap to
+#' @param lo lower boundary for uncertainty cap (default 0.8)
+#' @param up upper boundary for uncertainty cap (default 1.2)
+#' @return F factor after uncertainty cap was applied
+uncertCap <- function(ffac, lo=0.8, up=1.2){
+    ffac[ffac < lower] <- lower
+    ffac[ffac > upper] <- upper
+    return(ffac)
+}    
+
+
+#' @name get.TACi
+#' @title Apply uncertainty cap to F or F multiplier
+#' @param repin Result list as output from fit.spict().
+#' @param ffac Absolute F value for which to predict the catch for
+#' @param fractileC fractileC The fractile of the catch distribution to be used for setting TAC. Default
+#'   is median (0.5).
+#' @param MSEmode logical; indicating if uncertainty should only be estimated for logBlBmsy and logFlFmsy (default).
+#' @return
+get.TACi <- function(repin, ffac, fractileC=0.5, MSEmode=1){
+    inpx <- make.ffacvec(repin$inp, ffac)
+    repin$obj$env$data$ffacvec <- inpx$ffacvec
+    repin$obj$env$data$MSEmode <- MSEmode
+    repin$obj$retape()
+    repin$obj$fn(repin$opt$par)
+    if(fractileC == 0.5){
+        TACi <- exp(log(repin$obj$report()$Cp))                
+    }else{
+        sdr <- try(sdreport(repin$obj),silent=TRUE)
+        if(is(sdr, "try-error")){
+            TACi <- NA
+        }else{
+            logCp <- get.par('logCp', sdr)
+            TACi <- exp(qnorm(fractileC, logCp[2], logCp[4]))                    
+        }                
+    }
+    return(TACi)
+}    
+
 
 
 #' @name get.MP
