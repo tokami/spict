@@ -593,8 +593,8 @@ getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95,MSEmode=1){
 #' @param up upper boundary for uncertainty cap (default 1.2)
 #' @return F factor after uncertainty cap was applied
 uncertCap <- function(ffac, lo=0.8, up=1.2){
-    ffac[ffac < lower] <- lower
-    ffac[ffac > upper] <- upper
+    ffac[ffac < lo] <- lo
+    ffac[ffac > up] <- up
     return(ffac)
 }    
 
@@ -746,7 +746,7 @@ get.MP <- function(fractileC = 0.5,
             rep <- list()
             rep$inp <- inp
             TAC <- spict:::get.TAC(rep, 1, fractileC, fractileFFmsy, fractileBBmsy, pa, prob,
-                                   uncertaintyCap, lower, upper, ',interval,')
+                                   uncertaintyCap, lower, upper, ',interval,', FALSE)
             res <- TACfilter(TAC)
             Rec <- new("Rec")
             Rec@TAC <- res
