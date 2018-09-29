@@ -499,10 +499,10 @@ get.TAC  <- function(repin, reps = 1,
             fy <- (red + 1e-6) * Fmsy / Flast            
             ## predict catch with fy
             TACi <- spict:::get.TACi(rep, fy, fractileC)
+            ## Reduction based on B/Bmsy. Default = median (uncertainty of BBmsy taking account for already in PA)
+            predBBtrigger <- 2 * exp(qnorm(fractileBBmsy, logBpBmsy[2], logBpBmsy[4]))
+            TACi <- TACi * min(1, predBBtrigger)            
         }
-        ## Reduction based on B/Bmsy. Default = median
-        predBBtrigger <- 2 * exp(qnorm(fractileBBmsy, logBpBmsy[2], logBpBmsy[4]))
-        TACi <- TACi * min(1, predBBtrigger)
         ## hack to guarantee compatibility with other MPs (DLMtool takes median, thus rep no effect) 
         TAC <- rep(TACi, reps)  
     }
