@@ -452,8 +452,12 @@ get.TAC  <- function(repin, reps = 1,
                 if(is.finite(bbmsyQ5)){
                     if((0.5 - bbmsyQ5) > 0.001){
                         ## fractileBBmsy here or another argument?                        
-                        fy <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy, 
-                                                prob=prob, MSEmode=1)
+                        tmp <- spict:::getPAffac(rep, bbmsyfrac=fractileBBmsy, 
+                                                 prob=prob, MSEmode=1)
+                        if(tmp > fy){
+                            fy <- tmp
+                            print(paste0("ffacpa",round(tmp,2)," > ffacmsy",round(fy,2)))
+                        }
                         red <- fy * Flast / Fmsy
                         ## Uncertainty cap
                         if(uncertaintyCap){
