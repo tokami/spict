@@ -711,7 +711,7 @@ get.MP <- function(fractileC = 0.5,
 
     ## allowing for multiple generation of MPs
     argList <- list(fractileC, fractileFFmsy, pa, prob, fractileBBmsy,
-                    uncertaintyCap, lower, upper)
+                    uncertaintyCap, lower, upper, dteuler)
     argLengths <- sapply(argList, length)
     maxi <- max(argLengths)
     maxl  <- which(argLengths == maxi)
@@ -720,7 +720,7 @@ get.MP <- function(fractileC = 0.5,
             stop("Specified arguments have different lengths, they should have the same length or length = 1.")
     }
     argListCor <- argList
-    argListCor[(1:8)[-maxl]] <- lapply(argList[(1:8)[-maxl]], function(x) rep(unlist(x), maxi))
+    argListCor[(1:9)[-maxl]] <- lapply(argList[(1:9)[-maxl]], function(x) rep(unlist(x), maxi))
 
     template  <- expression(paste0(
         'structure(function(x, Data, reps = 1,
@@ -738,7 +738,7 @@ get.MP <- function(fractileC = 0.5,
             Index <- Data@Ind[x,]
             inp <- list(timeC=time, obsC=Catch, 
                         timeI=time, obsI=Index,
-                        dteuler = ',dteuler,',
+                        dteuler = ',i,',
                         do.sd.report=TRUE,
                         getReportCovariance = FALSE)
             inp <- check.inp(inp)
@@ -759,7 +759,7 @@ get.MP <- function(fractileC = 0.5,
 
         ## create MPs as functions
         subList <- lapply(argListCor, "[[", I)
-        names(subList) <- letters[1:8]
+        names(subList) <- letters[1:9]
         templati <- eval(parse(text=paste(parse(text = eval(template, subList)),collapse=" ")))
 
         ## save names of MPs
@@ -803,8 +803,13 @@ get.MP <- function(fractileC = 0.5,
         }else{
             c8 <- paste0("_up",argListCor[[8]][I])            
         }
+        if(argListCor[[9]][I] == 1){
+            c9 <- ""
+        }else{
+            c9 <- paste0("_dt",round(argListCor[[9]][I],2))            
+        }        
         ## put everythin together
-        nami[I] <- paste0("spict",c1,c2,c3,c4,c5,c6,c7,c8)
+        nami[I] <- paste0("spict",c1,c2,c3,c4,c5,c6,c7,c8,c9)
         assign(value=templati, x=nami[I], envir=env)
     }
 
