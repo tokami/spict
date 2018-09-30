@@ -414,12 +414,18 @@ get.TAC  <- function(repin, reps = 1,
                      upper=1.2,
                      interval = 1,
                      getFit = FALSE){
-    inp <- repin$inp
+    inp <- list()    
+    inp$dteuler <- repin$inp$dteuler
+    inp$timeC <- repin$inp$timeC
+    inp$obsC <- repin$inp$obsC
+    inp$timeI <- repin$inp$timeI
+    inp$obsI <- repin$inp$obsI
+    inp$timepredc <- repin$inp$timepredc
+    inp$timepredi <- inp$timepredc + interval
     inp$do.sd.report <- TRUE
     inp$getReportCovariance <- FALSE
     inp$MSEmode <- TRUE
     inp <- check.inp(inp)
-    inp$timepredi <- inp$timepredc + interval
     rep <- try(spict::fit.spict(inp),silent=TRUE)
     if(is(rep, "try-error") || rep$opt$convergence != 0 || any(is.infinite(rep$sd))){
         TAC <- rep(NA, reps)

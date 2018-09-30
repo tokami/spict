@@ -741,10 +741,8 @@ get.MP <- function(fractileC = 0.5,
                         dteuler = ',i,',
                         do.sd.report=TRUE,
                         getReportCovariance = FALSE)
-            inp <- check.inp(inp)
-            inp$timepredi <- inp$timepredc + ',interval,'
             rep <- list()
-            rep$inp <- inp
+            rep$inp <- check.inp(inp)
             TAC <- spict:::get.TAC(rep, 1, fractileC, fractileFFmsy, fractileBBmsy, pa, prob,
                                    uncertaintyCap, lower, upper, ',interval,', FALSE)
             res <- TACfilter(TAC)
