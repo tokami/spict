@@ -550,7 +550,7 @@ get.cov <- function(rep, parname1, parname2, cor=FALSE){
 #' @param getFrac
 #' @param verbose
 #' @return g
-probdev<-function(ffac, repin, bbmsyfrac=0.5, prob=0.95, getFrac=FALSE, verbose=TRUE){
+probdev<-function(ffac, repin, bbmsyfrac=0.5, prob=0.95, getFrac=FALSE, verbose=FALSE){
     ## get F fac
     inpt <- make.ffacvec(repin$inp, ffac)
     repin$obj$env$data$ffacvec <- inpt$ffacvec
@@ -578,12 +578,12 @@ probdev<-function(ffac, repin, bbmsyfrac=0.5, prob=0.95, getFrac=FALSE, verbose=
 getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95){
     ## see if is possible even with zero F  
     dev0 <- probdev(ffac=1e-6,repin=repin,getFrac=TRUE, prob=prob,
-                    bbmsyfrac=bbmsyfrac, verbose=1)
+                    bbmsyfrac=bbmsyfrac, verbose=FALSE)
     if(!is.finite(dev0) || (bbmsyfrac-dev0) > 0.001){
         cat("Not possible even with zero F\n"); return(1e-6)
     }
     offac <- optimize(probdev,c(1e-6,10),tol=1e-2, repin=repin,
-                      bbmsyfrac=bbmsyfrac,prob=prob,verbose=TRUE)
+                      bbmsyfrac=bbmsyfrac,prob=prob,verbose=FALSE)
     offac$minimum
 }
 
