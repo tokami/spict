@@ -414,7 +414,7 @@ get.TAC  <- function(repin, reps = 1,
                      stabilityClause=FALSE,
                      lower=0.8,
                      upper=1.2,
-                     interval = 1,
+                     amtint = 1,
                      getFit = FALSE){
     ## create inp list (note: put in function)
     inp <- list()    
@@ -424,10 +424,10 @@ get.TAC  <- function(repin, reps = 1,
     inp$timeI <- repin$inp$timeI
     inp$obsI <- repin$inp$obsI
     inp$timepredc <- repin$inp$timepredc
-    inp$timepredi <- inp$timepredc + interval
+    inp$timepredi <- inp$timepredc + amtint
     inp$do.sd.report <- TRUE
     inp$getReportCovariance <- FALSE
-    inp$MSEmode <- TRUE
+    inp$MSEmode <- FALSE #################################
     ## fit spict
     rep <- try(spict::fit.spict(inp),silent=TRUE)
     ## stop if not converged
@@ -465,7 +465,7 @@ get.TAC  <- function(repin, reps = 1,
         if(!is.finite(bbmsyQ5)) return(rep(NA,reps))
         ## check if precautionary
         if((0.5 - bbmsyQ5) > 0.001){
-            tmp <- try(spict:::getPAffac(rep, bbmsyfrac=bbmsyfrac, prob=prob, MSEmode=1))
+            tmp <- try(spict:::getPAffac(rep, bbmsyfrac=bbmsyfrac, prob=prob))
             if(is(tmp, "try-error")) return(rep(NA, reps))
             ## debugging:
             if(tmp > fabs) print(paste0("ffacpa",round(tmp,2)," > ffacmsy",round(fabs,2)))

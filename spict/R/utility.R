@@ -547,25 +547,25 @@ get.cov <- function(rep, parname1, parname2, cor=FALSE){
 #' @param repin Result list as output from fit.spict().
 #' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
 #' @param prob Probability to above threshold (bbmsyfrac)
-#' @param MSEmode logical; indicating if uncertainty should only be estimated for logBlBmsy and logFlFmsy (default).
 #' @param getFrac
 #' @param verbose
 #' @return g
-probdev<-function(ffac, repin, bbmsyfrac=0.5, prob=0.95, MSEmode = 1, getFrac=FALSE, verbose=FALSE){
+probdev<-function(ffac, repin, bbmsyfrac=0.5, prob=0.95, getFrac=FALSE, verbose=TRUE){
     ## get F fac
     inpt <- make.ffacvec(repin$inp, ffac)
     repin$obj$env$data$ffacvec <- inpt$ffacvec
-    repin$obj$env$data$MSEmode <- MSEmode
+    repin$obj$env$data$MSEmode <- 1
     repin$obj$retape()
     repin$obj$fn(repin$opt$par)
-    sdr<-sdreport(repin$obj)
+    sdr <- sdreport(repin$obj)
     last.state <- get.par("logBpBmsy",sdr)
     ll <- qnorm(1-prob,last.state[,2],last.state[,4])
-    dev<- (exp(ll) - bbmsyfrac)^2
+    dev <- (exp(ll) - bbmsyfrac)^2
     if(verbose)  cat("exp(ll): ",exp(ll),"ffac: ",ffac, " dev: ",dev,"\n")
-    if(getFrac) dev<-exp(ll)
+    if(getFrac) dev <- exp(ll)
     dev
 }
+
 
 
 #' @name getPAffac
@@ -573,28 +573,27 @@ probdev<-function(ffac, repin, bbmsyfrac=0.5, prob=0.95, MSEmode = 1, getFrac=FA
 #' @param repin Result list as output from fit.spict().
 #' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
 #' @param prob Probability to above threshold (bbmsyfrac)
-#' @param MSEmode logical; indicating if uncertainty should only be estimated for logBlBmsy and logFlFmsy (default).
 #' @return Optimised F for P(Bp<Blim)
 #' @export
-getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95,MSEmode=1){
+getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95){
     ## see if is possible even with zero F  
     dev0 <- probdev(ffac=1e-6,repin=repin,getFrac=TRUE, prob=prob,
-                    bbmsyfrac=bbmsyfrac, MSEmode=MSEmode)
+                    bbmsyfrac=bbmsyfrac, verbose=1)
     if(!is.finite(dev0) || (bbmsyfrac-dev0) > 0.001){
         cat("Not possible even with zero F\n"); return(1e-6)
     }
     offac <- optimize(probdev,c(1e-6,10),tol=1e-2, repin=repin,
-                      bbmsyfrac=bbmsyfrac,prob=prob,MSEmode=MSEmode)
+                      bbmsyfrac=bbmsyfrac,prob=prob,verbose=TRUE)
     offac$minimum
 }
 
 
 #' @name stabilityClause
-#' @title Apply uncertainty cap to F or F multiplier
+#' @title Apply stability Clause to F or F multiplier
 #' @param ffac F factor, multiplier or F to apply stability clause to
 #' @param lo lower boundary for stability clause (default 0.8)
 #' @param up upper boundary for stability clause (default 1.2)
-#' @return F factor after uncertainty cap was applied
+#' @return F factor after stability clause was applied
 stabilityClause <- function(ffac, lo=0.8, up=1.2){
     ffac[ffac < lo] <- lo
     ffac[ffac > up] <- up
@@ -651,10 +650,11 @@ get.TACi <- function(repin, ffac, fractileC=0.5, MSEmode=1){
 #' @param fractileBBmsy The fractile of the distribution of B/Bmsy. Default is 0.5 (median).
 #' @param pa Logical; indicating if the precautionary approach should be applied (reduce F if P(B<Blim) < prob). Default is FALSE.
 #' @param prob Probability for the precautionary approach (see argument 'pa', default is 0.95).
-#' @param uncertaintyCap Logical; If true TAC is bound between two values set in lower and upper. Default: FALSE.
-#' @param lower lower bound of the uncertainty cap. Default is 0.8, used if uncertaintyCap = TRUE.
-#' @param upper upper bound of the uncertainty cap. Default is 1.2, used if uncertaintyCap = TRUE.
-#' @param interval Assessment interval. Default is 1, which indicates annual assessments.
+#' @param bbmsyfrac
+#' @param stabilityClause Logical; If true TAC is bound between two values set in lower and upper. Default: FALSE.
+#' @param lower lower bound of the stability clause. Default is 0.8, used if stabilityClause = TRUE.
+#' @param upper upper bound of the stability clause. Default is 1.2, used if stabilityClause = TRUE.
+#' @param amtint Assessment interval. Default is 1, which indicates annual assessments.
 #' @param env environment where the harvest control rule function(s) are assigned to.
 #' @param package
 #' @return A function which can estimate TAC recommendations based on SPiCT assessment,
@@ -698,20 +698,21 @@ get.TACi <- function(repin, ffac, fractileC=0.5, MSEmode=1){
 #'
 get.MP <- function(fractileC = 0.5,
                    fractileFFmsy = 0.5,
+                   fractileBBmsy = 0.5,                   
                    pa = FALSE,
                    prob = 0.95,
-                   fractileBBmsy = 0.5,
-                   uncertaintyCap = FALSE,
+                   bbmsyfrac=0.5,
+                   stabilityClause = FALSE,
                    lower = 0.8,
                    upper = 1.2,
-                   interval = 1,
+                   amtint = 1,
                    dteuler = 1/16,
                    env = globalenv(),
                    package="dlmtool"){
 
     ## allowing for multiple generation of MPs
     argList <- list(fractileC, fractileFFmsy, pa, prob, fractileBBmsy,
-                    uncertaintyCap, lower, upper, dteuler)
+                    stabilityClause, lower, upper, dteuler)
     argLengths <- sapply(argList, length)
     maxi <- max(argLengths)
     maxl  <- which(argLengths == maxi)
@@ -729,7 +730,7 @@ get.MP <- function(fractileC = 0.5,
           pa=',c,',
           prob=',d,',
           fractileBBmsy=',e,',
-          uncertaintyCap=',f,',
+          stabilityClause=',f,',
           lower=',g,',
           upper=',h,'){
             dependencies <- "Data@Year, Data@Cat, Data@Ind"
@@ -743,8 +744,11 @@ get.MP <- function(fractileC = 0.5,
                         getReportCovariance = FALSE)
             rep <- list()
             rep$inp <- check.inp(inp)
-            TAC <- spict:::get.TAC(rep, 1, fractileC, fractileFFmsy, fractileBBmsy, pa, prob,
-                                   uncertaintyCap, lower, upper, ',interval,', FALSE)
+            TAC <- spict:::get.TAC(repin=rep, reps=1, fractileC=fractileC,
+                                   fractileFFmsy=fractileFFmsy,
+                                   fractileBBmsy=fractileBBmsy, pa=pa, prob=prob,
+                                   bbmsyfrac=',bbmsyfrac,', stabilityClause=stabilityClause,
+                                   lower=lower, upper=upper, amtint=',amtint,', getFit=FALSE)
             res <- TACfilter(TAC)
             Rec <- new("Rec")
             Rec@TAC <- res
