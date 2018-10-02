@@ -543,14 +543,17 @@ get.cov <- function(rep, parname1, parname2, cor=FALSE){
 
 #' @name probdev
 #' @title Get the fishing mortality to be below certain biomass threshold
+#' @param ffac
 #' @param repin Result list as output from fit.spict().
 #' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
 #' @param prob Probability to above threshold (bbmsyfrac)
 #' @param MSEmode logical; indicating if uncertainty should only be estimated for logBlBmsy and logFlFmsy (default).
+#' @param getFrac
+#' @param verbose
 #' @return g
-probdev<-function(fac, repin, bbmsyfrac=0.5, prob=0.95, MSEmode = 1, getFrac=FALSE, verbose=FALSE){
+probdev<-function(ffac, repin, bbmsyfrac=0.5, prob=0.95, MSEmode = 1, getFrac=FALSE, verbose=FALSE){
     ## get F fac
-    inpt <- make.ffacvec(repin$inp, fac)
+    inpt <- make.ffacvec(repin$inp, ffac)
     repin$obj$env$data$ffacvec <- inpt$ffacvec
     repin$obj$env$data$MSEmode <- MSEmode
     repin$obj$retape()
@@ -559,7 +562,7 @@ probdev<-function(fac, repin, bbmsyfrac=0.5, prob=0.95, MSEmode = 1, getFrac=FAL
     last.state <- get.par("logBpBmsy",sdr)
     ll <- qnorm(1-prob,last.state[,2],last.state[,4])
     dev<- (exp(ll) - bbmsyfrac)^2
-    if(verbose)  cat("exp(ll): ",exp(ll),"fac: ",fac, " dev: ",dev,"\n")
+    if(verbose)  cat("exp(ll): ",exp(ll),"ffac: ",ffac, " dev: ",dev,"\n")
     if(getFrac) dev<-exp(ll)
     dev
 }
@@ -575,7 +578,7 @@ probdev<-function(fac, repin, bbmsyfrac=0.5, prob=0.95, MSEmode = 1, getFrac=FAL
 #' @export
 getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95,MSEmode=1){
     ## see if is possible even with zero F  
-    dev0 <- probdev(fac=1e-6,repin=repin,getFrac=TRUE, prob=prob,
+    dev0 <- probdev(ffac=1e-6,repin=repin,getFrac=TRUE, prob=prob,
                     bbmsyfrac=bbmsyfrac, MSEmode=MSEmode)
     if(!is.finite(dev0) || (bbmsyfrac-dev0) > 0.001){
         cat("Not possible even with zero F\n"); return(1e-6)
@@ -586,13 +589,13 @@ getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95,MSEmode=1){
 }
 
 
-#' @name uncertCap
+#' @name stabilityClause
 #' @title Apply uncertainty cap to F or F multiplier
-#' @param ffac F factor, multiplier or F to apply uncertainty cap to
-#' @param lo lower boundary for uncertainty cap (default 0.8)
-#' @param up upper boundary for uncertainty cap (default 1.2)
+#' @param ffac F factor, multiplier or F to apply stability clause to
+#' @param lo lower boundary for stability clause (default 0.8)
+#' @param up upper boundary for stability clause (default 1.2)
 #' @return F factor after uncertainty cap was applied
-uncertCap <- function(ffac, lo=0.8, up=1.2){
+stabilityClause <- function(ffac, lo=0.8, up=1.2){
     ffac[ffac < lo] <- lo
     ffac[ffac > up] <- up
     return(ffac)
@@ -614,15 +617,12 @@ get.TACi <- function(repin, ffac, fractileC=0.5, MSEmode=1){
     repin$obj$retape()
     repin$obj$fn(repin$opt$par)
     if(fractileC == 0.5){
-        TACi <- exp(log(repin$obj$report()$Cp))                
+        TACi <- repin$obj$report(repin$obj$env$last.par.best)$Cp
     }else{
         sdr <- try(sdreport(repin$obj),silent=TRUE)
-        if(is(sdr, "try-error")){
-            TACi <- NA
-        }else{
-            logCp <- get.par('logCp', sdr)
-            TACi <- exp(qnorm(fractileC, logCp[2], logCp[4]))                    
-        }                
+        if(is(sdr, "try-error")) return(NA)
+        logCp <- get.par('logCp', sdr)
+        TACi <- exp(qnorm(fractileC, logCp[2], logCp[4]))                    
     }
     return(TACi)
 }    
