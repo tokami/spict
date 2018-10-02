@@ -607,12 +607,11 @@ stabilityClause <- function(ffac, lo=0.8, up=1.2){
 #' @param ffac Absolute F value for which to predict the catch for
 #' @param fractileC fractileC The fractile of the catch distribution to be used for setting TAC. Default
 #'   is median (0.5).
-#' @param MSEmode logical; indicating if uncertainty should only be estimated for logBlBmsy and logFlFmsy (default).
 #' @return
-get.TACi <- function(repin, ffac, fractileC=0.5, MSEmode=1){
+get.TACi <- function(repin, ffac, fractileC=0.5){
     inpx <- make.ffacvec(repin$inp, ffac)
     repin$obj$env$data$ffacvec <- inpx$ffacvec
-    repin$obj$env$data$MSEmode <- MSEmode
+    repin$obj$env$data$MSEmode <- 1
     repin$obj$retape()
     repin$obj$fn(repin$opt$par)
     if(fractileC == 0.5){
