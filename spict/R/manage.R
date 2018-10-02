@@ -427,7 +427,7 @@ get.TAC  <- function(repin, reps = 1,
     inp$timepredi <- inp$timepredc + amtint
     inp$do.sd.report <- TRUE
     inp$getReportCovariance <- FALSE
-    inp$MSEmode <- FALSE #################################
+    inp$MSEmode <- TRUE
     ## fit spict
     rep <- try(spict::fit.spict(inp),silent=TRUE)
     ## stop if not converged
