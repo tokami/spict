@@ -428,6 +428,8 @@ get.TAC  <- function(repin, reps = 1,
     inp$do.sd.report <- TRUE
     inp$getReportCovariance <- FALSE
     inp$MSEmode <- TRUE
+    ## stronger prior
+    inp$priors$logn <- c(log(2),0.2,1)    
     ## fit spict
     rep <- try(spict::fit.spict(inp),silent=TRUE)
     ## stop if not converged
@@ -438,6 +440,8 @@ get.TAC  <- function(repin, reps = 1,
     logBpBmsy <- get.par("logBpBmsy",rep)
     Fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
     Flast <- get.par('logFl', rep, exp=TRUE)[2]
+    ## second non-convergence stop
+    if(!all(is.finite(c(logFpFmsy[2],logBpBmsy[2],Flast,Fmsy)))) return(rep(NA, reps))    
     ## F multiplication factor based on uncertainty in F/Fmsy. Default = median        
     fi <- 1-fractileFFmsy
     fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
