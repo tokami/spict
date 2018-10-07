@@ -470,9 +470,9 @@ get.TAC  <- function(repin, reps = 1,
         ## check if precautionary
         if((0.5 - bbmsyQ5) > 0.001){
             tmp <- try(spict:::getPAffac(rep, bbmsyfrac=bbmsyfrac, prob=prob))
-            if(is(tmp, "try-error")) return(rep(NA, reps))
+            if(is(tmp, "try-error") || !is.finite(tmp)) return(rep(NA, reps))
             ## debugging:
-            if(tmp > fabs) print(paste0("ffacpa",round(tmp,2)," > ffacmsy",round(fabs,2)))
+            ## if(tmp > fabs) print(paste0("ffacpa",round(tmp,2)," > ffacmsy",round(fabs,2)))
             fabs <- tmp
             fmult <- fabs * Flast / Fmsy
         }
