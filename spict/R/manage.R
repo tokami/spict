@@ -400,7 +400,8 @@ pred.catch <- function(repin, fmsyfac=1, MSEmode = TRUE, get.sd=FALSE, exp=FALSE
 #' @param stabilityClause Logical; If true F multiplication factor is bound between two values set in lower and upper. Default: FALSE.
 #' @param lower lower bound of the stability clause. Default is 0.8, used if uncertaintyCap = TRUE.
 #' @param upper upper bound of the stability clause. Default is 1.2, used if uncertaintyCap = TRUE.
-#' @param amtint Assessment interval. Default is 1, which indicates annual assessments. 
+#' @param amtint Assessment interval. Default is 1, which indicates annual assessments.
+#' @param npriorSD standard deviation of logn prior (Default: 2). If NA, the logn prior is removed
 #' @param getFit Logical; if TRUE the fitted results list with adjusted fsihing mortality value is returned. Default is FALSE.
 #' @return A list with estimated TAC based on harvest control rule settings or the fitted rep list with adjusted fishing mortality values if getFit = TRUE and a logical value indicating if the stability clause was hit or not (if in use).
 #' @export
@@ -415,6 +416,7 @@ get.TAC  <- function(repin, reps = 1,
                      lower=0.8,
                      upper=1.2,
                      amtint = 1,
+                     npriorSD = 2,
                      getFit = FALSE){
     ## create inp list (note: put in function)
     inp <- list()    
@@ -428,20 +430,26 @@ get.TAC  <- function(repin, reps = 1,
     inp$do.sd.report <- TRUE
     inp$getReportCovariance <- FALSE
     inp$MSEmode <- TRUE
+    ## check inp
+    inp <- check.inp(inp)
     ## stronger prior
-    inp$priors$logn <- c(log(2),0.2,1)    
+    if(is.finite(npriorSD)){
+        inp$priors$logn <- c(log(2),npriorSD,1)
+    }else{
+        inp$priors$logn <- c(0,0,0)
+    }
     ## fit spict
     rep <- try(spict::fit.spict(inp),silent=TRUE)
     ## stop if not converged
     if(is(rep, "try-error") || rep$opt$convergence != 0 ||
-       any(is.infinite(rep$sd))) return(rep(NA, reps))
+       any(is.infinite(rep$sd))) return(list(TAC=rep(NA, reps),hitSC=FALSE))
     ## get quantities
     logFpFmsy <- get.par("logFpFmsy", rep)
     logBpBmsy <- get.par("logBpBmsy",rep)
     Fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
     Flast <- get.par('logFl', rep, exp=TRUE)[2]
     ## second non-convergence stop
-    if(!all(is.finite(c(logFpFmsy[2],logBpBmsy[2],Flast,Fmsy)))) return(rep(NA, reps))    
+    if(!all(is.finite(c(logFpFmsy[2],logBpBmsy[2],Flast,Fmsy)))) return(list(TAC=rep(NA, reps),hitSC=FALSE))
     ## F multiplication factor based on uncertainty in F/Fmsy. Default = median        
     fi <- 1-fractileFFmsy
     fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
@@ -460,17 +468,17 @@ get.TAC  <- function(repin, reps = 1,
         repPA$obj$fn(rep$opt$par)
         sdr <- try(sdreport(repPA$obj),silent=TRUE)
         ## stop if not converged
-        if(is(sdr, "try-error")) return(rep(NA, reps))
+        if(is(sdr, "try-error")) return(list(TAC=rep(NA, reps),hitSC=FALSE))
         ## get quantities
         logBpBmsyPA <- get.par("logBpBmsy",sdr)
         ll <- qnorm(1-prob,logBpBmsyPA[,2],logBpBmsyPA[,4])
         bbmsyQ5 <- exp(ll)
         ## stop if not finite
-        if(!is.finite(bbmsyQ5)) return(rep(NA,reps))
+        if(!is.finite(bbmsyQ5)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
         ## check if precautionary
         if((0.5 - bbmsyQ5) > 0.001){
             tmp <- try(spict:::getPAffac(rep, bbmsyfrac=bbmsyfrac, prob=prob))
-            if(is(tmp, "try-error") || !is.finite(tmp)) return(rep(NA, reps))
+            if(is(tmp, "try-error") || !is.finite(tmp)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
             ## debugging:
             ## if(tmp > fabs) print(paste0("ffacpa",round(tmp,2)," > ffacmsy",round(fabs,2)))
             fabs <- tmp

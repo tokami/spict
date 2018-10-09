@@ -655,6 +655,7 @@ get.TACi <- function(repin, ffac, fractileC=0.5){
 #' @param lower lower bound of the stability clause. Default is 0.8, used if stabilityClause = TRUE.
 #' @param upper upper bound of the stability clause. Default is 1.2, used if stabilityClause = TRUE.
 #' @param amtint Assessment interval. Default is 1, which indicates annual assessments.
+#' @param npriorSD standard deviation of logn prior (Default: 2). If NA, the logn prior is removed
 #' @param env environment where the harvest control rule function(s) are assigned to.
 #' @param package
 #' @return A function which can estimate TAC recommendations based on SPiCT assessment,
@@ -707,22 +708,22 @@ get.MP <- function(fractileC = 0.5,
                    upper = 1.2,
                    amtint = 1,
                    dteuler = 1/16,
+                   npriorSD = 2,
                    env = globalenv(),
                    package="dlmtool"){
 
     ## allowing for multiple generation of MPs
     argList <- list(fractileC, fractileFFmsy, pa, prob, fractileBBmsy,
-                    stabilityClause, lower, upper, dteuler)
+                    stabilityClause, lower, upper, dteuler, npriorSD)
     argLengths <- sapply(argList, length)
     maxi <- max(argLengths)
     maxl  <- which(argLengths == maxi)
     if(maxi>1){
-        if(max(argLengths[(1:8)[-maxl]]) > 1)
+        if(max(argLengths[(1:10)[-maxl]]) > 1)
             stop("Specified arguments have different lengths, they should have the same length or length = 1.")
     }
     argListCor <- argList
-    argListCor[(1:9)[-maxl]] <- lapply(argList[(1:9)[-maxl]], function(x) rep(unlist(x), maxi))
-
+    argListCor[(1:10)[-maxl]] <- lapply(argList[(1:10)[-maxl]], function(x) rep(unlist(x), maxi))
     template  <- expression(paste0(
         'structure(function(x, Data, reps = 1,
           fractileC = ',a,',
@@ -748,7 +749,8 @@ get.MP <- function(fractileC = 0.5,
                                    fractileFFmsy=fractileFFmsy,
                                    fractileBBmsy=fractileBBmsy, pa=pa, prob=prob,
                                    bbmsyfrac=',bbmsyfrac,', stabilityClause=stabilityClause,
-                                   lower=lower, upper=upper, amtint=',amtint,', getFit=FALSE)
+                                   lower=lower, upper=upper, amtint=',amtint,',
+                                   npriorSD=',j,', getFit=FALSE)
             res <- TACfilter(TAC$TAC)
             Rec <- new("Rec")
             Rec@TAC <- res
@@ -764,7 +766,7 @@ get.MP <- function(fractileC = 0.5,
 
         ## create MPs as functions
         subList <- lapply(argListCor, "[[", I)
-        names(subList) <- letters[1:9]
+        names(subList) <- letters[1:10]
         templati <- eval(parse(text=paste(parse(text = eval(template, subList)),collapse=" ")))
 
         ## save names of MPs
@@ -812,9 +814,14 @@ get.MP <- function(fractileC = 0.5,
             c9 <- ""
         }else{
             c9 <- paste0("_dt",round(argListCor[[9]][I],2))            
-        }        
+        }
+        if(argListCor[[10]][I] == 2 && !is.na(argListCor[[10]][I])){
+            c10 <- ""
+        }else{
+            c10 <- paste0("_nSD",argListCor[[10]][I])            
+        }                
         ## put everythin together
-        nami[I] <- paste0("spict",c1,c2,c3,c4,c5,c6,c7,c8,c9)
+        nami[I] <- paste0("spict",c1,c2,c3,c4,c5,c6,c7,c8,c9,c10)
         assign(value=templati, x=nami[I], envir=env)
     }
 
