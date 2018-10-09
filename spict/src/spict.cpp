@@ -973,8 +973,8 @@ Type objective_function<Type>::operator() ()
   Type logBlK = logBl - logK;
   Type logFl = logFs(indlastobs-1);
   Type logFlFmsy = logFl - logFmsyvec(indlastobs-1);
-  Type logBlBtrigger = (1/0.5) * (logBl - logBmsyvec(indlastobs-1));
-  Type logBlBlim = (1/0.3) * (logBl - logBmsyvec(indlastobs-1));  
+  Type logBlBtrigger = (Type(1.0)/Type(0.5)) * logBlBmsy;
+  Type logBlBlim = (Type(1.0)/Type(0.3)) * logBlBmsy; 
 
   if(dbg > 0){
     std::cout << "--- DEBUG: Calculate relative levels of biomass and fishing mortality --- ans: " << ans << std::endl;
@@ -1033,6 +1033,9 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logBpK);
     ADREPORT(logBl);
     ADREPORT(logBlBmsy);
+  ADREPORT(logBlBtrigger);
+  ADREPORT(logBlBlim);  
+    
     ADREPORT(logBlK);
     ADREPORT(Fmsy);
     ADREPORT(Fmsyd);
