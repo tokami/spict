@@ -400,9 +400,9 @@ pred.catch <- function(repin, fmsyfac=1, MSEmode = TRUE, get.sd=FALSE, exp=FALSE
 #' @param stabilityClause Logical; If true F multiplication factor is bound between two values set in lower and upper. Default: FALSE.
 #' @param lower lower bound of the stability clause. Default is 0.8, used if uncertaintyCap = TRUE.
 #' @param upper upper bound of the stability clause. Default is 1.2, used if uncertaintyCap = TRUE.
-#' @param interval Assessment interval. Default is 1, which indicates annual assessments. 
+#' @param amtint Assessment interval. Default is 1, which indicates annual assessments. 
 #' @param getFit Logical; if TRUE the fitted results list with adjusted fsihing mortality value is returned. Default is FALSE.
-#' @return A vector with estimated TAC based on harvest control rule settings or the fitted rep list with adjusted fishing mortality values if getFit = TRUE.
+#' @return A list with estimated TAC based on harvest control rule settings or the fitted rep list with adjusted fishing mortality values if getFit = TRUE and a logical value indicating if the stability clause was hit or not (if in use).
 #' @export
 get.TAC  <- function(repin, reps = 1,
                      fractileC = 0.5,
@@ -479,8 +479,9 @@ get.TAC  <- function(repin, reps = 1,
     }
     ## Stability clause
     if(stabilityClause){
-        fmult <- spict:::stabilityClause(fmult, lower, upper)                                  
-    }
+        fmult <- spict:::stabilityClause(fmult, lower, upper)
+        if(any(fmult < lower) || any(fmult > upper)) hitSC <- TRUE else hitSC <- FALSE
+    }else hitSC <- FALSE
     fabs <- fmult * Fmsy / Flast            
     ## predict catch with fabs
     TACi <- spict:::get.TACi(rep, fabs, fractileC)
@@ -493,7 +494,7 @@ get.TAC  <- function(repin, reps = 1,
         fit <- try(fit.spict(inpt),silent=TRUE)
         if(!is(fit,"try-error")) return(fit)
     }
-    return(TAC)
+    return(list(TAC=TAC, hitSC=hitSC))
 }
 
 

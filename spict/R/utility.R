@@ -749,9 +749,11 @@ get.MP <- function(fractileC = 0.5,
                                    fractileBBmsy=fractileBBmsy, pa=pa, prob=prob,
                                    bbmsyfrac=',bbmsyfrac,', stabilityClause=stabilityClause,
                                    lower=lower, upper=upper, amtint=',amtint,', getFit=FALSE)
-            res <- TACfilter(TAC)
+            res <- TACfilter(TAC$TAC)
             Rec <- new("Rec")
             Rec@TAC <- res
+            hitSC <- c(Data@Misc[[x]]$hitSC, TAC$hitSC)
+            Rec@Misc <- list(hitSC = hitSC)
             return(Rec)
         },
         class="MP")'))    
