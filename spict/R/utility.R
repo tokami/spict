@@ -752,7 +752,8 @@ get.MP <- function(fractileC = 0.5,
             res <- TACfilter(TAC$TAC)
             Rec <- new("Rec")
             Rec@TAC <- res
-            hitSC <- c(Data@Misc[[x]]$hitSC, TAC$hitSC)
+            if(is.null(Data@Misc[[x]])) hitSCold <- NULL else hitSC <- Data@Misc[[x]]$hitSC
+            hitSC <- c(hitSCold, TAC$hitSC)
             Rec@Misc <- list(hitSC = hitSC)
             return(Rec)
         },
