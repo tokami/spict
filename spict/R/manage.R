@@ -485,6 +485,7 @@ get.TAC  <- function(repin, reps = 1,
             fmult <- fabs * Flast / Fmsy
         }
     }
+    if(!is.finite(fmult)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
     ## Stability clause
     if(stabilityClause){
         fmult <- spict:::stabilityClause(fmult, lower, upper)
@@ -492,6 +493,7 @@ get.TAC  <- function(repin, reps = 1,
     }else hitSC <- FALSE
     fabs <- fmult * Fmsy / Flast            
     ## predict catch with fabs
+    if(!is.finite(fabs)) return(list(TAC=rep(NA, reps),hitSC=FALSE))    
     TACi <- spict:::get.TACi(rep, fabs, fractileC)
     ## hack for DLMtool
     TAC <- rep(TACi, reps)
