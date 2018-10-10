@@ -656,6 +656,7 @@ get.TACi <- function(repin, ffac, fractileC=0.5){
 #' @param upper upper bound of the stability clause. Default is 1.2, used if stabilityClause = TRUE.
 #' @param amtint Assessment interval. Default is 1, which indicates annual assessments.
 #' @param npriorSD standard deviation of logn prior (Default: 2). If NA, the logn prior is removed
+#' @param nhist number of historic years to use for assessment (default = NA, which means to use all available years)
 #' @param env environment where the harvest control rule function(s) are assigned to.
 #' @param package
 #' @return A function which can estimate TAC recommendations based on SPiCT assessment,
@@ -709,6 +710,7 @@ get.MP <- function(fractileC = 0.5,
                    amtint = 1,
                    dteuler = 1/16,
                    npriorSD = 2,
+                   nhist = NA,
                    env = globalenv(),
                    package="dlmtool"){
 
@@ -733,11 +735,20 @@ get.MP <- function(fractileC = 0.5,
           fractileBBmsy=',e,',
           stabilityClause=',f,',
           lower=',g,',
-          upper=',h,'){
+          upper=',h,',
+          nhist=',nhist,'){
             dependencies <- "Data@Year, Data@Cat, Data@Ind"
-            time <- Data@Year
-            Catch <- Data@Cat[x,]
-            Index <- Data@Ind[x,]
+            ## limit data to use for assessment (with argument nhist)
+            LH <- Data@LHYear   ## last historical year
+            if(is.na(nhist)) nhist <- LH else nhist <- nhist     ## number of historical data years to use
+            curr.yr <- length(Data@Year)
+            fst.yr <- max(LH-nhist+1, 1)
+            yr.ind <-  fst.yr:curr.yr
+            n.yr <- length(yr.ind)
+            time <- yr.ind
+            Catch <- Data@Cat[x,yr.ind]
+            Index <- Data@Ind[x,yr.ind]
+            ## compile inp list
             inp <- list(timeC=time, obsC=Catch, 
                         timeI=time, obsI=Index,
                         dteuler = ',i,',
