@@ -411,7 +411,7 @@ get.TAC  <- function(repin, reps = 1,
                      fractileBBmsy=0.5,
                      pa=0,
                      prob=0.95,
-                     bbmsyfrac=0.5,                     
+                     bbmsyfrac=0.3,       
                      stabilityClause=FALSE,
                      lower=0.8,
                      upper=1.2,
@@ -478,7 +478,7 @@ get.TAC  <- function(repin, reps = 1,
         ## stop if not finite
         if(is.null(bbmsyQ5) || !is.finite(bbmsyQ5)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
         ## check if precautionary
-        if((0.5 - bbmsyQ5) > 0.001){
+        if((bbmsyfrac - bbmsyQ5) > 0.001){
             tmp <- try(spict:::getPAffac(rep, bbmsyfrac=bbmsyfrac, prob=prob))
             if(is.null(tmp) ||
                is(tmp, "try-error") || !is.finite(tmp)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
@@ -509,6 +509,25 @@ get.TAC  <- function(repin, reps = 1,
     }
     return(list(TAC=TAC, hitSC=hitSC))
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

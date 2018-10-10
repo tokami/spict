@@ -545,12 +545,12 @@ get.cov <- function(rep, parname1, parname2, cor=FALSE){
 #' @title Get the fishing mortality to be below certain biomass threshold
 #' @param ffac
 #' @param repin Result list as output from fit.spict().
-#' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
-#' @param prob Probability to above threshold (bbmsyfrac)
+#' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold (Blim = 0.3 Bmsy, Btrigger = 0.5 Bmsy)
+#' @param prob Probability to be above threshold (bbmsyfrac)
 #' @param getFrac
 #' @param verbose
 #' @return g
-probdev<-function(ffac, repin, bbmsyfrac=0.5, prob=0.95, getFrac=FALSE, verbose=FALSE){
+probdev<-function(ffac, repin, bbmsyfrac=0.3, prob=0.95, getFrac=FALSE, verbose=FALSE){
     ## get F fac
     inpt <- make.ffacvec(repin$inp, ffac)
     repin$obj$env$data$ffacvec <- inpt$ffacvec
@@ -571,11 +571,11 @@ probdev<-function(ffac, repin, bbmsyfrac=0.5, prob=0.95, getFrac=FALSE, verbose=
 #' @name getPAffac
 #' @title Get the fishing mortality to be below certain biomass threshold
 #' @param repin Result list as output from fit.spict().
-#' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
-#' @param prob Probability to above threshold (bbmsyfrac)
+#' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold (Blim = 0.3 Bmsy, Btrigger = 0.5 Bmsy)
+#' @param prob Probability to be above threshold (bbmsyfrac)
 #' @return Optimised F for P(Bp<Blim)
 #' @export
-getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95){
+getPAffac<-function(repin,bbmsyfrac=0.3,prob=0.95){
     ## see if is possible even with zero F  
     dev0 <- probdev(ffac=1e-6,repin=repin,getFrac=TRUE, prob=prob,
                     bbmsyfrac=bbmsyfrac, verbose=FALSE)
@@ -703,7 +703,7 @@ get.MP <- function(fractileC = 0.5,
                    fractileBBmsy = 0.5,                   
                    pa = FALSE,
                    prob = 0.95,
-                   bbmsyfrac=0.5,
+                   bbmsyfrac=0.3,
                    stabilityClause = FALSE,
                    lower = 0.8,
                    upper = 1.2,
