@@ -471,7 +471,7 @@ get.TAC  <- function(repin, reps = 1,
         if(is(sdr, "try-error")) return(list(TAC=rep(NA, reps),hitSC=FALSE))
         ## get quantities
         logBpBmsyPA <- get.par("logBpBmsy",sdr)
-        ll <- qnorm(1-prob,logBpBmsyPA[,2],logBpBmsyPA[,4])
+        ll <- qnorm(1-prob,logBpBmsyPA[2],logBpBmsyPA[4])
         bbmsyQ5 <- exp(ll)
         ## stop if not finite
         if(!is.finite(bbmsyQ5)) return(list(TAC=rep(NA, reps),hitSC=FALSE))

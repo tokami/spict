@@ -751,8 +751,9 @@ get.MP <- function(fractileC = 0.5,
                                    bbmsyfrac=',bbmsyfrac,', stabilityClause=stabilityClause,
                                    lower=lower, upper=upper, amtint=',amtint,',
                                    npriorSD=',j,', getFit=FALSE)
-            res <- TACfilter(TAC$TAC)
+            res <- DLMtool::TACfilter(TAC$TAC)
             Rec <- new("Rec")
+            if(!is.numeric(res)) res <- NA
             Rec@TAC <- res
             if(is.null(Data@Misc[[x]])) hitSCold <- NULL else hitSCold <- Data@Misc[[x]]$hitSC
             hitSC <- c(hitSCold, TAC$hitSC)
