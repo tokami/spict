@@ -560,7 +560,7 @@ probdev<-function(ffac, repin, bbmsyfrac=0.3, prob=0.95, getFrac=FALSE, verbose=
     sdr <- sdreport(repin$obj)
     last.state <- get.par("logBpBmsy",sdr)
     ll <- qnorm(1-prob,last.state[,2],last.state[,4])
-    dev <- (exp(ll) - bbmsyfrac)^2
+    dev <- (exp(ll) - (1-bbmsyfrac))^2
     if(verbose)  cat("exp(ll): ",exp(ll),"ffac: ",ffac, " dev: ",dev,"\n")
     if(getFrac) dev <- exp(ll)
     dev
@@ -579,7 +579,7 @@ getPAffac<-function(repin,bbmsyfrac=0.3,prob=0.95){
     ## see if is possible even with zero F  
     dev0 <- probdev(ffac=1e-6,repin=repin,getFrac=TRUE, prob=prob,
                     bbmsyfrac=bbmsyfrac, verbose=FALSE)
-    if(!is.finite(dev0) || (bbmsyfrac-dev0) > 0.001){
+    if(!is.finite(dev0) || (dev0 - (1-bbmsyffrac)) < -1e-3){
         ## cat("Not possible even with zero F\n")
         return(1e-6)
     }
