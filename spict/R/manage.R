@@ -433,7 +433,7 @@ get.TAC  <- function(repin, reps = 1,
     ## check inp
     inp <- check.inp(inp)
     ## stronger prior
-    if(is.finite(npriorSD)){
+    if(!is.null(npriorSD) && is.finite(npriorSD)){
         inp$priors$logn <- c(log(2),npriorSD,1)
     }else{
         inp$priors$logn <- c(0,0,0)
@@ -441,7 +441,7 @@ get.TAC  <- function(repin, reps = 1,
     ## fit spict
     rep <- try(spict::fit.spict(inp),silent=TRUE)
     ## stop if not converged
-    if(is(rep, "try-error") || rep$opt$convergence != 0 ||
+    if(is.null(rep) || is(rep, "try-error") || rep$opt$convergence != 0 ||
        any(is.infinite(rep$sd))) return(list(TAC=rep(NA, reps),hitSC=FALSE))
     ## get quantities
     logFpFmsy <- get.par("logFpFmsy", rep)
@@ -449,7 +449,9 @@ get.TAC  <- function(repin, reps = 1,
     Fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
     Flast <- get.par('logFl', rep, exp=TRUE)[2]
     ## second non-convergence stop
-    if(!all(is.finite(c(logFpFmsy[2],logBpBmsy[2],Flast,Fmsy)))) return(list(TAC=rep(NA, reps),hitSC=FALSE))
+    if(any(is.null(c(logFpFmsy[2],logBpBmsy[2],Flast,Fmsy))) ||
+       !all(is.finite(c(logFpFmsy[2],logBpBmsy[2],Flast,Fmsy))))
+        return(list(TAC=rep(NA, reps),hitSC=FALSE))
     ## F multiplication factor based on uncertainty in F/Fmsy. Default = median        
     fi <- 1-fractileFFmsy
     fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
@@ -468,24 +470,25 @@ get.TAC  <- function(repin, reps = 1,
         repPA$obj$fn(rep$opt$par)
         sdr <- try(sdreport(repPA$obj),silent=TRUE)
         ## stop if not converged
-        if(is(sdr, "try-error")) return(list(TAC=rep(NA, reps),hitSC=FALSE))
+        if(is.null(sdr) || is(sdr, "try-error")) return(list(TAC=rep(NA, reps),hitSC=FALSE))
         ## get quantities
         logBpBmsyPA <- get.par("logBpBmsy",sdr)
         ll <- qnorm(1-prob,logBpBmsyPA[2],logBpBmsyPA[4])
         bbmsyQ5 <- exp(ll)
         ## stop if not finite
-        if(!is.finite(bbmsyQ5)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
+        if(is.null(bbmsyQ5) || !is.finite(bbmsyQ5)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
         ## check if precautionary
         if((0.5 - bbmsyQ5) > 0.001){
             tmp <- try(spict:::getPAffac(rep, bbmsyfrac=bbmsyfrac, prob=prob))
-            if(is(tmp, "try-error") || !is.finite(tmp)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
+            if(is.null(tmp) ||
+               is(tmp, "try-error") || !is.finite(tmp)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
             ## debugging:
             ## if(tmp > fabs) print(paste0("ffacpa",round(tmp,2)," > ffacmsy",round(fabs,2)))
             fabs <- tmp
             fmult <- fabs * Flast / Fmsy
         }
     }
-    if(!is.finite(fmult)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
+    if(is.null(fmult) || !is.finite(fmult)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
     ## Stability clause
     if(stabilityClause){
         fmult <- spict:::stabilityClause(fmult, lower, upper)
@@ -493,7 +496,7 @@ get.TAC  <- function(repin, reps = 1,
     }else hitSC <- FALSE
     fabs <- fmult * Fmsy / Flast            
     ## predict catch with fabs
-    if(!is.finite(fabs)) return(list(TAC=rep(NA, reps),hitSC=FALSE))    
+    if(is.null(fabs) || !is.finite(fabs)) return(list(TAC=rep(NA, reps),hitSC=FALSE))    
     TACi <- spict:::get.TACi(rep, fabs, fractileC)
     ## hack for DLMtool
     TAC <- rep(TACi, reps)
