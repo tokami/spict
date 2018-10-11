@@ -756,13 +756,13 @@ get.MP <- function(fractileC = 0.5,
                         getReportCovariance = FALSE)
             rep <- list()
             rep$inp <- check.inp(inp)
-            TAC <- spict:::get.TAC(repin=rep, reps=1, fractileC=fractileC,
+            TAC <- try(spict:::get.TAC(repin=rep, reps=1, fractileC=fractileC,
                                    fractileFFmsy=fractileFFmsy,
                                    fractileBBmsy=fractileBBmsy, pa=pa, prob=prob,
                                    bbmsyfrac=',bbmsyfrac,', stabilityClause=stabilityClause,
                                    lower=lower, upper=upper, amtint=',amtint,',
-                                   npriorSD=',j,', getFit=FALSE)
-            if(is.null(TAC) || is.null(TAC$TAC) ||
+                                   npriorSD=',j,', getFit=FALSE), silent=TRUE)
+            if(is.null(TAC) || is.null(TAC$TAC) || is(TAC, "try-error") || is.logical(TAC) ||
                !is.numeric(TAC$TAC) || (TAC$TAC < 0)) taci <- NA else taci <- TAC$TAC
             Rec <- new("Rec")
             Rec@TAC <- as.numeric(taci)
