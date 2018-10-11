@@ -478,7 +478,7 @@ get.TAC  <- function(repin, reps = 1,
         ## stop if not finite
         if(is.null(bbmsyQ5) || !is.finite(bbmsyQ5)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
         ## check if precautionary
-        if((bbmsyQ5 - (1-bbmsyfrac)) < -1e-3){
+        if((bbmsyQ5 - bbmsyfrac) < -1e-3){
             tmp <- try(spict:::getPAffac(rep, bbmsyfrac=bbmsyfrac, prob=prob))
             if(is.null(tmp) ||
                is(tmp, "try-error") || !is.finite(tmp)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
