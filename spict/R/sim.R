@@ -317,8 +317,13 @@ sim.spict <- function(input, nobs=100){
                       rep(F0,nt-160))          ## decreasing
             logFbase <- log(rawF) 
             logFbase[2:nt] <- logFbase[2:nt] + e.f            
+        }else if(inp$sim$Ftype == 6){   ## high and then decreasing effort
+            rawF <- c(rep(Fmax,(nt-(floor(nt/2)))),  ## stable 
+                      seq(Fmax,F0,length.out=floor(nt/2)))          ## decreasing
+            logFbase <- log(rawF) 
+            logFbase[2:nt] <- logFbase[2:nt] + e.f
         }else{
-            stop("sim$Ftype not known. Choose between 1 to 5.")
+            stop("sim$Ftype not known. Choose between 1 to 6.")
         }
         
         # Impose seasons
