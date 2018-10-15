@@ -763,12 +763,12 @@ get.MP <- function(fractileC = 0.5,
                                    lower=lower, upper=upper, amtint=',amtint,',
                                    npriorSD=',j,', getFit=FALSE), silent=TRUE)
             if(is.null(TAC) || is.null(TAC$TAC) || is(TAC, "try-error") || is.logical(TAC) ||
-               !is.numeric(TAC$TAC) || (TAC$TAC < 0)) taci <- NA else taci <- TAC$TAC
+               !is.numeric(TAC$TAC) || (TAC$TAC < 0) || is.na(TAC$TAC)) taci <- NA else taci <- TAC$TAC
             Rec <- new("Rec")
             Rec@TAC <- as.numeric(taci)
             if(is.null(Data@Misc[[x]])) hitSCold <- NULL else hitSCold <- Data@Misc[[x]]$hitSC
             if(is.null(TAC) || is.null(TAC$hitSC) || is(TAC, "try-error") ||
-               is.logical(TAC) || !is.logical(TAC$hitSC))
+               is.logical(TAC) || !is.logical(TAC$hitSC) || is.na(TAC$hitSC))
                    hitsci <- NA else hitsci <- TAC$hitSC
             hitSC <- c(hitSCold, hitsci)
             Rec@Misc <- list(hitSC = hitSC)
