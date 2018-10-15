@@ -767,7 +767,9 @@ get.MP <- function(fractileC = 0.5,
             Rec <- new("Rec")
             Rec@TAC <- as.numeric(taci)
             if(is.null(Data@Misc[[x]])) hitSCold <- NULL else hitSCold <- Data@Misc[[x]]$hitSC
-            if(is.null(TAC) || is.null(TAC$hitSC)) hitsci <- NA else hitsci <- TAC$hitSC
+            if(is.null(TAC) || is.null(TAC$hitSC) || is(TAC, "try-error") ||
+               is.logical(TAC) || !is.logical(TAC$hitSC))
+                   hitsci <- NA else hitsci <- TAC$hitSC
             hitSC <- c(hitSCold, hitsci)
             Rec@Misc <- list(hitSC = hitSC)
             return(Rec)
