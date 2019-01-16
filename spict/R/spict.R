@@ -123,7 +123,6 @@ fit.spict <- function(inp, dbg=0){
                     opt$objective <- opt$value
                     pl <- obj$env$parList(opt$par)
                 }
-
             }
         }
     }

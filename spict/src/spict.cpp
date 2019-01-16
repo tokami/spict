@@ -336,6 +336,8 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i < nsp; i++) SPvecSnotM(i) = 0.0;
   vector<Type> mvecnotP(ns);
   for(int i=0; i < ns; i++) mvecnotP(i) = 1.0;
+  vector<Type> mvecnotM(ns);
+  for(int i=0; i < ns; i++) mvecnotM(i) = 1.0;
 
   vector<Type> logphiparSP(logphiSP.size()+1);
   logphiparSP(0) = 0.0; // The first logphiSP is set to 0, the rest are estimated relative to this.
@@ -509,6 +511,7 @@ Type objective_function<Type>::operator() ()
       //      std::cout << "exp(logmbase(i)) " << exp(logmbase(i)) << std::endl;
       //      std::cout << "logmbase(i) " << logmbase(i) << std::endl;            
       mvec0(i) = exp(SPvecS(indSP) + logmbase(i));
+      mvecnotM(i) = exp(SPvecS(indSP));      
     }
 
     // Covariate for m
@@ -618,6 +621,8 @@ Type objective_function<Type>::operator() ()
   vector<Type> logFmsyvec(ns);
   vector<Type> logBmsyvec(ns);
   vector<Type> logMSYvec(ns);
+  vector<Type> logMSYvecP(ns);
+  vector<Type> logMSYvecM(ns);    
 
   vector<Type> Bmsy2(nm);
   if(flag){
@@ -640,6 +645,8 @@ Type objective_function<Type>::operator() ()
       logFmsyvec(i) = log(Fmsydveci - (p*(1.0-Fmsydveci)*sdb2) / pow(2.0-Fmsydveci, 2.0));
       logBmsyvec(i) = logBmsys(ind);
       logMSYvec(i) = log(mvecnotP(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
+      logMSYvecP(i) = log(mvec(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
+      logMSYvecM(i) = log(mvecnotM(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
     }
   } else {
     // Use deterministic reference points
@@ -654,6 +661,8 @@ Type objective_function<Type>::operator() ()
       logFmsyvec(i) = log(mvecnotP(i) / Bmsyd(ind));
       logBmsyvec(i) = logBmsyd(ind);
       logMSYvec(i) = log(mvecnotP(i));
+      logMSYvecP(i) = log(mvec(i));
+      logMSYvecM(i) = log(mvecnotM(i));            
     }
   }
 
@@ -1390,10 +1399,14 @@ Type objective_function<Type>::operator() ()
     ADREPORT(mvec0);
     ADREPORT(mvec);
     ADREPORT(mvecnotP);
+    ADREPORT(mvecnotM);    
     ADREPORT(Bscaled);
     ADREPORT(Fscaled);
     ADREPORT(seasonsplinefineSP);
     ADREPORT(BmsyB0);
+    ADREPORT(logMSYvec);        
+    ADREPORT(logMSYvecP);
+    ADREPORT(logMSYvecM);
 
     if(reportall){ 
       // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
