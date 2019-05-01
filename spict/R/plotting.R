@@ -2679,8 +2679,8 @@ plotspict.seaprod <- function(rep, stamp=get.version()){
             ylim <- range(y, yl, yu)
         }
         if ("true" %in% names(rep$inp)){
-            ttrue <- seq(0, 1, length=length(rep$inp$true$SPvecS))
-            ytrue <- exp(rep$inp$true$SPvecS)
+            ttrue <- seq(0, 1, length=length(rep$inp$true$SPvec))
+            ytrue <- exp(rep$inp$true$SPvec)
             ylim <- range(c(ylim, ytrue))
         }
         plot(t, y, typ='n', xaxt='n', xlab='Time of year', ylab='Seasonal factor',
