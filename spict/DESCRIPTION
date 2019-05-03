@@ -26,3 +26,4 @@ VignetteBuilder: knitr
 GithubRepo: spict
 GithubRef: mergePA 
 GithubSHA1: 2147db63f9bb37dfb87974032447b608096d49c2 
+RoxygenNote: 6.1.1

@@ -5,18 +5,24 @@
 \title{Get probability to be above certain biomass threshold for
     set fishing mortality}
 \usage{
-probdev(ffac, repin, bbmsyfrac = 0.3, prob = 0.95, getFrac = FALSE,
-  verbose = FALSE)
+probdev(ffac, repin, bfrac = 0.3, prob = 0.95, quant = "logBpBmsy",
+  MSEmode = 1, getFrac = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{ffac}{Fishing mortality factor}
 
 \item{repin}{Result list as output from fit.spict().}
 
-\item{bbmsyfrac}{Fraction of B/Bmsy which is defined as threshold
-(Blim = 0.3 Bmsy, Btrigger = 0.5 Bmsy)}
+\item{bfrac}{Fraction of biomass relativ to biomass reference
+levels (dependent on \code{quant}), e.g.  fraction of B/Bmsy
+which is defined as threshold (Blim = 0.3 Bmsy, Btrigger = 0.5
+Bmsy) or fraction of Bp/Bl}
 
-\item{prob}{Probability of being above threshold (bbmsyfrac)}
+\item{prob}{Probability of being above threshold}
+
+\item{quant}{Quantity to use (options: "logBpBmsy", logBpBl")}
+
+\item{MSEmode}{default 1}
 
 \item{getFrac}{logical; return}
 
@@ -27,4 +33,8 @@ mortality factor and deviation}
 Returns deviation between targeted and realised probability
     of being above certain biomass threshold under set fishing
     mortality
+}
+\description{
+Get probability to be above certain biomass threshold for
+    set fishing mortality
 }

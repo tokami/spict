@@ -6,9 +6,10 @@
     rule)}
 \usage{
 get.MP(fractileC = 0.5, fractileFFmsy = 0.5, fractileBBmsy = 0.5,
-  pa = FALSE, prob = 0.95, bbmsyfrac = 0.3, stabilityClause = FALSE,
-  lower = 0.8, upper = 1.2, dteuler = 1/16, npriorSD = NA, nhist = NA,
-  env = globalenv(), package = "dlmtool")
+  pa = FALSE, prob = 0.95, bbmsyfrac = 0.3,
+  stabilityClause = FALSE, lower = 0.8, upper = 1.2,
+  dteuler = 1/16, npriorSD = NA, nhist = NA, env = globalenv(),
+  package = "dlmtool")
 }
 \arguments{
 \item{fractileC}{The fractile of the catch distribution to be used
@@ -53,6 +54,10 @@ for (so far only 'dlmtool' implemented, default).}
 \value{
 A function which can estimate TAC recommendations based on
     SPiCT assessment, taking assessment uncertainty into account.
+}
+\description{
+Get the management procedure (harvest control rule, advice
+    rule)
 }
 \details{
 This function creates harvest control rules (HCRs) which

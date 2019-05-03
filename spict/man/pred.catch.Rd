@@ -26,3 +26,7 @@ and catches are ADreported}
 A vector containing predicted catch (possibly with
     uncertainty).
 }
+\description{
+Predict the catch of the prediction interval specified in
+    inp
+}

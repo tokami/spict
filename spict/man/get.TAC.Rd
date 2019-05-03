@@ -4,15 +4,15 @@
 \alias{get.TAC}
 \title{Estimate Total Allowable Catch (TAC)}
 \usage{
-get.TAC(repin, reps = 1, fractileC = 0.5, fractileFFmsy = 0.5,
-  fractileBBmsy = 0.5, pa = 0, prob = 0.95, bbmsyfrac = 0.3,
-  stabilityClause = FALSE, lower = 0.8, upper = 1.2, getFit = FALSE)
+get.TAC(repin, hcr = "msy", fractileC = 0.5, fractileFFmsy = 0.5,
+  fractileBBmsy = 0.5, prob = 0.95, bfrac = 0.3, stab = FALSE,
+  lower = 0.8, upper = 1.2, getFit = FALSE)
 }
 \arguments{
 \item{repin}{Result list as output from fit.spict().}
 
-\item{reps}{The number of stochastic samples of the TAC
-recommendation (not used for this HCR).}
+\item{hcr}{Harvest control rule. Options: 'msy', 'pa', 'dl', '2/3' (more
+information under details)}
 
 \item{fractileC}{The fractile of the catch distribution to be used
 for setting the TAC. Default is median (0.5).}
@@ -23,32 +23,42 @@ F/Fmsy. Default is 0.5 (median).}
 \item{fractileBBmsy}{The fractile of the distribution of
 B/Bmsy. Default is 0.5 (median).}
 
-\item{pa}{Logical; indicating if the precautionary approach should
-be applied (reduce F if P(B<Blim) < prob). Default is FALSE.}
-
 \item{prob}{Probability for the precautionary approach (see
 argument 'pa', default is 0.95).}
 
-\item{bbmsyfrac}{Fraction of B/Bmsy for precautionary approach}
+\item{bfrac}{Fraction of biomass relativ to biomass reference
+levels (dependent on \code{quant}), e.g.  fraction of B/Bmsy
+which is defined as threshold (Blim = 0.3 Bmsy, Btrigger = 0.5
+Bmsy) or fraction of Bp/Bl}
 
-\item{stabilityClause}{Logical; If true F multiplication factor is
-bound between two values set in lower and upper. Default:
-FALSE.}
+\item{stab}{Logical; stability clause. If true F multiplication factor is bound between two values set in lower and upper. Default: FALSE.}
 
-\item{lower}{Lower bound of the stability clause. Default is 0.8,
-used if uncertaintyCap = TRUE.}
+\item{lower}{Lower bound of the stability clause. Default is 0.8, used if uncertaintyCap = TRUE.}
 
-\item{upper}{Upper bound of the stability clause. Default is 1.2,
-used if uncertaintyCap = TRUE.}
+\item{upper}{Upper bound of the stability clause. Default is 1.2, used if uncertaintyCap = TRUE.}
 
-\item{getFit}{Logical; if TRUE the fitted results list with
-adjusted fsihing mortality value is returned. Default is FALSE.}
+\item{getFit}{Logical; if TRUE the fitted results list with adjusted fsihing mortality value is returned. Default is FALSE.}
+
+\item{pa}{Logical; indicating if the precautionary approach should
+be applied (reduce F if P(B<Blim) < prob). Default is FALSE.}
 }
 \value{
 A list with estimated TAC based on harvest control rule
     settings or the fitted rep list with adjusted fishing mortality
     values if getFit = TRUE and a logical value indicating if the
     stability clause was hit or not (if in use).
+}
+\description{
+Estimate Total Allowable Catch (TAC)
+}
+\details{
+The possible harvest control rules are:
+\itemize{
+  \item{"msy"}{Standard MSY approach}
+  \item{"pa"}{Precautionary approach}
+  \item{"dl"}{Data-limited approach}
+  \item{"2/3"}{2 over 3 rule = last 2 observations of abundance index over preceeding 3}
+}
 }
 \examples{
 data(pol)

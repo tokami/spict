@@ -17,3 +17,6 @@ for setting the TAC. Default is median (0.5).}
 \value{
 Estimate TAC
 }
+\description{
+Estimate TAC for set fishing mortality factor
+}

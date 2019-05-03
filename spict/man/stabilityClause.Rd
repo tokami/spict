@@ -18,3 +18,7 @@ mortality to apply stability clause to}
 \value{
 Fishing mortality factor after stability clause was applied
 }
+\description{
+Apply stability clause to fishing mortality or fishing
+    mortality multiplier
+}

@@ -1012,6 +1012,10 @@ check.inp <- function(inp){
 
     ## faster fitting for MSEs
     if (!"MSEmode" %in% names(inp)) inp$MSEmode <- FALSE
+
+    ## indmanstart & indmanend
+    inp$indmanstart <- which(inp$time %in% inp$manstart)
+    inp$indmanend <- max(inp$indpred)
     
     
     # Reorder parameter list

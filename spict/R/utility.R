@@ -543,26 +543,33 @@ get.cov <- function(rep, parname1, parname2, cor=FALSE){
 #'     set fishing mortality
 #' @param ffac Fishing mortality factor
 #' @param repin Result list as output from fit.spict().
-#' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
-#'     (Blim = 0.3 Bmsy, Btrigger = 0.5 Bmsy)
-#' @param prob Probability of being above threshold (bbmsyfrac)
+#' @param bfrac Fraction of biomass relativ to biomass reference
+#'     levels (dependent on \code{quant}), e.g.  fraction of B/Bmsy
+#'     which is defined as threshold (Blim = 0.3 Bmsy, Btrigger = 0.5
+#'     Bmsy) or fraction of Bp/Bl
+#' @param prob Probability of being above threshold
+#' @param quant Quantity to use (options: "logBpBmsy", logBpBl")
 #' @param getFrac logical; return
 #' @param verbose logical; print realised probability, set fishing
 #'     mortality factor and deviation
+#' @param MSEmode default 1
 #' @return Returns deviation between targeted and realised probability
 #'     of being above certain biomass threshold under set fishing
 #'     mortality
-probdev<-function(ffac, repin, bbmsyfrac=0.3, prob=0.95, getFrac=FALSE, verbose=FALSE){
+probdev <- function(ffac, repin, bfrac=0.3, 
+                  prob=0.95, quant = "logBpBmsy",
+                  MSEmode = 1,
+                  getFrac=FALSE, verbose=FALSE){
     ## get F factor
     inpt <- make.ffacvec(repin$inp, ffac)
     repin$obj$env$data$ffacvec <- inpt$ffacvec
-    repin$obj$env$data$MSEmode <- 1
+    repin$obj$env$data$MSEmode <- MSEmode
     repin$obj$retape()
     repin$obj$fn(repin$opt$par)
     sdr <- sdreport(repin$obj)
-    last.state <- get.par("logBpBmsy",sdr)
+    last.state <- get.par(quant,sdr)
     ll <- qnorm(1-prob,last.state[,2],last.state[,4])
-    dev <- (exp(ll) - bbmsyfrac)^2
+    dev <- (exp(ll) - bfrac)^2
     if(verbose)  cat("exp(ll): ",exp(ll),"ffac: ",ffac, " dev: ",dev,"\n")
     if(getFrac) dev <- exp(ll)
     dev
@@ -570,26 +577,34 @@ probdev<-function(ffac, repin, bbmsyfrac=0.3, prob=0.95, getFrac=FALSE, verbose=
 
 
 
-#' @name get.PAffac
+#' @name get.ffac
 #' @title Get the fishing mortality corresponding to set probability
 #'     of being above certain biomass threshold
 #' @param repin Result list as output from fit.spict().
-#' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
-#'     (Blim = 0.3 Bmsy, Btrigger = 0.5 Bmsy; default is 0.3)
-#' @param prob Probability to be above threshold (bbmsyfrac; default
+#' @param bfrac Fraction of biomass relativ to biomass reference
+#'     levels (dependent on \code{quant}), e.g.  fraction of B/Bmsy
+#'     which is defined as threshold (Blim = 0.3 Bmsy, Btrigger = 0.5
+#'     Bmsy) or fraction of Bp/Bl
+#' @param prob Probability to be above threshold (bfrac; default
 #'     is 0.95)
+#' @param quant Quantity to use (options: "logBpBmsy", logBpBl")
+#' @param MSEmode default = 1
 #' @return Optimised Fishing mortality for P(Bp<Blim)
 #' @export
-get.PAffac<-function(repin,bbmsyfrac=0.3,prob=0.95){
+get.ffac <- function(repin,
+                   bfrac=0.3, prob=0.95,
+                   quant = "logBpBmsy", MSEmode = 1){
     ## see if is possible even with zero F  
     dev0 <- probdev(ffac=1e-6,repin=repin,getFrac=TRUE, prob=prob,
-                    bbmsyfrac=bbmsyfrac, verbose=FALSE)
-    if(!is.finite(dev0) || (dev0 - bbmsyfrac) < -1e-3){
+                    bfrac=bfrac, quant = quant, MSEmode = MSEmode,
+                    verbose=FALSE)
+    if(!is.finite(dev0) || (dev0 - bfrac) < -1e-3){
         ## cat("Not possible even with zero F\n")
         return(1e-6)
     }
     offac <- optimize(probdev,c(1e-6,10),tol=1e-2, repin=repin,
-                      bbmsyfrac=bbmsyfrac,prob=prob,verbose=FALSE)
+                      bfrac=bfrac,prob=prob,quant=quant,MSEmode = MSEmode,
+                      verbose=FALSE)
     offac$minimum
 }
 
@@ -667,7 +682,7 @@ get.TACi <- function(repin, ffac, fractileC=0.5){
 #'     be applied (reduce F if P(B<Blim) < prob). Default is FALSE.
 #' @param prob Probability for the precautionary approach (see
 #'     argument 'pa', default is 0.95).
-#' @param bbmsyfrac Fraction of B/Bmsy which is defined as threshold
+#' @param bfrac Fraction of B/Bmsy which is defined as threshold
 #'     (Blim = 0.3 Bmsy, Btrigger = 0.5 Bmsy; default is 0.3)
 #' @param stabilityClause Logical; If true TAC is bound between two
 #'     values set in lower and upper. Default: FALSE.
@@ -727,7 +742,7 @@ get.MP <- function(fractileC = 0.5,
                    fractileBBmsy = 0.5,                   
                    pa = FALSE,
                    prob = 0.95,
-                   bbmsyfrac=0.3,
+                   bfrac=0.3,
                    stabilityClause = FALSE,
                    lower = 0.8,
                    upper = 1.2,
@@ -791,7 +806,7 @@ get.MP <- function(fractileC = 0.5,
             TAC <- try(spict:::get.TAC(repin=rep, reps=1, fractileC=fractileC,
                                    fractileFFmsy=fractileFFmsy,
                                    fractileBBmsy=fractileBBmsy, pa=pa, prob=prob,
-                                   bbmsyfrac=',bbmsyfrac,', stabilityClause=stabilityClause,
+                                   bfrac=',bfrac,', stabilityClause=stabilityClause,
                                    lower=lower, upper=upper,
                                    getFit=FALSE), silent=TRUE)
             if(is.null(TAC) || is.null(TAC$TAC) || is(TAC, "try-error") || is.logical(TAC) ||

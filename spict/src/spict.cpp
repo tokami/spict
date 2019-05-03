@@ -128,6 +128,8 @@ Type objective_function<Type>::operator() ()
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
   DATA_INTEGER(MSEmode);       // If 1 only relative states are ADreported (increases speed, relevant for fitting within MSE)
+  DATA_INTEGER(indmanstart);
+  DATA_INTEGER(indmanend);
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -1020,6 +1022,12 @@ Type objective_function<Type>::operator() ()
 
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
+
+  // Report B/Blast
+  Type logBmanstart = logB(indmanstart-1);
+  Type logBmanend = logB(indmanend-1);    
+  vector<Type> logBBl = logB - logBmanstart;
+  Type logBpBl = logBmanend - logBmanstart;  
   
   // ADREPORTS
   if(MSEmode == 1){
@@ -1031,6 +1039,10 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFpFmsy);
     ADREPORT(logCp);
     ADREPORT(logFmsy);
+  }else if(MSEmode == 2){
+    ADREPORT(logFnotS);
+    ADREPORT(logBBl);
+    ADREPORT(logBpBl);    
   }else{
     ADREPORT(Bmsy);  
     ADREPORT(Bmsyd);
@@ -1101,33 +1113,37 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logalpha);
     ADREPORT(logbeta);
     ADREPORT(BmsyB0);
-  }
 
-  if(reportall){ 
-    // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
-    // B
-    ADREPORT(logBBmsy);
-    // F
-    ADREPORT(logFFmsy); // Vector of size ns
-    ADREPORT(logFs);    // Vector of size ns
-    // C
-    ADREPORT(logCpred);
-    // I
-    ADREPORT(logIpred);
-    // E
-    ADREPORT(logEpred);
-    // Time varying growth
-    if ((timevaryinggrowth == 1) | (logmcovflag == 1)){
-      ADREPORT(logrre); // r random effect
-      ADREPORT(logFmsyvec);
-      ADREPORT(logMSYvec);
+
+    if(reportall){ 
+      // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
+      // B
+      ADREPORT(logBBmsy);
+      // F
+      ADREPORT(logFFmsy); // Vector of size ns
+      ADREPORT(logFs);    // Vector of size ns
+      // C
+      ADREPORT(logCpred);
+      // I
+      ADREPORT(logIpred);
+      // E
+      ADREPORT(logEpred);
+      // Time varying growth
+      if ((timevaryinggrowth == 1) | (logmcovflag == 1)){
+	ADREPORT(logrre); // r random effect
+	ADREPORT(logFmsyvec);
+	ADREPORT(logMSYvec);
+      }
+      ADREPORT(logFnotS);
+      ADREPORT(logFFmsynotS);
+      ADREPORT(logBBtrigger);
+      ADREPORT(logBBlim);
+      ADREPORT(logBBl);
+      ADREPORT(logBpBl);        
     }
-    ADREPORT(logFnotS);
-    ADREPORT(logFFmsynotS);
-    ADREPORT(logBBtrigger);
-    ADREPORT(logBBlim);        
+  
+    ADREPORT( logBmsyPluslogFmsy ) ;
   }
-  ADREPORT( logBmsyPluslogFmsy ) ;
   
   // REPORTS (these don't require sdreport to be output)
   REPORT(Cp);
