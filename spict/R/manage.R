@@ -500,7 +500,19 @@ get.TAC  <- function(repin,
                     fabs <- tmp
                     fmult <- fabs * Flast / Fmsy
                 }
-            }        
+            }
+        if(is.null(fmult) || !is.finite(fmult)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
+        ## Stability clause or uncertainty cap (for dl and 2/3)
+        if(stab){
+            fmult <- spict:::stabilityClause(fmult, lower, upper)
+            if(any(fmult < lower) || any(fmult > upper)) hitSC <- TRUE else hitSC <- FALSE
+        }else hitSC <- FALSE
+        ## convert back to f multiplication factor    
+        fabs <- fmult * Fmsy / Flast
+        ## predict catch with fabs
+        if(is.null(fabs) || !is.finite(fabs)) return(list(TAC=rep(NA, reps),hitSC=FALSE))    
+        TACi <- spict:::get.TACi(repin, fabs, fractileC)
+        TAC <- rep(TACi, reps)        
     }else if(hcr %in% c("dl")){
         quant = "logBpBl"
         ## get quantities
@@ -527,9 +539,61 @@ get.TAC  <- function(repin,
                 return(list(TAC=rep(NA, reps),hitSC=FALSE))
             fabs <- tmp
             fmult <- fabs / Flast
-        }else{ ## otherwise keep current F (or current catch?)
-            fmult <- 1
+            if(is.null(fmult) || !is.finite(fmult)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
+            ## Stability clause or uncertainty cap (for dl and 2/3)
+            if(stab){
+                fmult <- spict:::stabilityClause(fmult, lower, upper)
+                if(any(fmult < lower) || any(fmult > upper)) hitSC <- TRUE else hitSC <- FALSE
+            }else hitSC <- FALSE
+            ## convert back to f multiplication factor    
+            fabs <- fmult * Flast
+            ## predict catch with fabs
+            if(is.null(fabs) || !is.finite(fabs)) return(list(TAC=rep(NA, reps),hitSC=FALSE))    
+            TACi <- spict:::get.TACi(repin, fabs, fractileC)
+            TAC <- rep(TACi, reps)
+        }else{ ## otherwise keep current Catch
+            TAC <- rep(TACi, reps)
+            hitSC <- FALSE
         }
+        
+    }else if(hcr %in% c("dl2")){
+        quant = "logBpBmsy"        
+        ## get quantities
+        logFpFmsy <- get.par("logFpFmsy", repin)
+        logBpBmsy <- get.par("logBpBmsy",repin)
+        Fmsy <- get.par('logFmsy', repin, exp=TRUE)[2]
+        Flast <- get.par('logFnotS', repin, exp=TRUE)[inpin$indpred[1],2]
+        ## F multiplication factor based on uncertainty in F/Fmsy. Default = median        
+        fi <- 1-fractileFFmsy
+        fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
+        fm5 <- exp(qnorm(0.5, logFpFmsy[2], logFpFmsy[4]))
+        fmult <- fm5 / fm
+        fabs <- (fmult + 1e-6) * Fmsy / Flast
+        ## check if Bpred >= Bmsy at least x%
+        ll <- qnorm(1-prob,logBpBmsy[2],logBpBmsy[4])
+        bpblQx <- exp(ll)
+        ## if smaller
+        if((bpblQx - bfrac) < -1e-3){
+            tmp <- try(spict:::get.ffac(repin, bfrac=bfrac, prob=prob,
+                                        quant=quant, MSEmode = 1))
+            if(is.null(tmp) || is(tmp, "try-error") || !is.finite(tmp))
+                return(list(TAC=rep(NA, reps),hitSC=FALSE))
+            fabs <- tmp
+            fmult <- fabs * Flast / Fmsy            
+            if(is.null(fmult) || !is.finite(fmult)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
+        }
+        ## Stability clause or uncertainty cap (for dl and 2/3)
+        if(stab){
+            fmult <- spict:::stabilityClause(fmult, lower, upper)
+            if(any(fmult < lower) || any(fmult > upper)) hitSC <- TRUE else hitSC <- FALSE
+        }else hitSC <- FALSE
+        ## convert back to f multiplication factor
+        fabs <- fmult * Fmsy / Flast                
+        ## predict catch with fabs
+        if(is.null(fabs) || !is.finite(fabs)) return(list(TAC=rep(NA, reps),hitSC=FALSE))    
+        TACi <- spict:::get.TACi(repin, fabs, fractileC)
+        TAC <- rep(TACi, reps)
+
     }else if(hcr %in% c("2/3")){
         ## get quantities
         inds <- inpin$obsI
@@ -559,22 +623,6 @@ get.TAC  <- function(repin,
         }
         return(list(TAC=TAC, hitSC=hitSC))        
     }
-    if(is.null(fmult) || !is.finite(fmult)) return(list(TAC=rep(NA, reps),hitSC=FALSE))
-    ## Stability clause or uncertainty cap (for dl and 2/3)
-    if(stab){
-        fmult <- spict:::stabilityClause(fmult, lower, upper)
-        if(any(fmult < lower) || any(fmult > upper)) hitSC <- TRUE else hitSC <- FALSE
-    }else hitSC <- FALSE
-    ## convert back to f multiplication factor    
-    if(hcr %in% c("msy","pa")){
-        fabs <- fmult * Fmsy / Flast
-    }else if(hcr %in% c("dl")){
-        fabs <- fmult * Flast
-    }
-    ## predict catch with fabs
-    if(is.null(fabs) || !is.finite(fabs)) return(list(TAC=rep(NA, reps),hitSC=FALSE))    
-    TACi <- spict:::get.TACi(repin, fabs, fractileC)            
-    TAC <- rep(TACi, reps)
     ## get fitted object
     if(getFit){
         inpt <- make.ffacvec(repin$inp, fabs)

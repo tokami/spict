@@ -1014,8 +1014,10 @@ check.inp <- function(inp){
     if (!"MSEmode" %in% names(inp)) inp$MSEmode <- FALSE
 
     ## indmanstart & indmanend
-    inp$indmanstart <- which(inp$time %in% inp$manstart)
-    inp$indmanend <- max(inp$indpred)
+    ## inp$indmanstart <- which(inp$time %in% inp$manstart)
+    ## inp$indmanend <- max(inp$indpred)
+    inp$indmanstart <- inp$indlastobs
+    inp$indmanend <- inp$indpred[1]
     
     
     # Reorder parameter list

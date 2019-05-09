@@ -16,7 +16,7 @@ levels (dependent on \code{quant}), e.g.  fraction of B/Bmsy
 which is defined as threshold (Blim = 0.3 Bmsy, Btrigger = 0.5
 Bmsy) or fraction of Bp/Bl}
 
-\item{prob}{Probability to be above threshold (bbmsyfrac; default
+\item{prob}{Probability to be above threshold (bfrac; default
 is 0.95)}
 
 \item{quant}{Quantity to use (options: "logBpBmsy", logBpBl")}

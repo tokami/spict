@@ -6,10 +6,9 @@
     rule)}
 \usage{
 get.MP(fractileC = 0.5, fractileFFmsy = 0.5, fractileBBmsy = 0.5,
-  pa = FALSE, prob = 0.95, bbmsyfrac = 0.3,
-  stabilityClause = FALSE, lower = 0.8, upper = 1.2,
-  dteuler = 1/16, npriorSD = NA, nhist = NA, env = globalenv(),
-  package = "dlmtool")
+  pa = FALSE, prob = 0.95, bfrac = 0.3, stabilityClause = FALSE,
+  lower = 0.8, upper = 1.2, dteuler = 1/16, npriorSD = NA,
+  nhist = NA, env = globalenv(), package = "dlmtool")
 }
 \arguments{
 \item{fractileC}{The fractile of the catch distribution to be used
@@ -27,7 +26,7 @@ be applied (reduce F if P(B<Blim) < prob). Default is FALSE.}
 \item{prob}{Probability for the precautionary approach (see
 argument 'pa', default is 0.95).}
 
-\item{bbmsyfrac}{Fraction of B/Bmsy which is defined as threshold
+\item{bfrac}{Fraction of B/Bmsy which is defined as threshold
 (Blim = 0.3 Bmsy, Btrigger = 0.5 Bmsy; default is 0.3)}
 
 \item{stabilityClause}{Logical; If true TAC is bound between two
