@@ -1016,8 +1016,13 @@ check.inp <- function(inp){
     ## indmanstart & indmanend
     ## inp$indmanstart <- which(inp$time %in% inp$manstart)
     ## inp$indmanend <- max(inp$indpred)
-    inp$indmanstart <- inp$indlastobs
-    inp$indmanend <- inp$indpred[1]
+    inp$indmanstart <- min(inp$indpred) ## inp$indlastobs
+    inp$indmanend <- max(inp$indpred) ## inp$indpred[1]
+
+    ## standard deviations for indices (if given by cpue standardisation)
+    if(!"obsIsd" %in% names(inp)){
+        inp$obsIsd <- vector("list", length(inp$obsI))
+    }
     
     
     # Reorder parameter list

@@ -1139,7 +1139,9 @@ Type objective_function<Type>::operator() ()
       ADREPORT(logBBtrigger);
       ADREPORT(logBBlim);
       ADREPORT(logBBl);
-      ADREPORT(logBpBl);        
+      ADREPORT(logBpBl);
+      // testing
+      ADREPORT(Cpredsub);
     }
   
     ADREPORT( logBmsyPluslogFmsy ) ;

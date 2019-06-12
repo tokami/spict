@@ -36,6 +36,15 @@ make.ffacvec <- function(inp, ffac){
     return(inp)
 }
 
+make.ffacvec2 <- function(inp, ffac){
+    inp$ffacvec <- rep(1, inp$ns)
+    ## Start in indpred[2] because indpred[1] is mainly for plotting    
+    ind <- inp$indpred
+    print(ind)
+    inp$ffacvec[ind] <- ffac + 1e-8 # Add small to avoid taking log of 0
+    return(inp)
+}
+
 
 #' @name meanvar2shaperate
 #' @title Convert mean and variance to shape and rate of gamma distribution
