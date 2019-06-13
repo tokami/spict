@@ -6,7 +6,7 @@
 \usage{
 get.TAC(repin, hcr = "msy", fractileC = 0.5, fractileFFmsy = 0.5,
   fractileBBmsy = 0.5, prob = 0.95, bfrac = 0.3, stab = FALSE,
-  lower = 0.8, upper = 1.2, getFit = FALSE)
+  lower = 0.8, upper = 1.2, tcv = 0.5, getFit = FALSE)
 }
 \arguments{
 \item{repin}{Result list as output from fit.spict().}
@@ -36,6 +36,8 @@ Bmsy) or fraction of Bp/Bl}
 \item{lower}{Lower bound of the stability clause. Default is 0.8, used if uncertaintyCap = TRUE.}
 
 \item{upper}{Upper bound of the stability clause. Default is 1.2, used if uncertaintyCap = TRUE.}
+
+\item{tcv}{threshold for CV (for hcr dl3) when using pbb when msy}
 
 \item{getFit}{Logical; if TRUE the fitted results list with adjusted fsihing mortality value is returned. Default is FALSE.}
 
