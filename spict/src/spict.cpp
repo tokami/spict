@@ -1454,7 +1454,7 @@ Type objective_function<Type>::operator() ()
       if ((timevaryinggrowth == 1) | (logmcovflag == 1)){
 	ADREPORT(logrre); // r random effect
 	ADREPORT(logFmsyvec);
-	ADREPORT(logMSYvec);
+	//	ADREPORT(logMSYvec);
       }
       ADREPORT(logFnotS);
       ADREPORT(logFFmsynotS);
