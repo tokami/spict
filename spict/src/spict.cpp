@@ -137,6 +137,8 @@ Type objective_function<Type>::operator() ()
   DATA_MATRIX(splinematfineSP);
   DATA_VECTOR(sinFac);
   DATA_INTEGER(MSEmode);       // flag to reduce ADreport to logFpFmsy and logBpBmsy
+  DATA_INTEGER(indmanstart);
+  DATA_INTEGER(indmanend);  
 
 
   // Priors
@@ -1273,14 +1275,14 @@ Type objective_function<Type>::operator() ()
   }
 
   vector<Type> logFnotS(ns);
-  vector<Type> logFFmsynotS(ns);
-  
+  vector<Type> logFFmsynotS(ns);  
   Type meanS = (exp(logFs - logF)).sum() / logF.size(); 
   for(int i=0; i<ns; i++){
     //    std::cout << "logF: " << logF(i) << std::endl;
     logFnotS(i) = logF(i) + log(meanS);
     logFFmsynotS(i) = logFnotS(i) - logFmsyvec(i); 
   }
+  Type logFpFmsynotS = logFFmsynotS(pind);  
 
   // seaprod biomas without seasonality
   vector<Type> logBnotS(ns);
@@ -1298,6 +1300,7 @@ Type objective_function<Type>::operator() ()
     //logBnotS(i) = logBnotS(i) + log(meanSm);
     logBBmsynotS(i) = logBnotS(i) - logBmsyvec(i); 
   }
+  Type logBpBmsynotS = logBBmsynotS(pind);
 
 
   // Biomass and fishing mortality at last time point (not seasonal)
@@ -1314,15 +1317,39 @@ Type objective_function<Type>::operator() ()
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
 
-  // Blim for PA
-  vector<Type> logBlim(nm);  
-  logBlim = log(Bmsy/2);
+  // Btrigger and Blim
+  vector<Type> logBBtrigger = (Type(1.0)/Type(0.5)) * logBBmsy;
+  vector<Type> logBBlim = (Type(1.0)/Type(0.3)) * logBBmsy;
+ 
+  // Report B/Blast
+  Type logBmanstart = logB(indmanstart-1);
+  Type logBmanend = logB(indmanend-1);    
+  vector<Type> logBBl = logB - logBmanstart;
+  Type logBpBl = logBmanend - logBmanstart;
+  Type logBmanstartnotS = logBnotS(indmanstart-1);
+  Type logBmanendnotS = logBnotS(indmanend-1);      
+  vector<Type> logBBlnotS = logBnotS - logBmanstartnotS;
+  Type logBpBlnotS = logBmanend - logBmanstartnotS;  
   
   // ADREPORTS
   if(MSEmode == 1){
+    ADREPORT(logFnotS);
+    ADREPORT(logFFmsynotS);        
+    ADREPORT(logBBtrigger);
+    ADREPORT(logBBlim);    
     ADREPORT(logBpBmsy);
     ADREPORT(logFpFmsy);
-    ADREPORT(logCp);    
+    ADREPORT(logBpBmsynotS);
+    ADREPORT(logFpFmsynotS);    
+    ADREPORT(logCp);
+    ADREPORT(logFmsy);
+  }else if(MSEmode == 2){
+    ADREPORT(logFnotS);
+    ADREPORT(logBBl);    
+    ADREPORT(logBpBl);
+    ADREPORT(logBBlnotS);    
+    ADREPORT(logBpBlnotS);
+    ADREPORT(logBBmsynotS);    
   }else{
     ADREPORT(Bmsy);  
     ADREPORT(Bmsyd);
@@ -1407,6 +1434,8 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logMSYvec);        
     ADREPORT(logMSYvecP);
     ADREPORT(logMSYvecM);
+    ADREPORT(logBpBmsynotS);
+    ADREPORT(logFpFmsynotS);        
 
     if(reportall){ 
       // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
@@ -1481,8 +1510,6 @@ Type objective_function<Type>::operator() ()
   // for PA
   REPORT(Bp);
   REPORT(logBp);
-  REPORT(logBlim);
-  if(MSEmode == 0) ADREPORT(logBlim);
   REPORT(logFp);
   REPORT(B);
   REPORT(logFs);

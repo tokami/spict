@@ -14,3 +14,6 @@ check.euler(rep, dteuler = 1/128)
 \value{
 Relative difference between dteuler for reference levels and states
 }
+\description{
+Check robustness of assessment results vs time discretization
+}

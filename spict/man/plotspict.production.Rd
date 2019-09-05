@@ -2,9 +2,10 @@
 % Please edit documentation in R/plotting.R
 \name{plotspict.production}
 \alias{plotspict.production}
+\alias{plotspict.production2}
 \title{Plot theoretical production curve and estimates.}
 \usage{
-plotspict.production(rep, n.plotyears = 40, main = "Production curve",
+plotspict.production2(rep, n.plotyears = 40, main = "Production curve",
   stamp = get.version())
 }
 \arguments{
@@ -18,6 +19,9 @@ plotspict.production(rep, n.plotyears = 40, main = "Production curve",
 }
 \value{
 Nothing.
+}
+\description{
+Plot theoretical production curve and estimates.
 }
 \details{
 Plots the theoretical production curve (production as a function of biomass) as calculated from the estimated model parameters. Overlaid is the estimated production/biomass trajectory.

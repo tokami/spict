@@ -1239,6 +1239,12 @@ sim.spictSP <- function(input, nobs=100){
             rawF <- rep(oneCycle, repF)
             logFbase <- log(rawF[1:nt]) 
             logFbase[2:nt] <- logFbase[2:nt] + e.f
+        }else if(inp$Fpattern == 6){ ## first half of roller coaster,
+            rawF <- c(seq(F0,inp$Fmax,length.out = floor(nt/2)),           ## increasing
+                       rep(inp$Fmax,(nt-(floor(nt/2)+floor(nt/4)))),  ## stable 
+                       seq(inp$Fmax,0.9*inp$Fmax,length.out=floor(nt/4)))          ## decreasing
+            logFbase <- log(rawF) 
+            logFbase[2:nt] <- logFbase[2:nt] + e.f
         }
 
         #ef <- arima.sim(inp$armalistF, nt-1) * sdf*sqrt(dt) # Used to simulate other than white noise in F

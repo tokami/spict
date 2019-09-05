@@ -16,3 +16,6 @@ reduce.inp(inp, nyears, cutStart = FALSE)
 \value{
 Reduced inp list
 }
+\description{
+Reduce time series to get nested inp lists
+}

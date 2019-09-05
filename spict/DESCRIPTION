@@ -26,3 +26,4 @@ VignetteBuilder: knitr
 GithubRepo: spict
 GithubRef: seaprodTVP 
 GithubSHA1: 5b918ed9166725f14f2d9b8d898cfdd74de0eae9 
+RoxygenNote: 6.1.1
