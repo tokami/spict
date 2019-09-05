@@ -540,7 +540,7 @@ get.TAC  <- function(repin,
         if(is.null(bpblQx) || !is.finite(bpblQx))
             return(list(TAC=rep(NA, reps),hitSC=FALSE, conv = FALSE, id = "pbb"))
         ## if smaller
-        if(abs(bpblQx - bfrac) > 1e-2){
+        if(abs(bpblQx - bfrac) > 1e-3){
             tmp <- try(spict:::get.ffac(repin, bfrac=bfrac, prob=prob,
                                         quant=quant, MSEmode = 2))
             if(is.null(tmp) || is(tmp, "try-error") || !is.finite(tmp))
@@ -691,8 +691,8 @@ get.TAC  <- function(repin,
                 TAC <- rep(TACi, reps)
                 hitSC <- FALSE
             }
-        }
-        id <- "pbb"
+            id <- "pbb"
+        }        
     }else if(hcr %in% c("2/3")){
         ## get quantities
         inds <- inpin$obsI
