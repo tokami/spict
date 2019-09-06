@@ -171,6 +171,8 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(priorBBmsy);     // Prior vector for B/Bmsy, [log(mean), stdev in log, useflag, year, ib]
   DATA_VECTOR(priorFFmsy);     // Prior vector for F/Fmsy, [log(mean), stdev in log, useflag, year, if]
   DATA_VECTOR(priorBmsyB0)     // Prior vector for Bmsy/B_0, [mean, stdev, useflag]
+  DATA_VECTOR(priorlogamp)     // Prior vector for Bmsy/B_0, [mean, stdev, useflag]
+  DATA_VECTOR(priorphase)     // Prior vector for Bmsy/B_0, [mean, stdev, useflag]    
   
   // Options
   DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
@@ -881,7 +883,15 @@ Type objective_function<Type>::operator() ()
   }
   if(priorBmsyB0(2) == 1){
     ans -= dnorm( BmsyB0, priorBmsyB0(0),priorBmsyB0(1), 1); // prior for Bmsy/B0
+  }
+  if(priorlogamp(2) == 1){ 
+    ans-= dnorm(logamp, priorlogamp(0), priorlogamp(1), 1); // Prior for logamp
+  }
+  if(priorphase(2) == 1){ 
+    ans-= dnorm(phase, priorphase(0), priorphase(1), 1); // Prior for phase
   }  
+
+  
 
   /*
   dt[i] is the length of the time interval between t_i and t_i+1
