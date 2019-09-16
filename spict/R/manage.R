@@ -444,6 +444,8 @@ get.TAC  <- function(repin,
                      prob = 0.95,
                      bfrac = 0.3,
                      babs = NA,
+                     23_pa = FALSE,
+                     23_paRed = 0.2,
                      stab = FALSE,
                      lower = 0.8,
                      upper = 1.2,
@@ -721,10 +723,12 @@ get.TAC  <- function(repin,
         if(stab){
             r23 <- spict:::stabilityClause(r23, lower, upper)
             if(any(r23 < lower) || any(r23 > upper)) hitSC <- TRUE else hitSC <- FALSE
-        }else hitSC <- FALSE        
+        }else hitSC <- FALSE
         ## account for seasonal and annual catches
         Cl <- sum(tail(inpin$obsC, tail(1/inpin$dtc,1)))
         TACi <- Cl * r23 * 1 * 1  ## Clast * r * f * b
+        ## pa buffer
+        if(23_pa) TACi <- TACi * 23_paRed
         TAC <- rep(TACi, reps)        
         if(getFit){
             fit <- try(take.c(catch = Cl, inpin = inpin, repin = repin),silent=TRUE)
