@@ -444,8 +444,9 @@ get.TAC  <- function(repin,
                      prob = 0.95,
                      bfrac = 0.3,
                      babs = NA,
-                     23_pa = FALSE,
-                     23_paRed = 0.2,
+                     r23_type = "2/3",
+                     r23_pa = FALSE,
+                     r23_paRed = 0.2,
                      stab = FALSE,
                      lower = 0.8,
                      upper = 1.2,
@@ -716,8 +717,12 @@ get.TAC  <- function(repin,
             ind <- unlist(inds)
         }
         ninds <- length(ind)
-        inum <- ind[(ninds-1):ninds]
-        iden <- ind[(ninds-4):(ninds-2)]
+        r23_type <- "2/3"
+        r23t <- as.numeric(unlist(strsplit(r23_type, "/")))
+        inum <- ind[(ninds-(r23t[1]-1)):ninds]
+        iden <- ind[(ninds-(r23t[1]+r23t[2]-1)):(ninds-r23t[1])]
+        ## inum <- ind[(ninds-1):ninds]
+        ## iden <- ind[(ninds-4):(ninds-2)]
         r23 <- mean(inum, na.rm = TRUE)/mean(iden, na.rm = TRUE)
         ## uncertainty cap
         if(stab){
@@ -728,7 +733,7 @@ get.TAC  <- function(repin,
         Cl <- sum(tail(inpin$obsC, tail(1/inpin$dtc,1)))
         TACi <- Cl * r23 * 1 * 1  ## Clast * r * f * b
         ## pa buffer
-        if(23_pa) TACi <- TACi * 23_paRed
+        if(r23_pa) TACi <- TACi * 23_paRed
         TAC <- rep(TACi, reps)        
         if(getFit){
             fit <- try(take.c(catch = Cl, inpin = inpin, repin = repin),silent=TRUE)
