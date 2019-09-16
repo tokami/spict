@@ -733,7 +733,7 @@ get.TAC  <- function(repin,
         Cl <- sum(tail(inpin$obsC, tail(1/inpin$dtc,1)))
         TACi <- Cl * r23 * 1 * 1  ## Clast * r * f * b
         ## pa buffer
-        if(r23_pa) TACi <- TACi * 23_paRed
+        if(r23_pa) TACi <- TACi * r23_paRed
         TAC <- rep(TACi, reps)        
         if(getFit){
             fit <- try(take.c(catch = Cl, inpin = inpin, repin = repin),silent=TRUE)
