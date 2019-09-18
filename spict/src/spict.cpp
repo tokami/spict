@@ -1320,10 +1320,18 @@ Type objective_function<Type>::operator() ()
   Type logFlnotS = logFnotS(indlastobs-1);
   Type logFlFmsynotS = logFlnotS - logFmsyvec(indlastobs-1);  
 
-  // report scaled biomass and fishing mortality relative to mean for comparison with SAM, SMS and Co
-  vector<Type> Bscaled = log(exp(logB)/(sum(exp(logB))/logB.size()));
-  vector<Type> Fscaled = log(exp(logF)/(sum(exp(logF))/logF.size()));  
+  
+  // mean B and F for hist period
+  vector<Type> bhist(indlastobs-1);
+  vector<Type> fhist(indlastobs-1);    
+  for(int i=0; i<(indlastobs-1); i++){
+    bhist(i) = logB(i);
+    fhist(i) = logFnotS(i);    
+  }
+  vector<Type> logBscaled = log(exp(logB)/(sum(exp(bhist))/bhist.size()));
+  vector<Type> logFscaled = log(exp(logFnotS)/(sum(exp(fhist))/fhist.size()));  
 
+  
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
 
@@ -1359,7 +1367,14 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logBpBl);
     ADREPORT(logBBlnotS);    
     ADREPORT(logBpBlnotS);
-    ADREPORT(logBBmsynotS);    
+    ADREPORT(logBBmsynotS);
+  }else if(MSEmode == 3){    
+    ADREPORT(logBscaled);
+    ADREPORT(logFscaled);
+    ADREPORT(logFnotS);
+    ADREPORT(logBpBl);        
+    ADREPORT(logCpred);
+    ADREPORT(logq);        
   }else{
     ADREPORT(Bmsy);  
     ADREPORT(Bmsyd);
@@ -1437,8 +1452,8 @@ Type objective_function<Type>::operator() ()
     ADREPORT(mvec);
     ADREPORT(mvecnotP);
     ADREPORT(mvecnotM);    
-    ADREPORT(Bscaled);
-    ADREPORT(Fscaled);
+    ADREPORT(logBscaled);
+    ADREPORT(logFscaled);
     ADREPORT(seasonsplinefineSP);
     ADREPORT(BmsyB0);
     ADREPORT(logMSYvec);        
@@ -1472,6 +1487,10 @@ Type objective_function<Type>::operator() ()
       ADREPORT(logBBmsynotS);
 
       // NEW:
+      ADREPORT(logBBl);    
+      ADREPORT(logBpBl);
+      ADREPORT(logBBlnotS);    
+      ADREPORT(logBpBlnotS);
       ADREPORT(logBlnotS);
       ADREPORT(logBlBmsynotS);
       ADREPORT(logBlKnotS);

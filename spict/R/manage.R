@@ -451,15 +451,16 @@ get.TAC  <- function(repin,
                      lower = 0.8,
                      upper = 1.2,
                      tcv = 0.5,
-                     getFit = FALSE){
+                     getFit = FALSE,
+                     MSEmode = 0){
 
     ## hack for DLMtool - The number of stochastic samples of the TAC recommendation. 
     reps = 1
     ## inp
     inpin <- repin$inp    
     ## stop if repin not converged
-    if(is.null(repin) || is(repin, "try-error") || repin$opt$convergence != 0 ||
-       any(is.infinite(repin$sd)))
+    if((is.null(repin) || is(repin, "try-error") || repin$opt$convergence != 0 ||
+       any(is.infinite(repin$sd))) & hcr != "bmed")
         return(list(TAC=rep(NA, reps),hitSC=FALSE, conv = FALSE, id = "spict"))
     if(hcr %in% c("msy","pa")){
         quant = "logBpBmsynotS"        
@@ -705,7 +706,51 @@ get.TAC  <- function(repin,
                 hitSC <- FALSE
             }
             id <- "pbb"
-        }        
+        }
+    }else if(hcr %in% c("bmed")){
+        quant = "logBpBl"
+        ## get quantities
+        logBpBl <- get.par("logBpBl", repin, exp = FALSE)
+        Flast <- get.par('logFnotS', repin, exp=TRUE)[inpin$indpred[1],2]
+        ## second non-convergence stop
+        if(any(is.null(c(logBpBl[2],Flast))) ||
+           !all(is.finite(c(logBpBl[2],Flast))))
+            return(list(TAC=rep(NA, reps),hitSC=FALSE, conv = FALSE, id = "bmed"))
+        ## TAC = Clast by default
+        lastyearidxs <- min( which( cumsum(rev(inpin$dtc))>=1 ) ) ## warning: this will not make sense with subannual/mixed data with missing values
+        TACi <- sum(tail(inpin$obsC, lastyearidxs))
+        ## check if Bpred >= Blast at least x%
+        ll <- qnorm(1-0.5,logBpBl[2],logBpBl[4])
+        bpblQx <- exp(ll)
+        fabs <- Flast
+        fmult <- fabs/Flast
+        ## stop if not finite
+        if(is.null(bpblQx) || !is.finite(bpblQx))
+            return(list(TAC=rep(NA, reps),hitSC=FALSE, conv = FALSE, id = "pbb"))
+        ## if smaller
+        if(abs(bpblQx - bfrac) > 1e-3){
+            tmp <- Flast * 0.75
+            fabs <- tmp
+            fmult <- fabs / Flast
+            if(is.null(fmult) || !is.finite(fmult))
+                return(list(TAC=rep(NA, reps),hitSC=FALSE, conv = FALSE, id = "pbb"))
+            ## Stability clause or uncertainty cap (for dl and 2/3)
+            if(stab){
+                fmult <- spict:::stabilityClause(fmult, lower, upper)
+                if(any(fmult < lower) || any(fmult > upper)) hitSC <- TRUE else hitSC <- FALSE
+            }else hitSC <- FALSE
+            ## convert back to f multiplication factor    
+            fabs <- fmult * Flast
+            ## predict catch with fabs
+            if(is.null(fabs) || !is.finite(fabs))
+                return(list(TAC=rep(NA, reps),hitSC=FALSE, conv = FALSE, id = "pbb"))
+            TACi <- spict:::get.TACi(repin, fabs, fractileC)
+            TAC <- rep(TACi, reps)
+        }else{ ## otherwise keep current Catch
+            TAC <- rep(TACi, reps)
+            hitSC <- FALSE
+        }
+        id <- "bmed"        
     }else if(hcr %in% c("2/3")){
         ## get quantities
         inds <- inpin$obsI
@@ -717,7 +762,6 @@ get.TAC  <- function(repin,
             ind <- unlist(inds)
         }
         ninds <- length(ind)
-        r23_type <- "2/3"
         r23t <- as.numeric(unlist(strsplit(r23_type, "/")))
         inum <- ind[(ninds-(r23t[1]-1)):ninds]
         iden <- ind[(ninds-(r23t[1]+r23t[2]-1)):(ninds-r23t[1])]
@@ -743,8 +787,8 @@ get.TAC  <- function(repin,
     }
     ## get fitted object
     if(getFit){
-        inpt <- make.ffacvec(repin$inp, fabs)
-        inpt$MSEmode <- FALSE
+        inpt <- make.ffacvec(repin$inp, fmult)
+        inpt$MSEmode <- MSEmode
         fit <- try(fit.spict(inpt),silent=TRUE)
         if(!is(fit,"try-error")) return(fit)
     }
