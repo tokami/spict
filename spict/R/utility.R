@@ -861,7 +861,7 @@ probdev <- function(ffac, repin, bfrac=0.3,
 #' @export
 getPAffac<-function(repin,bbmsyfrac=0.5,prob=0.95,MSEmode=1){
     ## see if is possible even with zero F  
-    dev0 <- probdev(fac=1e-6,repin=repin,getFrac=TRUE)
+    dev0 <- probdev(ffac=1e-6,repin=repin,getFrac=TRUE)
     if( (bbmsyfrac-dev0) > 0.01 ) { cat("Not possible even with zero F\n"); return(1e-6) }
     offac <- optimize(probdev,c(1e-6,10),tol=1e-2, repin=repin,
                       bbmsyfrac=bbmsyfrac,prob=prob,MSEmode=MSEmode)
