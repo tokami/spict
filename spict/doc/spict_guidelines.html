@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="T.K. Mildenberger, A. Kokkalis, C.W. Berg" />
+
+
+<title>Guidelines for the use of the stochastic production model in continuous time (SPiCT)</title>
+
+
+
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Guidelines for the use of the stochastic production model in continuous time (SPiCT)</h1>
+<h4 class="author">T.K. Mildenberger, A. Kokkalis, C.W. Berg</h4>
+<h4 class="date">23 September, 2019</h4>
+
+
+
+<p>This is a living document, be sure to check for the latest update (<a href="https://github.com/mawp/spict/issues/new">link</a>). The SPiCT package is actively developed, check for the most recent package version and report problems at (<a href="https://github.com/mawp/spict/issues/new">link</a>).</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Document version</th>
+<th align="center">SPiCT version</th>
+<th align="right">Comments</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">v 1.0</td>
+<td align="center">v 1.2.8</td>
+<td align="right">Initial version (2019-09-23)</td>
+</tr>
+</tbody>
+</table>
+<p>This document provides specific guidelines for the use of the stochastic production model in continuous time (SPiCT; Pedersen and Berg, 2017). The following is divided into three parts, containing: (i) the main assumptions and data requirements of SPiCT, (ii) a checklist for the acceptance of a SPiCT assessment, and (iii) other helpful tips.</p>
+<p>Most of the following guidelines and tips are accompanied by sample code that assumes</p>
+<ul>
+<li>input data is contained in a list called ‘<code>inp</code>’,</li>
+<li>the results are contained in a list called ‘<code>fit</code>’ after fitting SPiCT to the input data with <code>fit &lt;- fit.spict(inp)</code>, and</li>
+<li>calculating the one-step-ahead residuals with <code>fit &lt;- calc.osa.resid(fit)</code>.</li>
+</ul>
+<div id="main-assumptions-and-input-data-for-spict" class="section level2">
+<h2>Main assumptions and input data for SPiCT</h2>
+<ul>
+<li><p>Catch data should be representative of both landings and bycatch. It is also possible to use a time series of landings, but then the interpretation of the results is changed. If available, seasonal catches should be used as input. Catches are assumed to be taken over a period of time (e.g. years or quarters). The time vector in SPiCT should reflect the beginning of each catch interval (e.g. 2002.25 and 2002.75 for the second and fourth quarter catches, respectively). Additionally, the vector inp$dtc should reflect the length of each time interval (e.g. 1 for annual and 0.25 for quarterly catches, respectively).</p></li>
+<li><p>Stock size indices should be in terms of biomass (not numbers) and representative of the exploitable stock biomass (ESB). In many cases, the gear selectivity of the commercial and scientific fleets do not coincide and thus the stock size indices have to be corrected to exclude smaller individuals that are not recruited to the commercial fleet.</p></li>
+<li><p>Biomass indices are assumed to be snapshots on given time points. Therefore, the timing of survey indices has to be given as decimal years reflecting the timing of the survey in the vector inp$timeI (e.g. 1995.5 for the middle of the year). Commercial CPUE indices should be associated with the midpoint of the interval of the corresponding catches, i.e. middle of the year if they are based on yearly aggregated catches and effort.</p></li>
+<li><p>If input data spans long periods and there is ecological evidence for potential changes in productivity, it is possible to fit productivity regime shifts or long-term gradual changes in productivity.</p></li>
+<li><p>The Euler discretisation has to be finer than the data, i.e. for yearly data the Euler time step (inp$dteuler) has to be smaller than 1. A value of 1 changes the model to a discrete time production model with different model assumptions. The default value is 1/16 year, which is sufficient in most cases. The function <code>check.euler(fit)</code> allows to check if the discretisation is fine enough.</p></li>
+</ul>
+</div>
+<div id="checklist-for-the-acceptance-of-a-spict-assessment" class="section level2">
+<h2>Checklist for the acceptance of a SPiCT assessment</h2>
+<p>ICES category 3 stocks can be managed using the official advice rule based on SPiCT (3.1.1 and 3.1.2 in ICES, 2018), which requires an accepted SPiCT assessment.</p>
+<ol style="list-style-type: decimal">
+<li><p>The assessment <strong>converged</strong> (<code>fit$opt$convergence</code> equals 0).</p></li>
+<li><p>All <strong>variance parameters</strong> of the model parameters are <strong>finite</strong> (<code>all(is.finite(fit$sd)</code>) should be <code>TRUE</code>).</p></li>
+<li><p><strong>No violation of model assumptions</strong> based on one-step-ahead residuals (bias, auto-correlation, normality). This means, that p-values are insignificant (<span class="math inline">\(\leq 0.05\)</span>), indicated by green titles in the graphs of <code>spictplot.diagnostics(fit)</code>. Slight violations of these assumptions do not necessarily invalidate model results.</p></li>
+<li><p><strong>Consistent patterns in the retrospective analysis</strong> (<code>fit &lt;- fit.retro(fit)</code>). This means that there is no tendency of consistent under- or overestimation of the relative fishing mortality (<span class="math inline">\(\frac{F}{F_{MSY}}\)</span>) and relative biomass (<span class="math inline">\(\frac{B}{B_{MSY}}\)</span>) in successive assessment. The retrospective trajectories of those two quantities should be inside the confidence intervals of the base run.</p></li>
+<li><p><strong>Realistic production curve</strong>. The shape of the production curve should not be too skewed (<span class="math inline">\(\frac{B_{MSY}}{K}\)</span> should be between 0.1 and 0.9). Low values of <span class="math inline">\(\frac{B_{MSY}}{K}\)</span> allow for an infinite population growth rate (<code>calc.bmsyk(fit)</code>).</p></li>
+<li><p><strong>High assessment uncertainty</strong> can indicate a lack of contrast in the input data or violation of the ecological model assumptions. The main variance parameters (<code>logsdb</code>, <code>logsdc</code>, <code>logsdi</code>, <code>logsdf</code>) should not be unrealistically high. Confidence intervals for <span class="math inline">\(\frac{B}{B_{MSY}}\)</span> and <span class="math inline">\(\frac{F}{F_{MSY}}\)</span> should not span more than 1 order of magnitude (<code>calc.om(fit)</code>).</p></li>
+<li><p><strong>Initial values do not influence the parameter estimates</strong> (<code>fit &lt;- check.ini(fit)</code>). The estimates should be the same for all initial values (<code>fit$ckeck.ini$resmat</code>). Runs which did not converge should not be considered in this regard.</p></li>
+</ol>
+</div>
+<div id="optional-model-and-assessment-tuning-in-case-of-assessment-rejection" class="section level2">
+<h2>Optional model and assessment tuning in case of assessment rejection</h2>
+<p><strong>Disclaimer</strong>: An uncertain assessment is okay; the model should not be tweaked and parameters should not be fixed unless there is sufficient information and evidence to make such assumptions. Rather than avoiding uncertainty, it should be accounted for by means of stochastic harvest control rules.</p>
+<ul>
+<li><p>Increase <strong>iterations of optimisation</strong> Special error code (8) exceeded max.iter.. <code>inp$optimiser.control = list(iter.max = 1e4, eval.max = 1e4)</code></p></li>
+<li><p>If the catch time series is longer than the survey(s), <strong>shortening the catch time series</strong> to cover only the period where there is an available biomass index may help model convergence. <code>inp = shorten.inp(inp, 2005, 2018)</code></p></li>
+<li><p><strong>Adjust</strong> the parameter determining the <strong>shape of the production curve</strong> ‘<code>logn</code>’ or impose a prior (be aware that this modification might cause smaller confidence bands).</p></li>
+<li><p>A prior for n based on a meta analysis, e.g. for all species pooled based on Thorson et al. (2011): <code>inp$priors$logn &lt;- c(log(log(1.478), 0.6, 1)</code></p>
+<ul>
+<li><p>Tighter Schaefer prior for n (or any other prior e.g. from meta studies): <code>inp$priors$logn &lt;- c(log(2), 0.5, 1)</code></p></li>
+<li><p>Fixing n to resemble the Schaefer production model (or the meta study, alternatively): <code>inp$ini$logn &lt;- log(2); inp$phases$logn &lt;- -1</code></p></li>
+</ul></li>
+<li><p>Use a <strong>prior for the initial depletion level</strong> based on available information, FOR EXAMPLE:</p>
+<ul>
+<li><p>If evidence or expert knowledge allows to infer that there was low or no exploitation before the beginning of the available data: initial depletion level could be assumed to be close to the carrying capacity (<strong>e.g.</strong> <code>inp$priors$logbkfrac &lt;- c(log(0.8),0.5,1)</code>)</p></li>
+<li><p>If evidence or expert knowledge allows to infer that there was low or no exploitation before the beginning of the available data: initial depletion level could be assumed to be a certain fraction of the carrying capacity (<strong>e.g.</strong> <code>inp$priors$logbkfrac &lt;- c(log(0.2),0.5,1)</code>)</p></li>
+</ul></li>
+<li><p>If information on the level of uncertainty in the biomass index and/or the uncertainty of the catch is available prior distribution could be used for the observation error term of the indices (‘<code>logsdi</code>’) and catches (‘logsdc’), respectively. This requires to remove the priors for the ratios of process to observation errors (‘<code>logalpha</code>’) and (‘<code>logbeta</code>’), respectively.</p></li>
+</ul>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

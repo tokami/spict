@@ -18,7 +18,10 @@
 
 #' @name manage
 #' @title Calculate predictions under different management scenarios
-#' @references{ICES. 2017. Report of the Workshop on the Development of the ICES approach to providing MSY advice for category 3 and 4 stocks (WKMSYCat34), 6–10 March 2017, Copenhagen, Denmark. ICES CM 2017/ ACOM:47. 53 pp.}
+#' @references{ICES. 2017. Report of the Workshop on the Development
+#'     of the ICES approach to providing MSY advice for category 3 and
+#'     4 stocks (WKMSYCat34), 6-10 March 2017, Copenhagen,
+#'     Denmark. ICES CM 2017/ ACOM:47. 53 pp.} 
 #' @details Scenarios that are currently implemented include:
 #' \itemize{
 #'   \item{"1"}{ Keep the catch of the current year (i.e. the last observed catch).}
@@ -29,7 +32,10 @@
 #'   \item{"6"}{ Increase F by X\%. Default X = 25.}
 #'   \item{"7"}{ Use ICES MSY advice rule.}
 #'
-#' Scenario 7 implements the ICES MSY advice rule for stocks that are assessed using spict (ICES 2017). MSY B_{trigger} is set equal to B_{MSY} / 2. Then fishing mortality in the short forecast is calculated as:
+#' Scenario 7 implements the ICES MSY advice rule for stocks that are
+#' assessed using spict (ICES 2017). MSY B_{trigger} is set equal to
+#' B_{MSY} / 2. Then fishing mortality in the short forecast is
+#' calculated as:
 #'
 #' F(y+1) =  F(y) * min{ 1, median[B(y+1) / MSY B_{trigger}] } / median[F(y)/F_{MSY}]  
 #' }
@@ -358,7 +364,7 @@ mansummary <- function(repin, ypred=1, include.EBinf=FALSE, include.unc=TRUE, ve
 
 #' @name pred.catch
 #' @title Predict the catch of the prediction interval specified in inp
-#' @param rep Result list as output from fit.spict().
+#' @param rep Result list from fit.spict().
 #' @param fmsyfac Projection are made using F = fmsyfac * Fmsy.
 #' @param get.sd Get uncertainty of the predicted catch.
 #' @param exp If TRUE report exp of log predicted catch.
@@ -398,4 +404,177 @@ pred.catch <- function(repin, fmsyfac=1, get.sd=FALSE, exp=FALSE, dbg=0){
         names(Cp) <- names(get.par('logK', repin)) # Just to get the names
     }
     return(Cp)
+}
+
+
+#' @name get.TAC
+#' @title Estimate Total Allowable Catch (TAC)
+#' @param rep Result list as output from fit.spict().
+#' @param hcr Harvest control rule. Options: 'msy', 'pa', 'dl', '2/3'
+#'     (more information under details)
+#' @param args A list with arguments for the individual hcrs
+#' @param getFit Logical; if TRUE the fitted results list with
+#'     adjusted fsihing mortality value is returned. Default is FALSE.
+#'
+#' @details The possible harvest control rules are:
+#' \itemize{
+#'   \item{"MSY"}{ICES MSY approach}
+#'   \item{"MSY-PA"}{MSY precautionary approach}
+#'   \item{"Btrend"}{Data-limited approach based on the trend in the biomass}
+#'   \item{"MSY-Btrend"}{Data-limited approach based on the trend in the biomass}
+#' }
+#' @author T.K. Mildenberger <t.k.mildenberger@gmail.com>
+#' @return A list with estimated TAC based on harvest control rule
+#'     settings or the fitted rep list with adjusted fishing mortality
+#'     values if getFit = TRUE and a logical value indicating if the
+#'     stability clause was hit or not (if in use).
+#' @export
+#' 
+#' @examples
+#' data(pol)
+#' rep <- fit.spict(pol$albacore)
+#' get.TAC(rep)
+get.TAC <- function(rep,
+                    hcr = "MSY",
+                    args = NULL,
+                    getFit = FALSE){
+    repin <- rep
+    inpin <- repin$inp
+
+    ## all hcrs
+    allhcrs <- c("MSY","MSY-PA","Btrend","MSY-Btrend")
+
+    ## arguments
+    if(is.null(args)) args <- list()
+    args$fracc <- if(!"fracc" %in% names(args)) 0.5 else args$fracc
+    args$fracf <- if(!"fracf" %in% names(args)) 0.5 else args$fracf
+    args$fracb <- if(!"fracb" %in% names(args)) 0.5 else args$fracb
+    if(!"bfrac" %in% names(args)){
+        if(hcr %in% c("Btrend","MSY-Btrend")){
+            args$bfrac <- 1
+        }else args$bfrac <- 0.3
+    }
+    if(!"bfrac" %in% names(args)){
+        if(hcr %in% c("Btrend","MSY-Btrend")){
+            args$prop <- 0.5
+        }else args$bfrac <- 0.95
+    }    
+    args$babs <- if(!"babs" %in% names(args)) NA else args$babs
+    args$om <- if(!"om" %in% names(args)) 1 else args$om
+    args$btrend <- if(!"btrend" %in% names(args)) 1 else args$btrend
+    args$reportmode <- if(!"reportmode" %in% names(args)) 2 else args$reportmode
+    if(getFit) args$reportmode <- 1
+
+    ## quantities
+    flfmsy <- get.par("logFlFmsy", repin, exp=TRUE)
+    blbmsy <- get.par("logBlBmsy", repin, exp=TRUE)        
+    logFpFmsy <- get.par("logFpFmsynotS", repin)
+    logBpBmsy <- get.par("logBpBmsynotS", repin)
+    fmsy <- get.par('logFmsy', repin, exp=TRUE)[2]
+    bmsy <- get.par('logBmsy', repin, exp=TRUE)[2]    
+    flast <- get.par('logFnotS', repin, exp=TRUE)[inpin$indpred[1],2]
+    logBpBl <- get.par("logBpBl", repin)
+    logBBl <- get.par("logBBl", repin)
+    om <- calc.om(repin)[,5]
+
+    ## rules
+    switch(hcr,
+           "MSY" = {
+               fi <- 1 - args$fracf
+               fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
+               fm5 <- exp(qnorm(0.5, logFpFmsy[2], logFpFmsy[4]))
+               bi <- 2 * exp(qnorm(args$fracb, logBpBmsy[2], logBpBmsy[4]))
+               fred <- fm5 / fm * min(1, bi) 
+               ffac <- (fred + 1e-8) * fmsy / flast
+               tac <- calc.tac(repin, ffac, args$fracc)
+           },
+           "MSY-PA" = {
+               quant <- "logBpBmsynotS"
+               repcop <- repin
+               bi <- 2 * exp(qnorm(args$fracb, logBpBmsy[2], logBpBmsy[4]))
+               ffac <- fmsy / flast * min(1, bi)
+               inpcop <- make.ffacvec(inpin, ffac)
+               repcop$obj$env$data$ffacvec <- inpcop$ffacvec
+               repcop$obj$env$data$reportmode <- 2
+               repcop$obj$retape()
+               repcop$obj$fn(repin$opt$par)
+               sdr <- try(sdreport(repcop$obj), silent=TRUE)
+               logBpBmsycop <- get.par("logBpBmsynotS", sdr)
+               bi <- 1 - args$prob
+               bm <- exp(qnorm(bi, logBpBmsycop[2], logBpBmsycop[4]))
+               bfrac <- args$bfrac
+               if(!is.na(args$babs) && is.numeric(args$babs)){
+                   bfrac <- args$babs / bmsy
+               }
+               if((bm - bfrac) < -1e-3){
+                   ffac <- try(get.ffac(repcop, bfrac=bfrac, prob=args$prob,
+                                        quant=quant, reportmode = 2), silent = TRUE)
+                   
+               }               
+               tac <- calc.tac(repin, ffac, args$fracc)
+           },
+           "Btrend" = {
+               quant = "logBpBl"
+               lastyearidxs <- min(which(cumsum(rev(inpin$dtc))>=1))
+               ## warning: this will not make sense with subannual/mixed data with missing values
+               tac <- sum(tail(inpin$obsC, lastyearidxs))
+               bi <- 1 - args$prob
+               bm <- exp(qnorm(bi, logBpBl[2], logBpBl[4]))
+               ffac <- 1
+               bfrac <- args$bfrac
+               if((bm - bfrac) < -1e-3){
+                   if(args$btrend == 1){
+                       ffac <- try(get.ffac(repin, bfrac = bfrac, prob = args$prob,
+                                            quant = quant, reportmode = 3), silent = TRUE)
+                   }
+                   if(args$btrend == 2){
+                       ffac <- 0.75
+                   }
+               }
+               tac <- calc.tac(repin, ffac, args$fracc)
+           },
+           "MSY-Btrend" = {
+               if(all(om <= args$om)){
+                   fi <- 1 - args$fracf
+                   fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
+                   fm5 <- exp(qnorm(0.5, logFpFmsy[2], logFpFmsy[4]))
+                   bi <- 2 * exp(qnorm(args$fracb, logBpBmsy[2], logBpBmsy[4]))
+                   fred <- fm5 / fm * min(1, bi) 
+                   ffac <- (fred + 1e-8) * fmsy / flast
+                   tac <- calc.tac(repin, ffac, args$fracc)
+               }else{
+                   quant = "logBpBl"
+                   lastyearidxs <- min(which(cumsum(rev(inpin$dtc))>=1))
+                   tac <- sum(tail(inpin$obsC, lastyearidxs))
+                   bi <- 1 - args$prob
+                   bm <- exp(qnorm(bi, logBpBl[2], logBpBl[4]))
+                   ffac <- 1
+                   bfrac <- args$bfrac
+                   if((bm - bfrac) < -1e-3){
+                       if(args$btrend == 1){
+                           ffac <- try(get.ffac(repin, bfrac = bfrac, prob = args$prob,
+                                                quant = quant, reportmode = 3), silent = TRUE)
+                       }
+                       if(args$btrend == 2){
+                           ffac <- 0.75
+                       }                       
+                   }
+                   tac <- calc.tac(repin, ffac, args$fracc)                   
+               }
+           },
+           stop(paste0("The specified 'hcr' is not known. Please choose between: ",
+                       paste0(allhcrs, collapse = "; "))))
+
+    ## get fitted object
+    if(getFit){
+        inpt <- make.ffacvec(repin$inp, ffac)
+        inpt$reportmode <- reportmode
+        fit <- try(fit.spict(inpt), silent=TRUE)
+        if(!is(fit,"try-error")) return(fit) else stop("The model could not be fitted.")
+    }
+    reslist <- list(bpbmsy = exp(logBpBmsy[2]), bpbl = exp(logBpBl[2]),
+                    fpfmsy = exp(logFpFmsy[2]), fmsy = fmsy, fl = flast,
+                    ffac = ffac, 
+                    TAC = tac, args = args)
+    return(reslist)
 }

@@ -1009,6 +1009,13 @@ check.inp <- function(inp){
     #    inp$ini$logmre <- check.mat(inp$ini$logmre, c(inp$nstocks, inp$ns), 'inp$ini$logmre')
     #}
     inp$ini$SARvec <- rep(0, max(inp$seasonindex2))
+
+    ## reporting
+    if(!"reportmode" %in% names(inp)) inp$reportmode <- 1
+
+    ## indmanstart & indmanend
+    inp$indmanstart <- min(inp$indpred) ## inp$indlastobs
+    inp$indmanend <- max(inp$indpred) ## inp$indpred[1]        
     
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,

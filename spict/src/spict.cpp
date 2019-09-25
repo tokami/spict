@@ -8,7 +8,7 @@
     (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
+n    but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
@@ -127,6 +127,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  DATA_INTEGER(indmanstart);
+  DATA_INTEGER(indmanend);  
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -161,6 +163,7 @@ Type objective_function<Type>::operator() ()
   // Options
   DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
   DATA_SCALAR(dbg);            // Debug flag, if == 1 then print stuff.
+  DATA_INTEGER(reportmode);     // If 2,3 only relative states are ADreported (increases speed, relevant for fitting within MSE)  
 
   // PARAMETERS
   PARAMETER_VECTOR(logm);      // m following the Fletcher formulation (see Prager 2002)
@@ -1009,103 +1012,192 @@ Type objective_function<Type>::operator() ()
     logFnotS(i) = logF(i) + log(meanS);
     logFFmsynotS(i) = logFnotS(i) - logFmsyvec(i); 
   }
+  Type logFpFmsynotS = logFFmsynotS(pind);
+
+  // biomass without seasonality
+  vector<Type> logBnotS(ns);
+  vector<Type> logBBmsynotS(ns);
+  logBnotS(0) = log(B(0));
+  for(int i=0; i<(ns-1); i++){
+    logBnotS(i+1) = predictlogB(exp(logBnotS(i)), exp(logFnotS(i)),
+				gamma, mvec(i), K, dt(i), n, sdb2);
+  }
+  for(int i=0; i<ns; i++){
+    logBBmsynotS(i) = logBnotS(i) - logBmsyvec(i); 
+  }
+  Type logBpBmsynotS = logBBmsynotS(pind);
+
+  // Biomass and fishing mortality at last time point (not seasonal)
+  Type logBlnotS = logBnotS(indlastobs-1);
+  Type logBlBmsynotS = logBlnotS - logBmsyvec(indlastobs-1);
+  Type logBlKnotS = logBlnotS - logK;
+  Type logFlnotS = logFnotS(indlastobs-1);
+  Type logFlFmsynotS = logFlnotS - logFmsyvec(indlastobs-1);
 
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
+
+  // Btrigger and Blim
+  vector<Type> logBBtrigger = (Type(1.0)/Type(0.5)) * logBBmsy;
+  vector<Type> logBBlim = (Type(1.0)/Type(0.3)) * logBBmsy;   
+
+  // Report B/Blast
+  Type logBmanstart = logB(indmanstart-1);
+  Type logBmanend = logB(indmanend-1);    
+  vector<Type> logBBl = logB - logBmanstart;
+  Type logBpBl = logBmanend - logBmanstart;
+  Type logBmanstartnotS = logBnotS(indmanstart-1);
+  Type logBmanendnotS = logBnotS(indmanend-1);      
+  vector<Type> logBBlnotS = logBnotS - logBmanstartnotS;
+  Type logBpBlnotS = logBmanend - logBmanstartnotS;
+
+ // mean B and F for hist period
+  vector<Type> bhist(indlastobs-1);
+  vector<Type> fhist(indlastobs-1);    
+  for(int i=0; i<(indlastobs-1); i++){
+    bhist(i) = logB(i);
+    fhist(i) = logFnotS(i);    
+  }
+  vector<Type> logBscaled = log(exp(logB)/(sum(exp(bhist))/bhist.size()));
+  vector<Type> logFscaled = log(exp(logFnotS)/(sum(exp(fhist))/fhist.size()));   
   
   // ADREPORTS
-  ADREPORT(Bmsy);  
-  ADREPORT(Bmsyd);
-  ADREPORT(Bmsys);
-  ADREPORT(Bmsy2);
-  ADREPORT(logBmsy);
-  ADREPORT(logBmsyd);
-  ADREPORT(logBmsys);
-  ADREPORT(logBp);
-  ADREPORT(logBpBmsy);
-  ADREPORT(logBpK);
-  ADREPORT(logBl);
-  ADREPORT(logBlBmsy);
-  ADREPORT(logBlK);
-  ADREPORT(Fmsy);
-  ADREPORT(Fmsyd);
-  ADREPORT(Fmsys);
-  ADREPORT(logFmsy);
-  ADREPORT(logFmsyd);
-  ADREPORT(logFmsys);
-  ADREPORT(logFp);
-  ADREPORT(logFpFmsy);
-  ADREPORT(logFl);
-  ADREPORT(logFlFmsy);
-  ADREPORT(MSY);
-  ADREPORT(MSYd);
-  ADREPORT(MSYs);
-  ADREPORT(logMSY);
-  ADREPORT(logMSYd);
-  ADREPORT(logMSYs);
-  ADREPORT(Emsy);
-  ADREPORT(Emsy2);
-  ADREPORT(logEmsy);
-  ADREPORT(logEmsy2);
-  ADREPORT(logbkfrac);
-  ADREPORT(seasonsplinefine);
-  // PREDICTIONS
-  ADREPORT(Cp);
-  ADREPORT(logIp);
-  ADREPORT(logCp);
-  ADREPORT(logEp);
-  // PARAMETERS
-  ADREPORT(r);
-  ADREPORT(logr);
-  ADREPORT(rc);
-  ADREPORT(logrc);
-  //ADREPORT(rp);
-  //ADREPORT(logrp);
-  ADREPORT(rold);
-  ADREPORT(logrold);
-  ADREPORT(K);
-  ADREPORT(q);
-  //ADREPORT(logq);
-  ADREPORT(logq2);
-  ADREPORT(p);
-  ADREPORT(gamma);
-  ADREPORT(m);
-  ADREPORT(sdf);
-  ADREPORT(sdc);
-  ADREPORT(sde);
-  ADREPORT(sdb);
-  ADREPORT(sdi);
-  ADREPORT(isdf2);
-  ADREPORT(isdc2);
-  ADREPORT(isde2);
-  ADREPORT(isdb2);
-  ADREPORT(isdi2);
-  ADREPORT(logalpha);
-  ADREPORT(logbeta);
-  ADREPORT(BmsyB0);
-  if(reportall){ 
-    // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
-    // B
-    ADREPORT(logBBmsy);
-    // F
-    ADREPORT(logFFmsy); // Vector of size ns
-    ADREPORT(logFs);    // Vector of size ns
-    // C
-    ADREPORT(logCpred);
-    // I
-    ADREPORT(logIpred);
-    // E
-    ADREPORT(logEpred);
-    // Time varying growth
-    if ((timevaryinggrowth == 1) | (logmcovflag == 1)){
-      ADREPORT(logrre); // r random effect
-      ADREPORT(logFmsyvec);
-      ADREPORT(logMSYvec);
+  if(reportmode == 1){
+    ADREPORT(Bmsy);  
+    ADREPORT(Bmsyd);
+    ADREPORT(Bmsys);
+    ADREPORT(Bmsy2);
+    ADREPORT(logBmsy);
+    ADREPORT(logBmsyd);
+    ADREPORT(logBmsys);
+    ADREPORT(logBp);
+    ADREPORT(logBpBmsy);
+    ADREPORT(logBpK);
+    ADREPORT(logBl);
+    ADREPORT(logBlBmsy);
+    ADREPORT(logBlK);
+    ADREPORT(Fmsy);
+    ADREPORT(Fmsyd);
+    ADREPORT(Fmsys);
+    ADREPORT(logFmsy);
+    ADREPORT(logFmsyd);
+    ADREPORT(logFmsys);
+    ADREPORT(logFp);
+    ADREPORT(logFpFmsy);
+    ADREPORT(logFl);
+    ADREPORT(logFlFmsy);
+    ADREPORT(MSY);
+    ADREPORT(MSYd);
+    ADREPORT(MSYs);
+    ADREPORT(logMSY);
+    ADREPORT(logMSYd);
+    ADREPORT(logMSYs);
+    ADREPORT(Emsy);
+    ADREPORT(Emsy2);
+    ADREPORT(logEmsy);
+    ADREPORT(logEmsy2);
+    ADREPORT(logbkfrac);
+    ADREPORT(seasonsplinefine);
+    // PREDICTIONS
+    ADREPORT(Cp);
+    ADREPORT(logIp);
+    ADREPORT(logCp);
+    ADREPORT(logEp);
+    // PARAMETERS
+    ADREPORT(r);
+    ADREPORT(logr);
+    ADREPORT(rc);
+    ADREPORT(logrc);
+    //ADREPORT(rp);
+    //ADREPORT(logrp);
+    ADREPORT(rold);
+    ADREPORT(logrold);
+    ADREPORT(K);
+    ADREPORT(q);
+    //ADREPORT(logq);
+    ADREPORT(logq2);
+    ADREPORT(p);
+    ADREPORT(gamma);
+    ADREPORT(m);
+    ADREPORT(sdf);
+    ADREPORT(sdc);
+    ADREPORT(sde);
+    ADREPORT(sdb);
+    ADREPORT(sdi);
+    ADREPORT(isdf2);
+    ADREPORT(isdc2);
+    ADREPORT(isde2);
+    ADREPORT(isdb2);
+    ADREPORT(isdi2);
+    ADREPORT(logalpha);
+    ADREPORT(logbeta);
+    ADREPORT(BmsyB0);
+    if(reportall){ 
+      // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
+      // B
+      ADREPORT(logBBmsy);
+      // F
+      ADREPORT(logFFmsy); // Vector of size ns
+      ADREPORT(logFs);    // Vector of size ns
+      // C
+      ADREPORT(logCpred);
+      // I
+      ADREPORT(logIpred);
+      // E
+      ADREPORT(logEpred);
+      // Time varying growth
+      if ((timevaryinggrowth == 1) | (logmcovflag == 1)){
+	ADREPORT(logrre); // r random effect
+	ADREPORT(logFmsyvec);
+	ADREPORT(logMSYvec);
+      }
+      ADREPORT(logFnotS);
+      ADREPORT(logFFmsynotS);
     }
+    ADREPORT( logBmsyPluslogFmsy ) ;
+
+
+    ADREPORT(logFpFmsynotS);
+    ADREPORT(logFscaled);   
+    ADREPORT(logBBtrigger);
+    ADREPORT(logBBlim);    
+    ADREPORT(logBpBmsynotS);
+    ADREPORT(logBBl);    
+    ADREPORT(logBpBl);
+    ADREPORT(logBBlnotS);    
+    ADREPORT(logBpBlnotS);
+    ADREPORT(logBBmsynotS);
+    ADREPORT(logBscaled);    
+
+  }else if(reportmode == 2){
     ADREPORT(logFnotS);
-    ADREPORT(logFFmsynotS);
+    ADREPORT(logFFmsynotS);        
+    ADREPORT(logBBtrigger);
+    ADREPORT(logBBlim);    
+    ADREPORT(logBpBmsy);
+    ADREPORT(logFpFmsy);
+    ADREPORT(logBpBmsynotS);
+    ADREPORT(logFpFmsynotS);    
+    ADREPORT(logCp);
+    ADREPORT(logFmsy);
+  }else if(reportmode == 3){
+    ADREPORT(logFnotS);
+    ADREPORT(logBBl);    
+    ADREPORT(logBpBl);
+    ADREPORT(logBBlnotS);    
+    ADREPORT(logBpBlnotS);
+    ADREPORT(logBBmsynotS);
+   }else if(reportmode == 4){
+    ADREPORT(logBscaled);
+    ADREPORT(logFscaled);
+    ADREPORT(logFnotS);
+    ADREPORT(logBpBl);        
+    ADREPORT(logCpred);
+    ADREPORT(logq);
+  }else if(reportmode == 5){
+    ADREPORT(logCp);
   }
-  ADREPORT( logBmsyPluslogFmsy ) ;
+  
   
   // REPORTS (these don't require sdreport to be output)
   REPORT(Cp);
