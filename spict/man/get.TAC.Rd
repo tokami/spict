@@ -2,41 +2,57 @@
 % Please edit documentation in R/manage.R
 \name{get.TAC}
 \alias{get.TAC}
-\title{Estimate Total Allowable Catch (TAC)}
+\title{Estimate the Total Allowable Catch (TAC)}
 \usage{
 get.TAC(rep, hcr = "MSY", args = NULL, getFit = FALSE)
 }
 \arguments{
-\item{rep}{Result list as output from fit.spict().}
+\item{rep}{Result list from fit.spict().}
 
-\item{hcr}{Harvest control rule. Options: 'msy', 'pa', 'dl', '2/3'
-(more information under details)}
+\item{hcr}{SPiCT specific harvest control rule (HCR). Possible
+rules are: \code{"MSY"}, \code{"MSY-PA"}, \code{"Btrend"}, or
+\code{"MSY-Btrend"}. More details about the rules are provided
+below.}
 
-\item{args}{A list with arguments for the individual hcrs}
+\item{args}{A list with specific arguments for the respective
+HCR. More details are provided below.}
 
-\item{getFit}{Logical; if TRUE the fitted results list with
-adjusted fsihing mortality value is returned. Default is FALSE.}
+\item{getFit}{Logical; if \code{TRUE} the function returns the
+fitted 'spictcls' object with respective HCR (\code{FALSE} by
+default).}
 }
 \value{
-A list with estimated TAC based on harvest control rule
-    settings or the fitted rep list with adjusted fishing mortality
-    values if getFit = TRUE and a logical value indicating if the
-    stability clause was hit or not (if in use).
+A list with absolute and relative reference levels and
+    states and estimated TAC; if \code{getFit} is \code{TRUE} the
+    fitted object with the respective HCR is returned.
 }
 \description{
-Estimate Total Allowable Catch (TAC)
+Estimate the Total Allowable Catch (TAC)
 }
 \details{
-The possible harvest control rules are:
+The possible harvest control rules (HCRs) are:
 \itemize{
-  \item{"MSY"}{ICES MSY approach}
-  \item{"MSY-PA"}{MSY precautionary approach}
-  \item{"Btrend"}{Data-limited approach based on the trend in the biomass}
-  \item{"MSY-Btrend"}{Data-limited approach based on the trend in the biomass}
+  \item{"MSY"- ICES MSY approach.}
+  \item{"MSY-PA" - MSY precautionary approach.}
+  \item{"Btrend" - Data-limited approach based on the trend in the biomass.}
+  \item{"MSY-Btrend" - Combined approach of the MSY and the biomass
+trend approach. Switching between the two based on the order of magnitude of
+the confidence intervals of F/F_{MSY} and B/B_{MSY}.}
+}
+
+The arguments of the 'args' list are:
+\itemize{
+  \item{fracc - Fractile of the predicted catch distribution (default: 0.5)}
+  \item{fracf - Fractile of the \eqn{F/F_{MSY}} distribution (default: 0.5)}
+  \item{fracb - Fractile of the \eqn{B/B_{MSY}} distribution (default: 0.5)}
+  \item{bfrac - }
+  \item{babs - }
+  \item{om - }
+  \item{btrend - }
+  \item{reportmode - }
 }
 }
 \examples{
-data(pol)
 rep <- fit.spict(pol$albacore)
 get.TAC(rep)
 }

@@ -1,4 +1,4 @@
-# Stochastic surplus Production model in Continuous-Time (SPiCT)
+q# Stochastic surplus Production model in Continuous-Time (SPiCT)
 #    Copyright (C) 2015-2016  Martin W. Pedersen, mawp@dtu.dk, wpsgodd@gmail.com
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -408,30 +408,46 @@ pred.catch <- function(repin, fmsyfac=1, get.sd=FALSE, exp=FALSE, dbg=0){
 
 
 #' @name get.TAC
-#' @title Estimate Total Allowable Catch (TAC)
-#' @param rep Result list as output from fit.spict().
-#' @param hcr Harvest control rule. Options: 'msy', 'pa', 'dl', '2/3'
-#'     (more information under details)
-#' @param args A list with arguments for the individual hcrs
-#' @param getFit Logical; if TRUE the fitted results list with
-#'     adjusted fsihing mortality value is returned. Default is FALSE.
+#' @title Estimate the Total Allowable Catch (TAC)
+#' @param rep Result list from fit.spict().
+#' @param hcr SPiCT specific harvest control rule (HCR). Possible
+#'     rules are: \code{"MSY"}, \code{"MSY-PA"}, \code{"Btrend"}, or
+#'     \code{"MSY-Btrend"}. More details about the rules are provided
+#'     below.
+#' @param args A list with specific arguments for the respective
+#'     HCR. More details are provided below.
+#' @param getFit Logical; if \code{TRUE} the function returns the
+#'     fitted 'spictcls' object with respective HCR (\code{FALSE} by
+#'     default).
 #'
-#' @details The possible harvest control rules are:
+#' @details The possible harvest control rules (HCRs) are:
 #' \itemize{
-#'   \item{"MSY"}{ICES MSY approach}
-#'   \item{"MSY-PA"}{MSY precautionary approach}
-#'   \item{"Btrend"}{Data-limited approach based on the trend in the biomass}
-#'   \item{"MSY-Btrend"}{Data-limited approach based on the trend in the biomass}
+#'   \item{"MSY"- ICES MSY approach.}
+#'   \item{"MSY-PA" - MSY precautionary approach.}
+#'   \item{"Btrend" - Data-limited approach based on the trend in the biomass.}
+#'   \item{"MSY-Btrend" - Combined approach of the MSY and the biomass
+#' trend approach. Switching between the two based on the order of magnitude of
+#' the confidence intervals of F/F_{MSY} and B/B_{MSY}.}
+#' }
+#'
+#' The arguments of the 'args' list are:
+#' \itemize{
+#'   \item{fracc - Fractile of the predicted catch distribution (default: 0.5)}
+#'   \item{fracf - Fractile of the \eqn{F/F_{MSY}} distribution (default: 0.5)}
+#'   \item{fracb - Fractile of the \eqn{B/B_{MSY}} distribution (default: 0.5)}
+#'   \item{bfrac - }
+#'   \item{babs - }
+#'   \item{om - }
+#'   \item{btrend - }
+#'   \item{reportmode - }
 #' }
 #' @author T.K. Mildenberger <t.k.mildenberger@gmail.com>
-#' @return A list with estimated TAC based on harvest control rule
-#'     settings or the fitted rep list with adjusted fishing mortality
-#'     values if getFit = TRUE and a logical value indicating if the
-#'     stability clause was hit or not (if in use).
+#'
+#' @return A list with absolute and relative reference levels and
+#'     states and estimated TAC; if \code{getFit} is \code{TRUE} the
+#'     fitted object with the respective HCR is returned.
 #' @export
-#' 
 #' @examples
-#' data(pol)
 #' rep <- fit.spict(pol$albacore)
 #' get.TAC(rep)
 get.TAC <- function(rep,
