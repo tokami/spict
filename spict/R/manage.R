@@ -515,6 +515,7 @@ get.TAC <- function(rep,
                repcop$obj$retape()
                repcop$obj$fn(repin$opt$par)
                sdr <- try(sdreport(repcop$obj), silent=TRUE)
+               if(!is(sdr,"try-error")){
                logBpBmsycop <- get.par("logBpBmsynotS", sdr)
                bi <- 1 - args$prob
                bm <- exp(qnorm(bi, logBpBmsycop[2], logBpBmsycop[4]))
@@ -523,11 +524,15 @@ get.TAC <- function(rep,
                    bfrac <- args$babs / bmsy
                }
                if((bm - bfrac) < -1e-3){
-                   ffac <- try(get.ffac(repcop, bfrac=bfrac, prob=args$prob,
+                   ffac <- try(get.ffac(repcop, bfrac=args$bfrac, prob=args$prob,
                                         quant=quant, reportmode = 2), silent = TRUE)
                    
-               }               
+               }
                tac <- calc.tac(repin, ffac, args$fracc)
+               }else{
+                   ffac <- NA
+                   tac <- NA
+               }               
            },
            "Btrend" = {
                quant = "logBpBl"
