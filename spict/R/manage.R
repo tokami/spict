@@ -470,10 +470,10 @@ get.TAC <- function(rep,
             args$bfrac <- 1
         }else args$bfrac <- 0.3
     }
-    if(!"bfrac" %in% names(args)){
+    if(!"prob" %in% names(args)){
         if(hcr %in% c("Btrend","MSY-Btrend")){
-            args$prop <- 0.5
-        }else args$bfrac <- 0.95
+            args$prob <- 0.5
+        }else args$prob <- 0.95
     }    
     args$babs <- if(!"babs" %in% names(args)) NA else args$babs
     args$om <- if(!"om" %in% names(args)) 1 else args$om
