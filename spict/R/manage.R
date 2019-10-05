@@ -497,7 +497,7 @@ get.TAC <- function(rep,
     inttime <- inpin$indmanstart - min(inpin$indpred)
     if(inttime > 0){
         ## 2 options: tac in assessment year or constant F (default)
-        if(!is.null(taclast) && is.numeric(taclast)){
+        if(!is.null(taclast) && !is.na(taclast) && is.numeric(taclast)){
             ## make catchList for projected years (timesteps) before manstart            
             catchList <- list()
             catchList$timeC <- inpin$time[min(inpin$indpred)]
