@@ -464,7 +464,8 @@ check.inp <- function(inp){
     }
     # Time point to predict catches until
     if (!"timepredc" %in% names(inp)){
-        inp$timepredc <- max(timeobsall)
+        tmp <- if("manstart" %in% names(inp)) inp$manstart else 0  ## if manual manstart later than timepredc
+        inp$timepredc <- max(timeobsall, tmp)
     } else {
         if (inp$timepredc < max(inp$timeC)){
             cat('inp$timepredc:', inp$timepredc,
@@ -590,7 +591,7 @@ check.inp <- function(inp){
     inp$indCpred <- which(inp$time >= max(inp$timeC + inp$dtc))
     # Management
     if (!"manstart" %in% names(inp)){
-        inp$manstart <- ceiling(inp$time[inp$indpred[1]])
+        inp$manstart <- max(ceiling(inp$time[inp$indpred[1]]),inp$timepredc)
     }
     if (!"ffac" %in% names(inp)) inp$ffac <- 1
     if ("ffac" %in% names(inp)){
@@ -1014,8 +1015,8 @@ check.inp <- function(inp){
     if(!"reportmode" %in% names(inp)) inp$reportmode <- 1
 
     ## indmanstart & indmanend
-    inp$indmanstart <- min(inp$indpred) ## inp$indlastobs
-    inp$indmanend <- max(inp$indpred) ## inp$indpred[1]        
+    inp$indmanstart <- which(inp$time == inp$manstart) ## min(inp$indpred) ## inp$indlastobs
+    inp$indmanend <- which(inp$time == (inp$timepredc + inp$dtpredc)) ## max(inp$indpred) ## inp$indpred[1]
     
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,

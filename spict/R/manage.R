@@ -1,4 +1,4 @@
-q# Stochastic surplus Production model in Continuous-Time (SPiCT)
+# Stochastic surplus Production model in Continuous-Time (SPiCT)
 #    Copyright (C) 2015-2016  Martin W. Pedersen, mawp@dtu.dk, wpsgodd@gmail.com
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -130,12 +130,11 @@ manage <- function(repin, scenarios='all', manstart=NULL, dbg=0, catch=NULL, cat
 #' @param fac Factor to multiply current F with.
 #' @param inpin Input list.
 #' @param repin Results list.
-#' @param maninds Indices of time vector for which to apply management.
 #' @param corF Make correction to F process such that the drift (-0.5*sdf^2*dt) is cancelled and F remains constant in projection mode
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more ourput.
 #' @return List containing results of management calculations.
 #' @export
-prop.F <- function(fac, inpin, repin, maninds, corF=FALSE, dbg=0){
+prop.F <- function(fac, inpin, repin, corF=FALSE, dbg=0){
     inpt <- check.inp(inpin)
     inpt <- make.ffacvec(inpt, fac)
     # Make object
@@ -168,12 +167,13 @@ prop.F <- function(fac, inpin, repin, maninds, corF=FALSE, dbg=0){
 
 
 #' @name take.c
-#' @title Calculate management when taking a constant catch (proxy for setting a TAC).
-#' @param catch Take this catch 'dtpredc' ahead from manstart time 
+#' @title Calculate management when taking a constant catch (proxy for
+#'     setting a TAC).
+#' @param catch Take this catch 'dtpredc' ahead from manstart time
 #' @param inpin Input list.
 #' @param repin Results list.
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
-#' @param sdfac Take catch with this 'stdevfacC' (default = 1e-3) 
+#' @param sdfac Take catch with this 'stdevfacC' (default = 1e-3)
 #' @return List containing results of management calculations.
 #' @export
 take.c <- function(catch, inpin, repin, dbg=0, sdfac=1e-3, catchList=NULL){
@@ -191,18 +191,18 @@ take.c <- function(catch, inpin, repin, dbg=0, sdfac=1e-3, catchList=NULL){
         inpt$obsC <- c( inpt$obsC, catchList$obsC )
         if(is.null(catchList$stdevfacC))
             inpt$stdevfacC <- c(inpt$stdevfacC, rep(sdfac, length(catchList$timeC)) )  else
-            inpt$stdevfacC <- c(inpt$stdevfacC, catchList$stdevfacC)
-        
+            inpt$stdevfacC <- c(inpt$stdevfacC, catchList$stdevfacC)        
         inpt$dtc <- c(inpt$dtc, catchList$dtc )
     }
-
     
     inpt <- check.inp(inpt)
-    # Make TMB data and object
+    ## Make TMB data and object
     plt <- repin$obj$env$parList(repin$opt$par)
     datint <- make.datin(inpt, dbg=dbg)
     objt <- make.obj(datint, plt, inpt, phase=1)
-    # Get updated sd report
+    ## Get updated sd report
+    objt$env$data$reportmode <- inpin$reportmode
+    objt$retape()    
     objt$fn(repin$opt$par)
     repmant <- sdreport(objt)
     repmant$inp <- inpt
@@ -411,9 +411,11 @@ pred.catch <- function(repin, fmsyfac=1, get.sd=FALSE, exp=FALSE, dbg=0){
 #' @title Estimate the Total Allowable Catch (TAC)
 #' @param rep Result list from fit.spict().
 #' @param hcr SPiCT specific harvest control rule (HCR). Possible
-#'     rules are: \code{"MSY"}, \code{"MSY-PA"}, \code{"Btrend"}, or
+#'     rules are: \code{"FMSY"}, \code{"MSY-HS-35"}, \code{"MSY-HS"},
+#'     \code{"MSY-HS-PA"}, \code{"Btrend"}, or
 #'     \code{"MSY-Btrend"}. More details about the rules are provided
-#'     below.
+#'     below (default: \code{"FMSY"}).
+#' @param taclast TAC during assessment year (default: NULL).
 #' @param args A list with specific arguments for the respective
 #'     HCR. More details are provided below.
 #' @param getFit Logical; if \code{TRUE} the function returns the
@@ -422,8 +424,10 @@ pred.catch <- function(repin, fmsyfac=1, get.sd=FALSE, exp=FALSE, dbg=0){
 #'
 #' @details The possible harvest control rules (HCRs) are:
 #' \itemize{
-#'   \item{"MSY"- ICES MSY approach.}
-#'   \item{"MSY-PA" - MSY precautionary approach.}
+#'   \item{"FMSY"- Fishing at Fmsy.}
+#'   \item{"MSY-HS-35"- Recommended ICES MSY hockey stick approach 35th percentile rule.}
+#'   \item{"MSY-HS"- ICES MSY hockey stick approach.}
+#'   \item{"MSY-HS-PA" - MSY precautionary approach.}
 #'   \item{"Btrend" - Data-limited approach based on the trend in the biomass.}
 #'   \item{"MSY-Btrend" - Combined approach of the MSY and the biomass
 #' trend approach. Switching between the two based on the order of magnitude of
@@ -441,6 +445,13 @@ pred.catch <- function(repin, fmsyfac=1, get.sd=FALSE, exp=FALSE, dbg=0){
 #'   \item{btrend - }
 #'   \item{reportmode - }
 #' }
+#'
+#' If the advice year (y+1) is not equal to the assessment year (y),
+#' the dynamics during y can be projected by continuing the fishing
+#' mortality process (default; \code{is.null(TAC)}), or by taking the
+#' TAC during year y. The TAC can be given with the argument
+#' \code{TAC}.
+#' 
 #' @author T.K. Mildenberger <t.k.mildenberger@gmail.com>
 #'
 #' @return A list with absolute and relative reference levels and
@@ -451,14 +462,15 @@ pred.catch <- function(repin, fmsyfac=1, get.sd=FALSE, exp=FALSE, dbg=0){
 #' rep <- fit.spict(pol$albacore)
 #' get.TAC(rep)
 get.TAC <- function(rep,
-                    hcr = "MSY",
+                    hcr = "FMSY",
+                    taclast = NULL,
                     args = NULL,
                     getFit = FALSE){
     repin <- rep
     inpin <- repin$inp
 
     ## all hcrs
-    allhcrs <- c("MSY","MSY-PA","Btrend","MSY-Btrend")
+    allhcrs <- c("FMSY","MSY-HS-35","MSY-HS","MSY-HS-PA","Btrend","MSY-Btrend")
 
     ## arguments
     if(is.null(args)) args <- list()
@@ -481,33 +493,63 @@ get.TAC <- function(rep,
     args$reportmode <- if(!"reportmode" %in% names(args)) 2 else args$reportmode
     if(getFit) args$reportmode <- 1
 
+    ## option for assessment year (intermediate year between last data and advice year)
+    inttime <- inpin$indmanstart - min(inpin$indpred)
+    if(inttime > 0){
+        ## 2 options: tac in assessment year or constant F (default)
+        if(!is.null(taclast) && is.numeric(taclast)){
+            ## make catchList for projected years (timesteps) before manstart            
+            catchList <- list()
+            catchList$timeC <- inpin$time[min(inpin$indpred)]
+            catchList$obsC <- taclast
+            catchList$ stdevfacC <- 1e-3
+            catchList$dtc <- (inpin$indmanstart - min(inpin$indpred)) * inpin$dteuler
+            inpin$reportmode <- 2
+            repin <- take.c(taclast, inpin, repin, catchList = catchList)
+            inpin <- repin$inp
+        }
+    }
+
     ## quantities
-    flfmsy <- get.par("logFlFmsy", repin, exp=TRUE)
-    blbmsy <- get.par("logBlBmsy", repin, exp=TRUE)        
-    logFpFmsy <- get.par("logFpFmsynotS", repin)
-    logBpBmsy <- get.par("logBpBmsynotS", repin)
-    fmsy <- get.par('logFmsy', repin, exp=TRUE)[2]
+    logFmsFmsy <- get.par("logFmsFmsynotS", repin)    ## at beginning of TAC year (indmanstart)
+    logBmsBmsy <- get.par("logBmsBmsynotS", repin)    ## at beginning of TAC year (indmanstart)    
+    logFmeFmsy <- get.par("logFmeFmsynotS", repin)    ## at end of TAC year (indmanend)
+    logBmeBmsy <- get.par("logBmeBmsynotS", repin)    ## at end of TAC year (indmanend)
+    fmsy <- get.par('logFmsy', repin, exp=TRUE)[2]  
     bmsy <- get.par('logBmsy', repin, exp=TRUE)[2]    
-    flast <- get.par('logFnotS', repin, exp=TRUE)[inpin$indpred[1],2]
-    logBpBl <- get.par("logBpBl", repin)
-    logBBl <- get.par("logBBl", repin)
+    fms <- get.par('logFmsnotS', repin, exp=TRUE)[2]  ## should be at manstart
+    logBpBl <- get.par("logBpBl", repin)            ## at end and beginning of TAC year
+    logBBl <- get.par("logBBl", repin)              ## at end and beginning of TAC year
     om <- calc.om(repin)[,5]
 
     ## rules
     switch(hcr,
-           "MSY" = {
-               fi <- 1 - args$fracf
-               fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
-               fm5 <- exp(qnorm(0.5, logFpFmsy[2], logFpFmsy[4]))
-               bi <- 2 * exp(qnorm(args$fracb, logBpBmsy[2], logBpBmsy[4]))
+           "FMSY" = {
+               ffac <- fmsy / fms
+               tac <- calc.tac(repin, ffac, args$fracc)   ## check what Cp returns! dependent on indpred and not the indmanstart - inmanend period
+           },
+           "MSY-HS-35" = {
+               fm <- exp(qnorm(0.65, logFmsFmsy[2], logFmsFmsy[4]))
+               fm5 <- exp(qnorm(0.5, logFmsFmsy[2], logFmsFmsy[4]))
+               bi <- 2 * exp(qnorm(0.35, logBmsBmsy[2], logBmsBmsy[4]))
                fred <- fm5 / fm * min(1, bi) 
-               ffac <- (fred + 1e-8) * fmsy / flast
+               ffac <- (fred + 1e-8) * fmsy / fms
+               tac <- calc.tac(repin, ffac, 0.35)
+           },           
+           "MSY-HS" = {
+               fi <- 1 - args$fracf
+               fm <- exp(qnorm(fi, logFmsFmsy[2], logFmsFmsy[4]))
+               fm5 <- exp(qnorm(0.5, logFmsFmsy[2], logFmsFmsy[4]))
+               bi <- 2 * exp(qnorm(args$fracb, logBsBmsy[2], logBsBmsy[4]))
+               fred <- fm5 / fm * min(1, bi) 
+               ffac <- (fred + 1e-8) * fmsy / fms
                tac <- calc.tac(repin, ffac, args$fracc)
            },
-           "MSY-PA" = {
-               quant <- "logBpBmsynotS"
+           ## not corrected yet for ms and me
+           "MSY-HS-PA" = {
+               quant <- "logBmeBmsynotS" ## "logBpBmsynotS"
                repcop <- repin
-               bi <- 2 * exp(qnorm(args$fracb, logBpBmsy[2], logBpBmsy[4]))
+               bi <- 2 * exp(qnorm(args$fracb, logBmsBmsy[2], logBmsBmsy[4]))
                ffac <- fmsy / flast * min(1, bi)
                inpcop <- make.ffacvec(inpin, ffac)
                repcop$obj$env$data$ffacvec <- inpcop$ffacvec
@@ -557,11 +599,11 @@ get.TAC <- function(rep,
            "MSY-Btrend" = {
                if(all(om <= args$om)){
                    fi <- 1 - args$fracf
-                   fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
-                   fm5 <- exp(qnorm(0.5, logFpFmsy[2], logFpFmsy[4]))
-                   bi <- 2 * exp(qnorm(args$fracb, logBpBmsy[2], logBpBmsy[4]))
-                   fred <- fm5 / fm * min(1, bi) 
-                   ffac <- (fred + 1e-8) * fmsy / flast
+                   fm <- exp(qnorm(fi, logFmsFmsy[2], logFmsFmsy[4]))
+                   fm5 <- exp(qnorm(0.5, logFmsFmsy[2], logFmsFmsy[4]))
+                   bi <- 2 * exp(qnorm(args$fracb, logBmsBmsy[2], logBmsBmsy[4]))
+                   fred <- fm5 / fm * min(1, bi)
+                   ffac <- (fred + 1e-8) * fmsy / fms
                    tac <- calc.tac(repin, ffac, args$fracc)
                }else{
                    quant = "logBpBl"
@@ -589,13 +631,21 @@ get.TAC <- function(rep,
     ## get fitted object
     if(getFit){
         inpt <- make.ffacvec(repin$inp, ffac)
-        inpt$reportmode <- reportmode
+        inpt$reportmode <- 1
         fit <- try(fit.spict(inpt), silent=TRUE)
         if(!is(fit,"try-error")) return(fit) else stop("The model could not be fitted.")
     }
-    reslist <- list(bpbmsy = exp(logBpBmsy[2]), bpbl = exp(logBpBl[2]),
-                    fpfmsy = exp(logFpFmsy[2]), fmsy = fmsy, fl = flast,
-                    ffac = ffac, 
-                    TAC = tac, args = args)
+    reslist <- list(hcr = hcr,
+                    manyears = c(inpin$time[inpin$indmanstart],inpin$time[inpin$indmanend]),
+                    TAC = tac,
+                    ffac = ffac,
+                    BBmsyManstart = exp(logBmsBmsy[2]),
+                    FFmsyManstart = exp(logFmsFmsy[2]),
+                    BBmsyManend = exp(logBmeBmsy[2]),
+                    FFmsyManend = exp(logFmeFmsy[2]),                                        
+                    BManendBManstart = exp(logBpBl[2]),
+                    FManstart = fms,
+                    Fmsy = fmsy, 
+                    args = args)
     return(reslist)
 }

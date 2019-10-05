@@ -1059,8 +1059,16 @@ Type objective_function<Type>::operator() ()
     fhist(i) = logFnotS(i);    
   }
   vector<Type> logBscaled = log(exp(logB)/(sum(exp(bhist))/bhist.size()));
-  vector<Type> logFscaled = log(exp(logFnotS)/(sum(exp(fhist))/fhist.size()));   
-  
+  vector<Type> logFscaled = log(exp(logFnotS)/(sum(exp(fhist))/fhist.size()));
+
+  // management
+  // new: quantities at beginning and end of TAC year, independent of lastobs and ipred
+  Type logFmsnotS = logFnotS(indmanstart-1);             // notS because mean F should be around Fmsy
+  Type logFmsFmsynotS = logFFmsynotS(indmanstart-1);
+  Type logBmsBmsynotS = logBBmsynotS(indmanstart-1);
+  Type logFmeFmsynotS = logFFmsynotS(indmanend-1);       
+  Type logBmeBmsynotS = logBBmsynotS(indmanend-1);
+
   // ADREPORTS
   if(reportmode == 1){
     ADREPORT(Bmsy);  
@@ -1167,8 +1175,14 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logBBlnotS);    
     ADREPORT(logBpBlnotS);
     ADREPORT(logBBmsynotS);
-    ADREPORT(logBscaled);    
+    ADREPORT(logBscaled);
 
+    ADREPORT(logFmsnotS);
+    ADREPORT(logFmsFmsynotS);
+    ADREPORT(logFmeFmsynotS);
+    ADREPORT(logBmsBmsynotS);
+    ADREPORT(logBmeBmsynotS);
+    
   }else if(reportmode == 2){
     ADREPORT(logFnotS);
     ADREPORT(logFFmsynotS);        
@@ -1180,6 +1194,11 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFpFmsynotS);    
     ADREPORT(logCp);
     ADREPORT(logFmsy);
+    ADREPORT(logFmsnotS);
+    ADREPORT(logFmsFmsynotS);
+    ADREPORT(logFmeFmsynotS);
+    ADREPORT(logBmsBmsynotS);
+    ADREPORT(logBmeBmsynotS);                
   }else if(reportmode == 3){
     ADREPORT(logFnotS);
     ADREPORT(logBBl);    

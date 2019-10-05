@@ -616,8 +616,8 @@ get.ffac <- function(rep, bfrac=0.3, prob=0.95,
 #' @author T.K. Mildenberger <t.k.mildenberger@gmail.com>
 #' @return Estimated TAC given fishing mortality factor
 calc.tac <- function(rep, ffac, fracc = 0.5){
-    inpx <- make.ffacvec(rep$inp, ffac)
-    rep$obj$env$data$ffacvec <- inpx$ffacvec
+    inpt <- make.ffacvec(rep$inp, ffac)
+    rep$obj$env$data$ffacvec <- inpt$ffacvec
     rep$obj$env$data$reportmode <- 5
     rep$obj$retape()
     rep$obj$fn(rep$opt$par)
@@ -626,7 +626,7 @@ calc.tac <- function(rep, ffac, fracc = 0.5){
     }else{
         sdr <- try(sdreport(rep$obj),silent=TRUE)
         if(is(sdr, "try-error")) return(NA)
-        logCp <- get.par('logCp', sdr)
+        logCp <- get.par('logCp', sdr)                  ## check the time period of Cp 
         tac <- exp(qnorm(fracc, logCp[2], logCp[4]))                    
     }
     return(tac)
