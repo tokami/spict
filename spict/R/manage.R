@@ -540,7 +540,7 @@ get.TAC <- function(rep,
                fi <- 1 - args$fracf
                fm <- exp(qnorm(fi, logFmsFmsy[2], logFmsFmsy[4]))
                fm5 <- exp(qnorm(0.5, logFmsFmsy[2], logFmsFmsy[4]))
-               bi <- 2 * exp(qnorm(args$fracb, logBsBmsy[2], logBsBmsy[4]))
+               bi <- 2 * exp(qnorm(args$fracb, logBmsBmsy[2], logBmsBmsy[4]))
                fred <- fm5 / fm * min(1, bi) 
                ffac <- (fred + 1e-8) * fmsy / fms
                tac <- calc.tac(repin, ffac, args$fracc)
