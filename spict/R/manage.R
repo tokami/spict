@@ -207,7 +207,7 @@ take.c <- function(catch, inpin, repin, dbg=0, sdfac=1e-3, catchList=NULL){
     repmant <- sdreport(objt)
     repmant$inp <- inpt
     repmant$obj <- objt
-    repmant$opt <- list(convergence=0)
+    repmant$opt <- list(convergence=0, par=repin$opt$par)
     if (!is.null(repmant)){
         class(repmant) <- "spictcls"
     }
@@ -502,7 +502,7 @@ get.TAC <- function(rep,
             catchList <- list()
             catchList$timeC <- inpin$time[min(inpin$indpred)]
             catchList$obsC <- taclast
-            catchList$ stdevfacC <- 1e-3
+            catchList$stdevfacC <- 1e-3
             catchList$dtc <- (inpin$indmanstart - min(inpin$indpred)) * inpin$dteuler
             inpin$reportmode <- 2
             repin <- take.c(taclast, inpin, repin, catchList = catchList)
