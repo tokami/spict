@@ -624,8 +624,7 @@ calc.tac <- function(rep, ffac, fracc = 0.5){
     if(fracc == 0.5){
         tac <- rep$obj$report(rep$obj$env$last.par.best)$Cp
     }else{
-        sdr <- try(sdreport(rep$obj),silent=TRUE)
-        if(is(sdr, "try-error")) return(NA)
+        sdr <- sdreport(rep$obj)
         logCp <- get.par('logCp', sdr)                  ## check the time period of Cp 
         tac <- exp(qnorm(fracc, logCp[2], logCp[4]))                    
     }
@@ -660,4 +659,5 @@ calc.om <- function(rep){
                        "CI range","order magnitude")
     rownames(res) <- c("B/Bmsy","F/Fmsy")
     return(res)
+
 }

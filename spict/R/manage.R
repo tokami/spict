@@ -631,8 +631,12 @@ get.TAC <- function(rep,
     ## get fitted object
     if(getFit){
         inpt <- make.ffacvec(repin$inp, ffac)
-        inpt$reportmode <- 1
-        fit <- try(fit.spict(inpt), silent=TRUE)
+        repin$obj$env$data$ffacvec <- inpt$ffacvec
+        repin$obj$env$data$reportmode <- 1
+        repin$obj$retape()
+        repin$obj$fn(repin$opt$par)
+        fit <- try(sdreport(repin$obj),silent=TRUE)        
+##        fit <- try(fit.spict(inpt), silent=TRUE)
         if(!is(fit,"try-error")) return(fit) else stop("The model could not be fitted.")
     }
     reslist <- list(hcr = hcr,
