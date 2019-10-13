@@ -494,6 +494,7 @@ get.TAC <- function(rep,
 
 
     ## option for assessment year (intermediate year between last data and advice year)
+    if(FALSE){
     inttime <- inpin$indmanstart - min(inpin$indpred)
     if(inttime > 0){
         ## 2 options: tac in assessment year or constant F (default)
@@ -508,6 +509,7 @@ get.TAC <- function(rep,
             repin <- take.c(taclast, inpin, repin, catchList = catchList)
             inpin <- repin$inp
         }
+    }
     }
 
     ## quantities
