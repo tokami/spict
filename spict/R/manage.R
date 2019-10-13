@@ -177,7 +177,6 @@ prop.F <- function(fac, inpin, repin, corF=FALSE, dbg=0){
 #' @return List containing results of management calculations.
 #' @export
 take.c <- function(catch, inpin, repin, dbg=0, sdfac=1e-3, catchList=NULL){
-    
     inpt <- inpin
     if(is.null(catchList)){
         tmpTime <- repin$inp$timeCpred  
@@ -194,7 +193,7 @@ take.c <- function(catch, inpin, repin, dbg=0, sdfac=1e-3, catchList=NULL){
             inpt$stdevfacC <- c(inpt$stdevfacC, catchList$stdevfacC)        
         inpt$dtc <- c(inpt$dtc, catchList$dtc )
     }
-    
+
     inpt <- check.inp(inpt)
     ## Make TMB data and object
     plt <- repin$obj$env$parList(repin$opt$par)
@@ -492,6 +491,7 @@ get.TAC <- function(rep,
     args$btrend <- if(!"btrend" %in% names(args)) 1 else args$btrend
     args$reportmode <- if(!"reportmode" %in% names(args)) 2 else args$reportmode
     if(getFit) args$reportmode <- 1
+
 
     ## option for assessment year (intermediate year between last data and advice year)
     inttime <- inpin$indmanstart - min(inpin$indpred)
