@@ -1,4 +1,4 @@
-q# Stochastic surplus Production model in Continuous-Time (SPiCT)
+# Stochastic surplus Production model in Continuous-Time (SPiCT)
 #    Copyright (C) 2015-2016  Martin W. Pedersen, mawp@dtu.dk, wpsgodd@gmail.com
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@ q# Stochastic surplus Production model in Continuous-Time (SPiCT)
 #' @references{ICES. 2017. Report of the Workshop on the Development
 #'     of the ICES approach to providing MSY advice for category 3 and
 #'     4 stocks (WKMSYCat34), 6-10 March 2017, Copenhagen,
-#'     Denmark. ICES CM 2017/ ACOM:47. 53 pp.} 
+#'     Denmark. ICES CM 2017/ ACOM:47. 53 pp.}
 #' @details Scenarios that are currently implemented include:
 #' \itemize{
 #'   \item{"1"}{ Keep the catch of the current year (i.e. the last observed catch).}
@@ -37,7 +37,7 @@ q# Stochastic surplus Production model in Continuous-Time (SPiCT)
 #' B_{MSY} / 2. Then fishing mortality in the short forecast is
 #' calculated as:
 #'
-#' F(y+1) =  F(y) * min{ 1, median[B(y+1) / MSY B_{trigger}] } / median[F(y)/F_{MSY}]  
+#' F(y+1) =  F(y) * min{ 1, median[B(y+1) / MSY B_{trigger}] } / median[F(y)/F_{MSY}]
 #' }
 #' @param repin Result list from fit.spict().
 #' @param scenarios Vector of integers specifying which scenarios to run. Default: 'all'.
@@ -69,7 +69,7 @@ manage <- function(repin, scenarios='all', manstart=NULL, dbg=0, catch=NULL, cat
         inpin$timepredi <- repin$inp$timepredi
         inpin$manstart <- repin$inp$manstart
         repman <- list() # Output list
-        attr(repman, "scenarios") <- scenarios 
+        attr(repman, "scenarios") <- scenarios
         if (1 %in% scenarios){
             # 1. Specify the catch, which will be taken each year in the prediction period
             lastyearidxs <- min( which( cumsum(rev(inpin$dtc))>=1 ) ) ## warning: this will not make sense with subannual/mixed data with missing values
@@ -145,7 +145,7 @@ prop.F <- function(fac, inpin, repin, maninds, corF=FALSE, dbg=0){
     objt$fn(repin$opt$par)
     ## repmant <- sdreport(objt)
     verflag <- as.numeric(gsub('[.]', '', as.character(packageVersion('TMB')))) >= 171
-    if (verflag) { 
+    if (verflag) {
       repmant <- sdreport(objt,
                           getJointPrecision=repin$inp$getJointPrecision,
                           bias.correct=repin$inp$bias.correct,
@@ -169,22 +169,22 @@ prop.F <- function(fac, inpin, repin, maninds, corF=FALSE, dbg=0){
 
 #' @name take.c
 #' @title Calculate management when taking a constant catch (proxy for setting a TAC).
-#' @param catch Take this catch 'dtpredc' ahead from manstart time 
+#' @param catch Take this catch 'dtpredc' ahead from manstart time
 #' @param inpin Input list.
 #' @param repin Results list.
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
-#' @param sdfac Take catch with this 'stdevfacC' (default = 1e-3) 
+#' @param sdfac Take catch with this 'stdevfacC' (default = 1e-3)
 #' @return List containing results of management calculations.
 #' @export
 take.c <- function(catch, inpin, repin, dbg=0, sdfac=1e-3, catchList=NULL){
-    
+
     inpt <- inpin
     if(is.null(catchList)){
-        tmpTime <- repin$inp$timeCpred  
+        tmpTime <- repin$inp$timeCpred
         maninds <- which(tmpTime >= inpin$manstart)
         inpt$timeC <- c( inpt$timeC, tmpTime[maninds] )
         inpt$obsC <- c( inpt$obsC, rep(catch, length(maninds)) )
-        inpt$stdevfacC <- c(inpt$stdevfacC, rep(sdfac, length(maninds)) )  
+        inpt$stdevfacC <- c(inpt$stdevfacC, rep(sdfac, length(maninds)) )
         inpt$dtc <- c(inpt$dtc, rep(inpt$dtpredc, length(maninds)) )
     } else {
         inpt$timeC <- c( inpt$timeC, catchList$timeC )
@@ -192,11 +192,11 @@ take.c <- function(catch, inpin, repin, dbg=0, sdfac=1e-3, catchList=NULL){
         if(is.null(catchList$stdevfacC))
             inpt$stdevfacC <- c(inpt$stdevfacC, rep(sdfac, length(catchList$timeC)) )  else
             inpt$stdevfacC <- c(inpt$stdevfacC, catchList$stdevfacC)
-        
+
         inpt$dtc <- c(inpt$dtc, catchList$dtc )
     }
 
-    
+
     inpt <- check.inp(inpt)
     # Make TMB data and object
     plt <- repin$obj$env$parList(repin$opt$par)
@@ -313,7 +313,7 @@ mansummary <- function(repin, ypred=1, include.EBinf=FALSE, include.unc=TRUE, ve
             scenarios <- attr(repman, "scenarios")
             rn <- c('1. Keep current catch', '2. Keep current F', '3. Fish at Fmsy',
                     '4. No fishing', '5. Reduce F 25%', '6. Increase F 25%', '7. MSY advice rule')[scenarios]
-            
+
             rownames(df) <- rn
             rownames(dfrel) <- rn
             rownames(dfabs) <- rn
@@ -474,7 +474,7 @@ get.TAC <- function(rep,
         if(hcr %in% c("Btrend","MSY-Btrend")){
             args$prop <- 0.5
         }else args$bfrac <- 0.95
-    }    
+    }
     args$babs <- if(!"babs" %in% names(args)) NA else args$babs
     args$om <- if(!"om" %in% names(args)) 1 else args$om
     args$btrend <- if(!"btrend" %in% names(args)) 1 else args$btrend
@@ -483,11 +483,11 @@ get.TAC <- function(rep,
 
     ## quantities
     flfmsy <- get.par("logFlFmsy", repin, exp=TRUE)
-    blbmsy <- get.par("logBlBmsy", repin, exp=TRUE)        
+    blbmsy <- get.par("logBlBmsy", repin, exp=TRUE)
     logFpFmsy <- get.par("logFpFmsynotS", repin)
     logBpBmsy <- get.par("logBpBmsynotS", repin)
     fmsy <- get.par('logFmsy', repin, exp=TRUE)[2]
-    bmsy <- get.par('logBmsy', repin, exp=TRUE)[2]    
+    bmsy <- get.par('logBmsy', repin, exp=TRUE)[2]
     flast <- get.par('logFnotS', repin, exp=TRUE)[inpin$indpred[1],2]
     logBpBl <- get.par("logBpBl", repin)
     logBBl <- get.par("logBBl", repin)
@@ -500,7 +500,7 @@ get.TAC <- function(rep,
                fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
                fm5 <- exp(qnorm(0.5, logFpFmsy[2], logFpFmsy[4]))
                bi <- 2 * exp(qnorm(args$fracb, logBpBmsy[2], logBpBmsy[4]))
-               fred <- fm5 / fm * min(1, bi) 
+               fred <- fm5 / fm * min(1, bi)
                ffac <- (fred + 1e-8) * fmsy / flast
                tac <- calc.tac(repin, ffac, args$fracc)
            },
@@ -525,8 +525,8 @@ get.TAC <- function(rep,
                if((bm - bfrac) < -1e-3){
                    ffac <- try(get.ffac(repcop, bfrac=bfrac, prob=args$prob,
                                         quant=quant, reportmode = 2), silent = TRUE)
-                   
-               }               
+
+               }
                tac <- calc.tac(repin, ffac, args$fracc)
            },
            "Btrend" = {
@@ -555,7 +555,7 @@ get.TAC <- function(rep,
                    fm <- exp(qnorm(fi, logFpFmsy[2], logFpFmsy[4]))
                    fm5 <- exp(qnorm(0.5, logFpFmsy[2], logFpFmsy[4]))
                    bi <- 2 * exp(qnorm(args$fracb, logBpBmsy[2], logBpBmsy[4]))
-                   fred <- fm5 / fm * min(1, bi) 
+                   fred <- fm5 / fm * min(1, bi)
                    ffac <- (fred + 1e-8) * fmsy / flast
                    tac <- calc.tac(repin, ffac, args$fracc)
                }else{
@@ -573,9 +573,9 @@ get.TAC <- function(rep,
                        }
                        if(args$btrend == 2){
                            ffac <- 0.75
-                       }                       
+                       }
                    }
-                   tac <- calc.tac(repin, ffac, args$fracc)                   
+                   tac <- calc.tac(repin, ffac, args$fracc)
                }
            },
            stop(paste0("The specified 'hcr' is not known. Please choose between: ",
@@ -590,7 +590,7 @@ get.TAC <- function(rep,
     }
     reslist <- list(bpbmsy = exp(logBpBmsy[2]), bpbl = exp(logBpBl[2]),
                     fpfmsy = exp(logFpFmsy[2]), fmsy = fmsy, fl = flast,
-                    ffac = ffac, 
+                    ffac = ffac,
                     TAC = tac, args = args)
     return(reslist)
 }

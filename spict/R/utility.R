@@ -106,7 +106,8 @@ NULL
 #' @name test.spict
 #' @title Example of a spict analysis.
 #' @details Loads a data set, fits the model, calculates one-step-ahead residuals, plots the results.
-#' @param dataset Specify one of the three test data sets: 'albacore', 'hake', 'lobster'. These can be accessed with the command data(pol).
+#' @param dataset Specify one of the three test data sets: 'albacore', 'hake', 'lobst
+#' er'. These can be accessed with the command data(pol).
 #' @return A result report as given by fit.spict().
 #' @examples
 #' rep <- test.spict()
@@ -157,16 +158,16 @@ calc.gamma <- function(n) n^(n/(n-1)) / (n-1)
 #' ## Make the south Atlantic albacore assessment
 #' data(pol)
 #' rep <- fit.spict(pol$albacore)
-#' 
+#'
 #' ## See all quantitites that can be extracted
 #' list.quantities(rep)
-#' 
+#'
 #' ## Extract the Bmsy reference point
 #' Bmsy <- get.par('logBmsy', rep, exp=TRUE)
-#' 
+#'
 #' ## Extract the exploitable biomass estimates
 #' Best <- get.par('logB', rep, exp=TRUE)
-#' 
+#'
 #' ## Extract the estimated caryting capacity
 #' K <- get.par('logK', rep, exp=TRUE)
 get.par <- function(parname, rep=rep, exp=FALSE, random=FALSE, fixed=FALSE){
@@ -556,7 +557,7 @@ get.cov <- function(rep, parname1, parname2, cor=FALSE){
 #' @return Returns deviation between targeted and realised probability
 #'     of being above certain biomass threshold under set fishing
 #'     mortality
-probdev <- function(ffac, rep, bfrac = 0.3, 
+probdev <- function(ffac, rep, bfrac = 0.3,
                     prob = 0.95, quant = "logBpBmsynotS",
                     reportmode = 2,
                     getFrac = FALSE, verbose = FALSE){
@@ -592,7 +593,7 @@ probdev <- function(ffac, rep, bfrac = 0.3,
 #' @export
 get.ffac <- function(rep, bfrac=0.3, prob=0.95,
                      quant = "logBpBmsynotS", reportmode = 2){
-    ## see if is possible even with zero F  
+    ## see if is possible even with zero F
     dev0 <- probdev(ffac=1e-6,rep=rep,getFrac=TRUE, prob=prob,
                     bfrac=bfrac, quant = quant, reportmode = reportmode,
                     verbose=FALSE)
@@ -627,10 +628,10 @@ calc.tac <- function(rep, ffac, fracc = 0.5){
         sdr <- try(sdreport(rep$obj),silent=TRUE)
         if(is(sdr, "try-error")) return(NA)
         logCp <- get.par('logCp', sdr)
-        tac <- exp(qnorm(fracc, logCp[2], logCp[4]))                    
+        tac <- exp(qnorm(fracc, logCp[2], logCp[4]))
     }
     return(tac)
-}    
+}
 
 
 #' @name calc.om
@@ -652,7 +653,7 @@ calc.om <- function(rep){
     bdiff <- blbmsy[,3] - blbmsy[,1]
     fdiff <- flfmsy[,3] - flfmsy[,1]
     ## order of magnitude
-    omagnib <- abs(floor(log10(blbmsy[,3])) - floor(log10(blbmsy[,1])))    
+    omagnib <- abs(floor(log10(blbmsy[,3])) - floor(log10(blbmsy[,1])))
     omagnif <- abs(floor(log10(flfmsy[,3])) - floor(log10(flfmsy[,1])))
 
     res <- round(cbind(rbind(blbmsy[,1:3],flfmsy[,1:3]),c(bdiff,fdiff),c(omagnib,omagnif)),2)
