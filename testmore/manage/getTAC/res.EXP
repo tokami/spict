@@ -58,11 +58,5 @@
 [1] 7.808
 [1] 4.453
 [1] 6.164
-Warning message:
-In sqrt(diag(cov)) : NaNs produced
-[1] 6.164
 [1] 2.663
 [1] 2.014
-> proc.time()
-    user   system  elapsed 
-1880.234    3.301 1883.825 

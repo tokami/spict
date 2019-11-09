@@ -145,7 +145,6 @@ round(get.TAC(fit, breakpoint_bbmsy = 0.5, paList = list(bbmsy=0.3, prob=0.9), f
 round(get.TAC(fit, breakpoint_bbmsy = 0.3, paList = list(bbmsy=0.5, prob=0.9), fractileList = list(catch=0.2, ffmsy = 0.1))$TAC,3)
 
 ## Fishing at Fmsy with TAC during assessment year
-round(get.TAC(fit, catch_pred = 8)$TAC,3)
 round(get.TAC(fit, catch_pred = 4)$TAC,3)
 round(get.TAC(fit, catch_pred = 4, fractileList = list(catch=0.2))$TAC,3)
 round(get.TAC(fit, catch_pred = 4, fractileList = list(catch=0.2, ffmsy = 0.1))$TAC,3)
