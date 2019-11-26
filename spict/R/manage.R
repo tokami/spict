@@ -619,3 +619,53 @@ get.TAC <- function(rep,
     ## return
     return(reslist)
 }
+
+#' @name get.TAC.ices
+#' @title Estimate the Total Allowable Catch (TAC) based on the ICES (2019) recommended HCR
+#' @param rep Result list from fit.spict().
+#' @param catch_pred Catch during assessment year (corresponding to argument
+#'     \code{catch} in \code{\link{take.c}}), e.g. last year's TAC (default:
+#'     \code{NULL}; see details for more information).
+#' @param sdfac Factor for the multiplication of the standard deveiation of the
+#'     catch during the assessment year (\code{stdevfacC}; default = 1; see
+#'     \code{\link{take.c}}).
+#' @param getFit Logical; if \code{TRUE} the function returns the fitted
+#'     'spictcls' object with respective HCR (\code{FALSE} by default).
+#'
+#' @details
+#' Dependent on the start of the management period (e.g. advice year), there
+#' might be a time lag between the last observation and the start of the
+#' management period. If this is the case, an assumption about the intermediate
+#' time period (e.g. assessment year) has to be made. Either the fishing
+#' mortality is extrapolated for the intermediate time period (\code{catch_pred
+#' = NULL}; default), or the argument \code{catch_pred} can be used to set the
+#' catch in that period. The argument \code{sdfac} allows to adjust the standard
+#' deviation of the catch in the intermediate time period.
+#'
+#' @return A list with the TAC and management relevant quantities; if
+#'     \code{getFit} is \code{TRUE} the fitted object with the respective HCR is
+#'     returned.
+#'
+#' @references
+#' ICES 2019. Report of the Ninth Workshop on the Development of
+#' Quantitative Assessment Methodologies based on LIFE-history traits,
+#' exploitation characteristics, and other relevant parameters for
+#' data-limited stocks (WKLIFE IX), 30 September-4 October 2019,
+#' Lisbon, Portugal.
+#'
+#' @export
+#' @examples
+#' rep <- fit.spict(pol$albacore)
+#'
+#' ## ICES (2019) recommended HCR
+#' get.TAC.ices(rep)
+#'
+get.TAC.ices <- function(rep,
+                         catch_pred = NULL,
+                         sdfac = 1,
+                         getFit = FALSE){
+    reppa <- repin <- rep
+    inpin <- repin$inp
+    res <- get.TAC(rep, fractileList = list(catch=0.35, bbmsy=0.35, ffmsy=0.35), breakpoint_bbmsy=0.5)
+    return(res)
+}
