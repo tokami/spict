@@ -377,7 +377,7 @@ check.inp <- function(inp){
     if (!"sim.comm.cpue" %in% names(inp)) inp$sim.comm.cpue <- FALSE
     # Optimiser options
     if (!"optimiser" %in% names(inp)) inp$optimiser <- 'nlminb'
-    if (!"optimiser.control" %in% names(inp)) inp$optimiser.control <- list()
+    if (!"optimiser.control" %in% names(inp)) inp$optimiser.control <- list(iter.max = 1e4, eval.max = 1e4)
     if (!"optim.method" %in% names(inp)) inp$optim.method <- 'BFGS'
     if (!"stabilise" %in% names(inp)) inp$stabilise <- 1 # If 1 wide uninformative priors are imposed on some parameters to stabilise optimisation (this happens inside the cpp file)
     # OSAR options
