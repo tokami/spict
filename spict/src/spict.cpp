@@ -1,19 +1,19 @@
 /*
-    Stochastic surplus Production model in Continuous-Time (SPiCT)
-    Copyright (C) 2015-2016  Martin W. Pedersen, mawp@dtu.dk, wpsgodd@gmail.com
+  Stochastic surplus Production model in Continuous-Time (SPiCT)
+  Copyright (C) 2015-2016  Martin W. Pedersen, mawp@dtu.dk, wpsgodd@gmail.com
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 // 14.10.2014
@@ -78,6 +78,7 @@ Type objective_function<Type>::operator() ()
 
   // DATA
   DATA_INTEGER(reportall);     // Report everything?
+  DATA_INTEGER(reportRel);     // ADreport B/mean(B) and F/mean(F) ?
   DATA_VECTOR(dt);             // Time steps
   DATA_VECTOR(dtpredcinds);    // Indices of predictions in F state vector
   DATA_INTEGER(dtpredcnsteps); // Number of sub time step for prediction
@@ -110,7 +111,7 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(seasonindex);    // A vector of length ns giving the number stepped within the current year
   DATA_INTEGER(nseasons);      // Number of seasons pr year
   DATA_VECTOR(seasonindex2)    // A vector of length ns mapping states to seasonal AR component (for seasontype=3)
-  DATA_MATRIX(splinemat);      // Design matrix for the seasonal spline
+    DATA_MATRIX(splinemat);      // Design matrix for the seasonal spline
   DATA_MATRIX(splinematfine);  // Design matrix for the seasonal spline on a fine time scale to get spline uncertainty
   DATA_SCALAR(omega);          // Period time of seasonal SDEs (2*pi = 1 year period)
   DATA_INTEGER(seasontype);     // Variable indicating whether to use 1=spline, 2=coupled SDEs
@@ -129,26 +130,21 @@ Type objective_function<Type>::operator() ()
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
+  DATA_VECTOR(priorngamma);    // Prior vector for logn, gamma distribution [shape, rate, useflag ]
   DATA_VECTOR(priorr);         // Prior vector for r, [log(mean), stdev in log, useflag]
   //DATA_VECTOR(priorrp);        // Prior vector for rp, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priorK);         // Prior vector for K, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priorm);         // Prior vector for m, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priormu);        // Prior vector for mu, [log(mean), stdev in log, useflag]
   DATA_MATRIX(priorq);         // Prior vector for q, [log(mean), stdev in log, useflag]
-  DATA_VECTOR(prioriqgamma);   // Prior vector for q, inverse gamma distribution, [shape, rate, useflag]
   DATA_VECTOR(priorqf);        // Prior vector for qf, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priorbkfrac);    // Prior vector for B0/K, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priorsdb);       // Prior vector for sdb, [log(mean), stdev in log, useflag]
-  DATA_VECTOR(priorisdb2gamma);// Prior vector for sdb2, inv. gamma distribution, [shape, rate, useflag]
   DATA_VECTOR(priorsdm);       // Prior vector for sdm, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priorsdf);       // Prior vector for sdf, [log(mean), stdev in log, useflag]
-  DATA_VECTOR(priorisdf2gamma);// Prior vector for sdf2, inv. gamma distribution, [shape, rate, useflag]
   DATA_MATRIX(priorsdi);       // Prior vector for sdi, [log(mean), stdev in log, useflag]
-  DATA_VECTOR(priorisdi2gamma);// Prior vector for sdi2, inv. gamma distribution, [shape, rate, useflag]
   DATA_VECTOR(priorsde);       // Prior vector for sde, [log(mean), stdev in log, useflag]
-  DATA_VECTOR(priorisde2gamma);// Prior vector for sde2, inv. gamma distribution, [shape, rate, useflag]
   DATA_VECTOR(priorsdc);       // Prior vector for sdc, [log(mean), stdev in log, useflag]
-  DATA_VECTOR(priorisdc2gamma);// Prior vector for sdc2, inv. gamma distribution, [shape, rate, useflag]
   DATA_VECTOR(prioralpha);     // Prior vector for alpha, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priorbeta);      // Prior vector for beta, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priorpsi);       // Prior vector for psi, [log(mean), stdev in log, useflag]
@@ -157,8 +153,8 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(priorBBmsy);     // Prior vector for B/Bmsy, [log(mean), stdev in log, useflag, year, ib]
   DATA_VECTOR(priorFFmsy);     // Prior vector for F/Fmsy, [log(mean), stdev in log, useflag, year, if]
   DATA_VECTOR(priorBmsyB0)     // Prior vector for Bmsy/B_0, [mean, stdev, useflag]
-  // Options
-  DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
+    // Options
+    DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
   DATA_SCALAR(dbg);            // Debug flag, if == 1 then print stuff.
   DATA_INTEGER(reportmode);    // If 1-5 only specific quantities are ADreported (increases speed, relevant for fitting within MSE)
 
@@ -192,9 +188,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
-   if(dbg > 0){
-     std::cout << "==== DATA read, now calculating derived quantities ====" << std::endl;
-   }
+  if(dbg > 0){
+    std::cout << "==== DATA read, now calculating derived quantities ====" << std::endl;
+  }
 
   int ind = 0;
   // Distribute sorted observations into logobsC and logobsI vectors
@@ -495,7 +491,7 @@ Type objective_function<Type>::operator() ()
     }
     if(prioralpha(2) != 1){
       for(int i=0; i<nsdi; i++){
-	ans -= dnorm(logalpha(i), Type(0.0), Type(10.0), 1);
+        ans -= dnorm(logalpha(i), Type(0.0), Type(10.0), 1);
       }
     }
     if(priorsde(2) != 1){
@@ -511,30 +507,10 @@ Type objective_function<Type>::operator() ()
     std::cout << "PRIOR: priorm(0): " << priorm(0) << " -- priorm(1): " << priorm(1) << " -- priorm(2): " << priorm(2) << std::endl;
     std::cout << "PRIOR: priorq(0): " << priorq(0) << " -- priorq(1): " << priorq(1) << " -- priorq(2): " << priorq(2) << std::endl;
   }
-  // Inverse gamma priors
+  // Gamma priors
   // TMB uses shape and scale parameterisation, but spict uses shape and rate similar to jags.
-  // Prior for q.
-  if((prioriqgamma(2) == 1) & (nq == 1)){
-    ans-= dgamma(1.0/exp(logq(0)), prioriqgamma(0), 1.0/prioriqgamma(1), 1);
-  }
-  if(priorisdb2gamma(2) == 1){
-    ans-= dgamma(1.0/sdb2, priorisdb2gamma(0), 1.0/priorisdb2gamma(1), 1);
-  }
-  if(priorisdf2gamma(2) == 1){
-    for(int i=0; i<nsdf; i++){
-      ans-= dgamma(1.0/sdf2(i), priorisdf2gamma(0), 1.0/priorisdf2gamma(1), 1);
-    }
-  }
-  if(priorisdi2gamma(2) == 1){
-    for(int i=0; i<nsdi; i++){
-      ans-= dgamma(1.0/sdi2(i), priorisdi2gamma(0), 1.0/priorisdi2gamma(1), 1);
-    }
-  }
-  if(priorisde2gamma(2) == 1){
-    ans-= dgamma(1.0/sde2, priorisde2gamma(0), 1.0/priorisde2gamma(1), 1);
-  }
-  if(priorisdi2gamma(2) == 1){
-    //ans-= dgamma(1.0/exp(2.0*logsdi), priorisdi2gamma(0), 1.0/priorisdi2gamma(1), 1);
+  if(priorngamma(2)==1){
+    ans-= dgamma(logn, priorngamma(0), 1.0/priorngamma(1), 1);
   }
   // Log-normal priors
   if(priorn(2) == 1){
@@ -555,7 +531,7 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i<nq; i++){
     if(priorq(i,2) == 1){
       ans-= dnorm(logq(i), priorq(i,0), priorq(i, 1), 1); // Prior for logq - log-normal
-      }
+    }
   }
   if(priorqf(2) == 1){
     ans-= dnorm(logqf, priorqf(0), priorqf(1), 1); // Prior for logqf
@@ -621,19 +597,19 @@ Type objective_function<Type>::operator() ()
   }
 
   /*
-  dt[i] is the length of the time interval between t_i and t_i+1
-  B[t] is biomass at the beginning of the time interval starting at time t
-  Binf[t] is equilibrium biomass with the parameters given at the beginning of the time interval starting at time t
-  I[t] is an index of biomass (e.g. CPUE) at the beginning of the time interval starting at time t
-  P[t] is the accumulated biomass production over the interval starting at time t
-  F[t] is the constant fishing mortality during the interval starting at time t
-  rvec[t] is the constant intrinsic growth rate during the interval starting at time t
-  C[t] is the catch removed during the interval starting at time t.
-  ffacvec[t] is the factor to multiply F[t-1] when calculating F[t] such that management is imposed at time t.
+    dt[i] is the length of the time interval between t_i and t_i+1
+    B[t] is biomass at the beginning of the time interval starting at time t
+    Binf[t] is equilibrium biomass with the parameters given at the beginning of the time interval starting at time t
+    I[t] is an index of biomass (e.g. CPUE) at the beginning of the time interval starting at time t
+    P[t] is the accumulated biomass production over the interval starting at time t
+    F[t] is the constant fishing mortality during the interval starting at time t
+    rvec[t] is the constant intrinsic growth rate during the interval starting at time t
+    C[t] is the catch removed during the interval starting at time t.
+    ffacvec[t] is the factor to multiply F[t-1] when calculating F[t] such that management is imposed at time t.
   */
 
   /*
-  --- PROCESS EQUATIONS ---
+    --- PROCESS EQUATIONS ---
   */
 
   // FISHING MORTALITY
@@ -659,17 +635,17 @@ Type objective_function<Type>::operator() ()
       Type Fpredtmp = 0.0;
       iisdf = CppAD::Integer(isdf(i)) - 1;
       if (efforttype == 1){
-	Fpredtmp = predictF1(logF(i-1), dt(i), sdf2(iisdf), delta, logeta);
+        Fpredtmp = predictF1(logF(i-1), dt(i), sdf2(iisdf), delta, logeta);
       }
       if (efforttype == 2){
-	Fpredtmp = predictF2(logF(i-1), dt(i), sdf2(iisdf), delta, logeta);
+        Fpredtmp = predictF2(logF(i-1), dt(i), sdf2(iisdf), delta, logeta);
       }
       Type logFpred = log( ffacvec(i) * Fpredtmp + fconvec(i) );
       likval = dnorm(logF(i), logFpred, sqrt(dt(i-1))*sdf(iisdf), 1);
       ans-=likval;
       // DEBUGGING
       if(dbg>1){
-	std::cout << "-- i: " << i << " -   logF(i-1): " << logF(i-1) << "  logF(i): " << logF(i) << "  ffacvec(i): " << ffacvec(i) << "  fconvec(i): " << fconvec(i) << "  iisdf: " << iisdf << "  sdf: " << sdf(iisdf) << "  efforttype: " << efforttype << "  likval: " << likval << "  ans:" << ans << std::endl;
+        std::cout << "-- i: " << i << " -   logF(i-1): " << logF(i-1) << "  logF(i): " << logF(i) << "  ffacvec(i): " << ffacvec(i) << "  fconvec(i): " << fconvec(i) << "  iisdf: " << iisdf << "  sdf: " << sdf(iisdf) << "  efforttype: " << efforttype << "  likval: " << likval << "  ans:" << ans << std::endl;
       }
     }
 
@@ -680,57 +656,57 @@ Type objective_function<Type>::operator() ()
       // Spline
       int ind2, ind3;
       for(int i=0; i<ns; i++){
-	ind2 = CppAD::Integer(seasonindex(i));
-	ind3 = CppAD::Integer(seasonindex2(i));
-	//logFs(i) += seasonspline(ind2);
-	logS(i) += seasonspline(ind2);
+        ind2 = CppAD::Integer(seasonindex(i));
+        ind3 = CppAD::Integer(seasonindex2(i));
+        //logFs(i) += seasonspline(ind2);
+        logS(i) += seasonspline(ind2);
 
-	if(seasontype == 3) logS(i) += SARvec(ind3-1);
-	// DEBUGGING
-	if(dbg>1){
-	  //std::cout << "-- i: " << i << " -   logF(i): " << logF(i) << " logFs(i): " << logFs(i) << " ind2: " << ind2 << " seasonspline(ind2): " << seasonspline(ind2) << std::endl;
-	  std::cout << "-- i: " << i << " -   logF(i): " << logF(i) << " logS(i): " << logS(i) << " ind2: " << ind2 << " seasonspline(ind2): " << seasonspline(ind2) << std::endl;
-	}
+        if(seasontype == 3) logS(i) += SARvec(ind3-1);
+        // DEBUGGING
+        if(dbg>1){
+          //std::cout << "-- i: " << i << " -   logF(i): " << logF(i) << " logFs(i): " << logFs(i) << " ind2: " << ind2 << " seasonspline(ind2): " << seasonspline(ind2) << std::endl;
+          std::cout << "-- i: " << i << " -   logF(i): " << logF(i) << " logS(i): " << logS(i) << " ind2: " << ind2 << " seasonspline(ind2): " << seasonspline(ind2) << std::endl;
+        }
       }
     }
     if(seasontype == 2){
       // Coupled SDEs
       for(int j=0; j<nsdu; j++){
-	Type per = j+1.0;
-	if(dbg>0){ std::cout << "-- j:" << j << "- per:" << per << "- omega:" << omega << std::endl; }
-	for(int i=1; i<ns; i++){
-	  // Analytical expression for matrix exponential
-	  matrix<Type> trigmat(2, 2);
-	  trigmat(0, 0) = cos(per*omega*dt(i-1));
-	  trigmat(0, 1) = -sin(per*omega*dt(i-1));
-	  trigmat(1, 0) = sin(per*omega*dt(i-1));
-	  trigmat(1, 1) = cos(per*omega*dt(i-1));
-	  if(dbg>0){ std::cout << "-- trigmat: " << trigmat << std::endl; }
-	  matrix<Type> expmAt = exp(-lambda*dt(i-1))*trigmat;
-	  if(dbg>0){ std::cout << "-- expmAt: " << expmAt << std::endl; }
-	  // Corrected standard deviation
-	  Type sduana = sdu(j) * sqrt(1.0/(2.0*lambda) * (1.0 - exp(-2.0*lambda*dt(i-1))));
-	  if(dbg>0){ std::cout << "-- sduana: " << sduana << std::endl; }
-	  vector<Type> sublogumF = logu.col(i-1);
-	  vector<Type> sublogum(2);
-	  sublogum(0) = sublogumF(2*j);
-	  sublogum(1) = sublogumF(2*j+1);
-	  if(dbg>0){ std::cout << "-- sublogumF: " << sublogumF << "-- sublogum: " << sublogum << std::endl; }
-	  vector<Type> logupred = expmAt * sublogum;
-	  if(dbg>0){ std::cout << "-- logupred: " << logupred << std::endl; }
-	  likval = 0.0;
-	  for(int k=0; k<logupred.size(); k++){
-	    if(dbg>0){ std::cout << "-- k: " << k << "- 2*j+k: " << 2*j+k << " - logu(2*j+k, i): " << logu(2*j+k, i) << std::endl; }
-	    likval += dnorm(logu(2*j+k, i), logupred(k), sduana, 1);
-	  }
-	  ans-=likval;
-	  // DEBUGGING
-	  if(dbg>0){
-	    std::cout << "-- i: " << i << " -   logu(0,i): " << logu(0,i) << "  logupred(0): " << logupred(0) << " -   logu(1,i): " << logu(1,i) << "  logupred(1): " << logupred(1) << "  sdu(j): " << sdu(j) << "  sduana: " << sduana << "  likval: " << likval << "  ans:" << ans << std::endl;
-	  }
-	}
-	//for(int i=0; i<ns; i++) logFs(i) += logu(2*j, i); // Sum diffusion and seasonal component
-	for(int i=0; i<ns; i++) logS(i) += logu(2*j, i); // Sum diffusion and seasonal component
+        Type per = j+1.0;
+        if(dbg>0){ std::cout << "-- j:" << j << "- per:" << per << "- omega:" << omega << std::endl; }
+        for(int i=1; i<ns; i++){
+          // Analytical expression for matrix exponential
+          matrix<Type> trigmat(2, 2);
+          trigmat(0, 0) = cos(per*omega*dt(i-1));
+          trigmat(0, 1) = -sin(per*omega*dt(i-1));
+          trigmat(1, 0) = sin(per*omega*dt(i-1));
+          trigmat(1, 1) = cos(per*omega*dt(i-1));
+          if(dbg>0){ std::cout << "-- trigmat: " << trigmat << std::endl; }
+          matrix<Type> expmAt = exp(-lambda*dt(i-1))*trigmat;
+          if(dbg>0){ std::cout << "-- expmAt: " << expmAt << std::endl; }
+          // Corrected standard deviation
+          Type sduana = sdu(j) * sqrt(1.0/(2.0*lambda) * (1.0 - exp(-2.0*lambda*dt(i-1))));
+          if(dbg>0){ std::cout << "-- sduana: " << sduana << std::endl; }
+          vector<Type> sublogumF = logu.col(i-1);
+          vector<Type> sublogum(2);
+          sublogum(0) = sublogumF(2*j);
+          sublogum(1) = sublogumF(2*j+1);
+          if(dbg>0){ std::cout << "-- sublogumF: " << sublogumF << "-- sublogum: " << sublogum << std::endl; }
+          vector<Type> logupred = expmAt * sublogum;
+          if(dbg>0){ std::cout << "-- logupred: " << logupred << std::endl; }
+          likval = 0.0;
+          for(int k=0; k<logupred.size(); k++){
+            if(dbg>0){ std::cout << "-- k: " << k << "- 2*j+k: " << 2*j+k << " - logu(2*j+k, i): " << logu(2*j+k, i) << std::endl; }
+            likval += dnorm(logu(2*j+k, i), logupred(k), sduana, 1);
+          }
+          ans-=likval;
+          // DEBUGGING
+          if(dbg>0){
+            std::cout << "-- i: " << i << " -   logu(0,i): " << logu(0,i) << "  logupred(0): " << logupred(0) << " -   logu(1,i): " << logu(1,i) << "  logupred(1): " << logupred(1) << "  sdu(j): " << sdu(j) << "  sduana: " << sduana << "  likval: " << likval << "  ans:" << ans << std::endl;
+          }
+        }
+        //for(int i=0; i<ns; i++) logFs(i) += logu(2*j, i); // Sum diffusion and seasonal component
+        for(int i=0; i<ns; i++) logS(i) += logu(2*j, i); // Sum diffusion and seasonal component
       }
     }
   } else {
@@ -756,7 +732,7 @@ Type objective_function<Type>::operator() ()
       ans -= likval;
       // DEBUGGING
       if (dbg > 1){
-	std::cout << "-- i: " << i << " -   logmre(i-1): " << logmre(i-1) << "  sdm: " << sdm << "  likval: " << likval << "  ans:" << ans << std::endl;
+        std::cout << "-- i: " << i << " -   logmre(i-1): " << logmre(i-1) << "  sdm: " << sdm << "  likval: " << likval << "  ans:" << ans << std::endl;
       }
     }
   }
@@ -797,13 +773,13 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<nobsCp; i++){
       // Sum catch contributions from each sub interval
       for(int j=0; j<nc(i); j++){
-	ind = CppAD::Integer(ic(i)-1) + j; // minus 1 because R starts at 1 and c++ at 0
-	Cpred(i) += Cpredsub(ind);
+        ind = CppAD::Integer(ic(i)-1) + j; // minus 1 because R starts at 1 and c++ at 0
+        Cpred(i) += Cpredsub(ind);
       }
       logCpred(i) = log(Cpred(i));
       // DEBUGGING
       if(dbg>1){
-	std::cout << "-- i: " << i << " -  ind: " << ind << "  logCpred(i): " << logCpred(i) << std::endl;
+        std::cout << "-- i: " << i << " -  ind: " << ind << "  logCpred(i): " << logCpred(i) << std::endl;
       }
     }
   } else {
@@ -821,13 +797,13 @@ Type objective_function<Type>::operator() ()
       Fcumpred(i) = 0.0;
       // Sum effort contributions from each sub interval
       for(int j=0; j<ne(i); j++){
-	ind = CppAD::Integer(ie(i)-1) + j; // minus 1 because R starts at 1 and c++ at 0
-	Fcumpred(i) += F(ind) * dt(ind);
+        ind = CppAD::Integer(ie(i)-1) + j; // minus 1 because R starts at 1 and c++ at 0
+        Fcumpred(i) += F(ind) * dt(ind);
       }
       logFcumpred(i) = log(Fcumpred(i));
       // DEBUGGING
       if(dbg>1){
-	std::cout << "-- i: " << i << " -  ind: " << ind << "  logFcumpred(i): " << logFcumpred(i) << std::endl;
+        std::cout << "-- i: " << i << " -  ind: " << ind << "  logFcumpred(i): " << logFcumpred(i) << std::endl;
       }
     }
   }
@@ -852,14 +828,14 @@ Type objective_function<Type>::operator() ()
       //ind = CppAD::Integer(ic(i)-1) + j; // minus 1 because R starts at 1 and c++ at 0 <- NOT USED?
       inds = CppAD::Integer(isc(i)-1);
       if(robflagc==1){
-	likval = log(pp*dnorm(logCpred(i), logobsC(i), stdevfacc(i)*sdc, 0) + (1.0-pp)*dnorm(logCpred(i), logobsC(i), robfac*stdevfacc(i)*sdc, 0));
+        likval = log(pp*dnorm(logCpred(i), logobsC(i), stdevfacc(i)*sdc, 0) + (1.0-pp)*dnorm(logCpred(i), logobsC(i), robfac*stdevfacc(i)*sdc, 0));
       } else {
-	likval = dnorm(logCpred(i), logobsC(i), stdevfacc(i)*sdc, 1);
+        likval = dnorm(logCpred(i), logobsC(i), stdevfacc(i)*sdc, 1);
       }
       ans-= keep(inds) * likval;
       // DEBUGGING
       if(dbg>1){
-	std::cout << "-- i: " << i << " -   logobsC(i): " << logobsC(i) << " -   stdevfacc(i): " << stdevfacc(i) << "  sdc: " << sdc << "  likval: " << likval << "  ans:" << ans << std::endl;
+        std::cout << "-- i: " << i << " -   logobsC(i): " << logobsC(i) << " -   stdevfacc(i): " << stdevfacc(i) << "  sdc: " << sdc << "  likval: " << likval << "  ans:" << ans << std::endl;
       }
     }
   }
@@ -872,15 +848,15 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<nobsE; i++){
       logEpred(i) = logFcumpred(i) - logqf; // E = 1/q * integral{F_t dt}
       if(robflage==1){
-	likval = log(pp*dnorm(logEpred(i), logobsE(i), stdevface(i)*sde, 0) + (1.0-pp)*dnorm(logEpred(i), logobsE(i), robfac*stdevface(i)*sde, 0));
+        likval = log(pp*dnorm(logEpred(i), logobsE(i), stdevface(i)*sde, 0) + (1.0-pp)*dnorm(logEpred(i), logobsE(i), robfac*stdevface(i)*sde, 0));
       } else {
-	likval = dnorm(logEpred(i), logobsE(i), stdevface(i)*sde, 1);
+        likval = dnorm(logEpred(i), logobsE(i), stdevface(i)*sde, 1);
       }
       inds = CppAD::Integer(ise(i)-1);
       ans-= keep(inds) * likval;
       // DEBUGGING
       if(dbg>1){
-	std::cout << "-- i: " << i << " -   logobsE(i): " << logobsE(i) << " -   stdevface(i): " << stdevface(i) << "  sde: " << sde << "  likval: " << likval << "  ans:" << ans << std::endl;
+        std::cout << "-- i: " << i << " -   logobsE(i): " << logobsE(i) << " -   stdevface(i): " << stdevface(i) << "  sde: " << sde << "  likval: " << likval << "  ans:" << ans << std::endl;
       }
     }
   }
@@ -912,7 +888,7 @@ Type objective_function<Type>::operator() ()
 
 
   /*
-  --- ONE-STEP-AHEAD PREDICTIONS ---
+    --- ONE-STEP-AHEAD PREDICTIONS ---
   */
 
   if(dbg > 0){
@@ -999,9 +975,16 @@ Type objective_function<Type>::operator() ()
   // Calculate relative levels of biomass and fishing mortality
   vector<Type> logBBmsy(ns);
   vector<Type> logFFmsy(ns);
+  Type meanB = exp(logB).sum()/ns;
+  Type meanF = exp(logF).sum()/ns;
+  vector<Type> logBrel(ns);
+  vector<Type> logFrel(ns);
+
   for(int i=0; i<ns; i++){
     logBBmsy(i) = logB(i) - logBmsyvec(i);
     logFFmsy(i) = logFs(i) - logFmsyvec(i);
+    logBrel(i) = logB(i) - log(meanB);
+    logFrel(i) = logF(i) - log(meanF);
   }
 
   //std::cout << "logFFmsy: " << logFFmsy << std::endl;
@@ -1104,9 +1087,11 @@ Type objective_function<Type>::operator() ()
       // These reports are derived from the random effects and are therefore vectors. TMB calculates the covariance of all sdreports leading to a very large covariance matrix which may cause memory problems.
       // B
       ADREPORT(logBBmsy);
+      if(reportRel) ADREPORT(logBrel);
       // F
       ADREPORT(logFFmsy); // Vector of size ns
       ADREPORT(logFs);    // Vector of size ns
+      if(reportRel) ADREPORT(logFrel);
       // C
       ADREPORT(logCpred);
       // I
@@ -1115,9 +1100,9 @@ Type objective_function<Type>::operator() ()
       ADREPORT(logEpred);
       // Time varying growth
       if ((timevaryinggrowth == 1) | (logmcovflag == 1)){
-	ADREPORT(logrre); // r random effect
-	ADREPORT(logFmsyvec);
-	ADREPORT(logMSYvec);
+        ADREPORT(logrre); // r random effect
+        ADREPORT(logFmsyvec);
+        ADREPORT(logMSYvec);
       }
       ADREPORT(logFnotS);
       ADREPORT(logFFmsynotS);

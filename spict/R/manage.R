@@ -27,24 +27,36 @@
 #'   \item{"4"}{ No fishing, reduce to 1\% of current F.}
 #'   \item{"5"}{ Reduce F by X\%. Default X = 25.}
 #'   \item{"6"}{ Increase F by X\%. Default X = 25.}
-#'   \item{"7"}{ Use ICES MSY advice rule.}
+#'   \item{"7"}{ Use ICES MSY advice rule (ICES, 2017).}
 #'
 #' Scenario 7 implements the ICES MSY advice rule for stocks that are assessed using spict (ICES 2017). MSY B_{trigger} is set equal to B_{MSY} / 2. Then fishing mortality in the short forecast is calculated as:
 #'
-#' F(y+1) =  F(y) * min{ 1, median[B(y+1) / MSY B_{trigger}] } / median[F(y)/F_{MSY}]
-#' }
+#' F(y+1) = F(y) * min{ 1, median[B(y+1) / MSY B_{trigger}] } /
+#' median[F(y)/F_{MSY}] }
 #' @param repin Result list from fit.spict().
-#' @param scenarios Vector of integers specifying which scenarios to run. Default: 'all'.
+#' @param scenarios Vector of integers specifying which scenarios to run.
+#'     Default: 'all'.
 #' @param manstart Year that management should be initiated.
-#' @param dbg Debug flag, dbg=1 some output, dbg=2 more ourput.
+#' @param catch Catch which will be taken each year in the prediction period. By
+#'     default (\code{NULL}) catch is equal to last year's catch.
+#' @param sdfac Take catch with this 'stdevfacC' (default = 1e-3)
+#' @param catchList List with elements: "obsC", "timeC", "stdevfacC", and "dtc"
+#'     specifying the catch, the time of catch, the factor of the standard
+#'     deviation of the catch, and the catch time interval. By default
+#'     (\code{NULL}) settings are based on the last year.
+#' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @return List containing results of management calculations.
+#' @references ICES. 2017. Report of the Workshop on the Development of the ICES
+#'     approach to providing MSY advice for category 3 and 4 stocks
+#'     (WKMSYCat34), 6-10 March 2017, Copenhagen, Denmark. ICES CM 2017/ACOM:47.
+#'     53 pp.
 #' @export
 #' @examples
 #' data(pol)
 #' rep <- fit.spict(pol$albacore)
 #' repman <- manage(rep)
 #' mansummary(repman) # To print projections
-manage <- function(repin, scenarios='all', manstart=NULL, dbg=0, catch=NULL, catchList=NULL){
+manage <- function(repin, scenarios='all', manstart=NULL, dbg=0, catch=NULL, sdfac = 1, catchList=NULL){
     if (scenarios == 'all'){
         scenarios <- 1:7
     }
@@ -68,7 +80,7 @@ manage <- function(repin, scenarios='all', manstart=NULL, dbg=0, catch=NULL, cat
             # 1. Specify the catch, which will be taken each year in the prediction period
             lastyearidxs <- min( which( cumsum(rev(inpin$dtc))>=1 ) ) ## warning: this will not make sense with subannual/mixed data with missing values
             if(is.null(catch)) catch <- sum(tail(inpin$obsC, lastyearidxs))
-            repman[[1]] <- take.c(catch, inpin, repin, dbg=dbg, catchList=catchList, sdfac = 1)
+            repman[[1]] <- take.c(catch, inpin, repin, dbg=dbg, sdfac=sdfac, catchList=catchList)
         }
         if (2 %in% scenarios){
             # Keep current F
@@ -162,12 +174,17 @@ prop.F <- function(fac, inpin, repin, maninds, corF=FALSE, dbg=0){
 
 
 #' @name take.c
-#' @title Calculate management when taking a constant catch (proxy for setting a TAC).
+#' @title Calculate management when taking a constant catch (proxy for setting a
+#'     TAC).
 #' @param catch Take this catch 'dtpredc' ahead from manstart time
 #' @param inpin Input list.
 #' @param repin Results list.
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @param sdfac Take catch with this 'stdevfacC' (default = 1)
+#' @param catchList List with elements: "obsC", "timeC", "stdevfacC", and "dtc"
+#'     specifying the catch, the time of catch, the factor of the standard
+#'     deviation of the catch, and the catch time interval. By default
+#'     (\code{NULL}) settings are based on the last year.
 #' @return List containing results of management calculations.
 #' @export
 take.c <- function(catch, inpin, repin, dbg=0, sdfac=1, catchList=NULL){
@@ -186,9 +203,8 @@ take.c <- function(catch, inpin, repin, dbg=0, sdfac=1, catchList=NULL){
         if(is.null(catchList$stdevfacC))
             inpt$stdevfacC <- c(inpt$stdevfacC, rep(sdfac, length(catchList$timeC)) )  else
             inpt$stdevfacC <- c(inpt$stdevfacC, catchList$stdevfacC)
-        inpt$dtc <- c(inpt$dtc, catchList$dtc)
+        inpt$dtc <- c(inpt$dtc, catchList$dtc )
     }
-
     inpt <- check.inp(inpt)
     # Make TMB data and object
     plt <- repin$obj$env$parList(repin$opt$par)

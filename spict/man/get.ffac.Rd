@@ -4,8 +4,13 @@
 \alias{get.ffac}
 \title{Estimate fishing mortality factor minimising risk of overfishing}
 \usage{
-get.ffac(rep, relstate = "logBpBmsy", frac_relstate = 1,
-  problevel = 0.95, reportmode = 1)
+get.ffac(
+  rep,
+  relstate = "logBpBmsy",
+  frac_relstate = 1,
+  problevel = 0.95,
+  reportmode = 1
+)
 }
 \arguments{
 \item{rep}{Result list from fit.spict().}

@@ -5,9 +5,16 @@
 \title{Estimate deviation between targeted and realised probability of
     overfishing}
 \usage{
-probdev(ffac, rep, relstate = "logBpBmsy", frac_relstate = 1,
-  problevel = 0.95, reportmode = 1, getFrac = FALSE,
-  verbose = FALSE)
+probdev(
+  ffac,
+  rep,
+  relstate = "logBpBmsy",
+  frac_relstate = 1,
+  problevel = 0.95,
+  reportmode = 1,
+  getFrac = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{ffac}{Factor to multiply current F by}

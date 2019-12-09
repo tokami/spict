@@ -1,5 +1,8 @@
 ## Tests vectorized robflagi and plotspict.priors for list priors
+
+## Also tests using the logngamma prior
 library(spict)
+
 
 ## Fleet=1: catches, Fleet > 1 : indices of exploitable biomass, Fleet=999 : effort
 d<-read.csv("data.txt", skip=1, comment.char="#")
@@ -57,15 +60,34 @@ inp$timepredc <- max(inp$timeC,na.rm=TRUE) + 1
 # Multiply last F with ffac and forecast using resulting F
 inp$ffac <- 1.00
 
-## Fix n to 2 (Schaefer)
-#inp$ini$logn <- log(2)
-#inp$phases$logn <- -1
 inp<-check.inp(inp)
 
 inp$phases$logitpp <- -1
 
 fit<-fit.spict(inp)
 
+## Testing do.plot=1 only adds the first prior to existing plot
+par(mfrow=c(2,1),mar=c(4,3,3,1))
+plotspict.priors(fit,do.plot=1)
+plotspict.priors(fit,do.plot=1)
+
+## Should plot all active priors
 plotspict.priors(fit)
 
-cat(fit$opt$objective,"\n", file="res.out")
+## Gamma prior on logn with mode equal to Thorson's mean estimate and 90th percentile match
+n.est <- 1.478
+sdn <- 0.849
+x90 <- qnorm(0.9,n.est,sdn)
+sr <- modefrac2shaperate(log(n.est),log(x90))
+
+inp$priors$logn <- c(log(2), 1, 0)
+inp$priors$logngamma <- c(sr[1], sr[2], 1)
+
+fit2<-fit.spict(inp)
+plotspict.priors(fit2)
+plot(fit2)
+
+sink("res.out")
+print(round(sumspict.parest(fit),3))
+print(round(sumspict.parest(fit2),3))
+sink()

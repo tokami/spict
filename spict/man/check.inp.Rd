@@ -74,8 +74,6 @@ Example: intrinsic growth rate of 0.8
 Example: Biomass prior of 200 in 1985
  inp$priors$logB <- c(log(200), 0.2, 1985)
  inp$priors$logB <- c(log(200), 0.2, 1, 1985) # This includes the optional useflag
-Example: Inverse gamma prior on sdb^2:
- inp$priors$isdb2gamma <- meanvar2shaperate(1/exp(inp$ini$logsdb)^2, 150^2)
 
 - Settings/Options/Preferences
 
@@ -83,11 +81,12 @@ Example: Inverse gamma prior on sdb^2:
  \item{"inp$dtpredc"}{ Length of catch prediction interval in years. Default: max(inp$dtc). Should be 1 to get annual predictions and 0.25 for quarterly predictions.}
  \item{"inp$timepredc"}{ Predict accummulated catch in the interval starting at $timepredc and $dtpredc into the future. Default: Time of last observation. Example: inp$timepredc <- 2020}
  \item{"inp$timepredi"}{ Predict index until this time. Default: Time of last observation. Example: inp$timepredi <- 2021}
-\item{"inp$maninterval"}{ Two floats representing the start and end of the management period. Default: Time of last observation and one year later. Example: inp$maninterval <- c(2020.25,2021.25)}
-\item{"inp$maneval"}{ Time at which to evaluate model states. Default: End of management period (inp$maninterval). Example: inp$maneval <- 2021.25}
-\item{"inp$manstart"}{ Deprecated: start of the management period. Updated argument \code{inp$maninterval}.  Default: First time of \code{inp$maninterval} if set, otherwise time of last observation. Example: inp$manstart <- 2021}
+\item{"inp$maninterval"}{ Two floats representing the start and end of the management period. Example: inp$maninterval <- c(2020.25,2021.25)}
+\item{"inp$maneval"}{ Time at which to evaluate model states. Example: inp$maneval <- 2021.25}
+\item{"inp$manstart"}{ Deprecated: start of the management period. Updated argument \code{inp$maninterval}.}
  \item{"inp$do.sd.report"}{ Flag indicating whether SD report (uncertainty of derived quantities) should be calculated. For small values of inp$dteuler this may require a lot of memory. Default: TRUE.}
  \item{"inp$reportall"}{ Flag indicating whether quantities derived from state vectors (e.g. B/Bmsy, F/Fmsy etc.) should be calculated by SD report. For small values of inp$dteuler (< 1/32) reporting all may have to be set to FALSE for sdreport to run. Additionally, if only reference points of parameter estimates are of interest one can set to FALSE to gain a speed-up. Default: TRUE.}
+\item{"inp$reportRel"}{ Flag indicating whether mean 1 standardized states (i.e. B/mean(B), F/mean(F) etc.) should be calculated by SD report. Default: FALSE.}
 \item{"inp$robflagc"}{ Flag indicating whether robust estimation should be used for catches (either 0 or 1). Default: 0.}
  \item{"inp$robflagi"}{ Vector of flags indicating whether robust estimation should be used for indices (either 0 or 1). Default: 0.}
  \item{"inp$ffac"}{ Management scenario represented by a factor to multiply F with when calculating the F of the next time step. ffac=0.8 means a 20\% reduction in F over the next year. The factor is only used when predicting beyond the data set. Default: 1 (0\% reduction).}

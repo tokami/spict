@@ -4,14 +4,10 @@
 \alias{get.TAC.ices}
 \title{Estimate the Total Allowable Catch (TAC) based on the ICES (2019) recommended HCR}
 \usage{
-get.TAC.ices(rep, catch_pred = NULL, sdfac = 1, getFit = FALSE)
+get.TAC.ices(rep, catchIntermediateYear = NULL, sdfac = 1, getFit = FALSE)
 }
 \arguments{
 \item{rep}{Result list from fit.spict().}
-
-\item{catch_pred}{Catch during assessment year (corresponding to argument
-\code{catch} in \code{\link{take.c}}), e.g. last year's TAC (default:
-\code{NULL}; see details for more information).}
 
 \item{sdfac}{Factor for the multiplication of the standard deveiation of the
 catch during the assessment year (\code{stdevfacC}; default = 1; see
@@ -19,6 +15,10 @@ catch during the assessment year (\code{stdevfacC}; default = 1; see
 
 \item{getFit}{Logical; if \code{TRUE} the function returns the fitted
 'spictcls' object with respective HCR (\code{FALSE} by default).}
+
+\item{catch_pred}{Catch during assessment year (corresponding to argument
+\code{catch} in \code{\link{take.c}}), e.g. last year's TAC (default:
+\code{NULL}; see details for more information).}
 }
 \value{
 A list with the TAC and management relevant quantities; if
