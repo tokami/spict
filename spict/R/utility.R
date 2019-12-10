@@ -32,10 +32,23 @@ make.ffacvec <- function(inp, ffac){
     inp$ffacvec <- rep(1, inp$ns)
     # Start in indpred[2] because indpred[1] is mainly for plotting
     ind <- which(inp$time == inp$manstart)
-    inp$ffacvec[ind] <- ffac + 1e-8 # Add small to avoid taking log of 0
+    inp$ffacvec[ind] <- ffac
+    inp$ffacvec <- inp$ffacvec + 1e-8 # Add small to avoid taking log of 0
     return(inp)
 }
 
+#' @name make.fconvec
+#' @title Make fcon vector
+#' @param inp Input list
+#' @param fcon Constant to add to F
+#' @return Input list containing fconvec
+#' @export
+make.fconvec <- function(inp, fcon){
+    inp$fconvec <- numeric(inp$ns)
+    inp$fconvec[inp$indpred[-1]] <- fcon
+    inp$fconvec <- inp$fconvec + 1e-8 # Add small to avoid taking log of 0
+    return(inp)
+}
 
 #' @name meanvar2shaperate
 #' @title Convert mean and variance to shape and rate of gamma distribution
@@ -537,97 +550,6 @@ get.cov <- function(rep, parname1, parname2, cor=FALSE){
     }
 }
 
-
-#' @name probdev
-#' @title Estimate deviation between targeted and realised probability of
-#'     overfishing
-#' @param ffac Factor to multiply current F by
-#' @param rep Result list from fit.spict().
-#' @param relstate Relative state for estimation of probability of overfishing
-#'     (one of the relative states returned by \code{\link{fit.spict}}; default
-#'     = "logBpBmsy").
-#' @param frac_relstate Fraction of relative state (\code{relstate}; default =
-#'     1)
-#' @param problevel Probability level of risk aversion (default = 0.95).
-#' @param reportmode Integer between 0 and 2 determining which objects will be
-#'     adreported (default = 1).
-#' @param getFrac logical; return realised fraction of relative state (default =
-#'     FALSE).
-#' @param verbose logical; print realised fraction of relative state, fishing
-#'     mortality factor, and deviation (default = FALSE).
-#' @return Returns deviation between targeted and realised probability of being
-#'     above certain biomass threshold under set fishing mortality
-probdev <- function(ffac, rep, relstate = "logBpBmsy", frac_relstate = 1,
-                    problevel = 0.95, reportmode = 1, getFrac = FALSE,
-                    verbose = FALSE){
-    ## get F factor
-    inpt <- make.ffacvec(rep$inp, ffac)
-    rep$obj$env$data$ffacvec <- inpt$ffacvec
-    rep$obj$env$data$reportmode <- reportmode
-    rep$obj$retape()
-    rep$obj$fn(rep$opt$par)
-    sdr <- sdreport(rep$obj)
-    rstate <- get.par(relstate,sdr)
-    ll <- qnorm(1 - problevel, rstate[,2], rstate[,4])
-    dev <- (exp(ll) - frac_relstate)^2
-    if(verbose)  cat("exp(ll): ",exp(ll),"ffac: ",ffac," dev: ",dev,"\n")
-    if(getFrac) dev <- exp(ll)
-    dev
-}
-
-
-#' @name get.ffac
-#' @title Estimate fishing mortality factor minimising risk of overfishing
-#' @param rep Result list from fit.spict().
-#' @param relstate Relative state as returned by \code{\link{fit.spict}}
-#'     (default = "logBpBmsy").
-#' @param frac_relstate Fraction of relative state (\code{relstate}; default =
-#'     1)
-#' @param problevel Probability level of risk aversion (default = 0.95).
-#' @param reportmode Integer between 0 and 2 determining which objects will be
-#'     adreported (default = 1).
-#' @return Optimised Fishing mortality for P(Bp<Blim)
-#' @export
-get.ffac <- function(rep, relstate = "logBpBmsy", frac_relstate=1,
-                     problevel=0.95, reportmode = 1){
-    ## see if is possible even with zero F
-    frac_ffac0 <- probdev(ffac=1e-6, rep=rep, getFrac=TRUE, problevel=problevel,
-                    frac_relstate=frac_relstate, relstate = relstate,
-                    reportmode=reportmode, verbose=FALSE)
-    if(!is.finite(frac_ffac0) || (frac_ffac0 - frac_relstate) < -1e-3){
-        ## cat("Not possible even with zero F\n")
-        return(1e-6)
-    }
-    offac <- optimize(probdev, c(1e-6,5), tol=1e-2, rep=rep,
-                      frac_relstate=frac_relstate, problevel=problevel,
-                      relstate=relstate, reportmode=reportmode,
-                      verbose=FALSE)
-    offac$minimum
-}
-
-
-#' @name calc.tac
-#' @title Calculate Total Allowable Catch (TAC)
-#' @param rep Result list from fit.spict().
-#' @param ffac Factor to multiply current F by
-#' @param fractile_catch The fractile of the catch distribution to be used for
-#'     setting the TAC. Default (0.5) corresponds to the median.
-#' @return Total Allowable Catch (TAC)
-calc.tac <- function(rep, ffac, fractile_catch = 0.5){
-    inpt <- make.ffacvec(rep$inp, ffac)
-    rep$obj$env$data$ffacvec <- inpt$ffacvec
-    rep$obj$env$data$reportmode <- 2
-    rep$obj$retape()
-    rep$obj$fn(rep$opt$par)
-    if(fracc == 0.5){
-        tac <- rep$obj$report(rep$obj$env$last.par.best)$Cp
-    }else{
-        sdr <- sdreport(rep$obj)
-        logCp <- get.par('logCp', sdr)                  ## check the time period of Cp
-        tac <- exp(qnorm(fractile_catch, logCp[2], logCp[4]))
-    }
-    return(tac)
-}
 
 #' @name calc.bmsyk
 #' @title Calculates the Bmsy/K ratio

@@ -4,21 +4,26 @@
 \alias{get.TAC.ices}
 \title{Estimate the Total Allowable Catch (TAC) based on the ICES (2019) recommended HCR}
 \usage{
-get.TAC.ices(rep, catchIntermediateYear = NULL, sdfac = 1, getFit = FALSE)
+get.TAC.ices(
+  rep,
+  catchIntermediateYear = NULL,
+  catchIntermediateYearSDFac = 1,
+  getFit = FALSE
+)
 }
 \arguments{
 \item{rep}{Result list from fit.spict().}
 
-\item{sdfac}{Factor for the multiplication of the standard deveiation of the
+\item{catchIntermediateYear}{Catch during assessment year (corresponding to argument
+\code{catch} in \code{\link{take.c}}), e.g. last year's TAC (default:
+\code{NULL}; see details for more information).}
+
+\item{catchIntermediateYearSDFac}{Factor for the multiplication of the standard deveiation of the
 catch during the assessment year (\code{stdevfacC}; default = 1; see
 \code{\link{take.c}}).}
 
 \item{getFit}{Logical; if \code{TRUE} the function returns the fitted
 'spictcls' object with respective HCR (\code{FALSE} by default).}
-
-\item{catch_pred}{Catch during assessment year (corresponding to argument
-\code{catch} in \code{\link{take.c}}), e.g. last year's TAC (default:
-\code{NULL}; see details for more information).}
 }
 \value{
 A list with the TAC and management relevant quantities; if
@@ -33,9 +38,9 @@ Dependent on the start of the management period (e.g. advice year), there
 might be a time lag between the last observation and the start of the
 management period. If this is the case, an assumption about the intermediate
 time period (e.g. assessment year) has to be made. Either the fishing
-mortality is extrapolated for the intermediate time period (\code{catch_pred
-= NULL}; default), or the argument \code{catch_pred} can be used to set the
-catch in that period. The argument \code{sdfac} allows to adjust the standard
+mortality is extrapolated for the intermediate time period (\code{catchIntermediateYear
+= NULL}; default), or the argument \code{catchIntermediateYear} can be used to set the
+catch in that period. The argument \code{catchIntermediateYearSDFac} allows to adjust the standard
 deviation of the catch in the intermediate time period.
 }
 \examples{

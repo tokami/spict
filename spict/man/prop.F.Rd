@@ -5,6 +5,8 @@
 \title{Calculate management for changing F by a given factor.}
 \usage{
 prop.F(fac, inpin, repin, maninds, corF = FALSE, dbg = 0)
+
+prop.F(fac, inpin, repin, maninds, corF = FALSE, dbg = 0)
 }
 \arguments{
 \item{fac}{Factor to multiply current F with.}
@@ -17,11 +19,15 @@ prop.F(fac, inpin, repin, maninds, corF = FALSE, dbg = 0)
 
 \item{corF}{Make correction to F process such that the drift (-0.5*sdf^2*dt) is cancelled and F remains constant in projection mode}
 
-\item{dbg}{Debug flag, dbg=1 some output, dbg=2 more ourput.}
+\item{dbg}{Debug flag, dbg=1 some output, dbg=2 more output.}
 }
 \value{
 List containing results of management calculations.
+
+List containing results of management calculations.
 }
 \description{
+Calculate management for changing F by a given factor.
+
 Calculate management for changing F by a given factor.
 }

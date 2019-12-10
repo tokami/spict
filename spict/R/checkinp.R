@@ -105,12 +105,13 @@
 #' \item{"inp$reportmode"}{ Integer between 0 and 2 determining which objects will be adreported. Default: 0 = all quantities are adreported. Example: inp$reportmode <- 1}
 #' }
 #' @param inp List of input variables, see details for required variables.
+#' @param verbose Should informative messages be printed to console (default: TRUE)
 #' @return An updated list of input variables checked for consistency and with defaults added.
 #' @examples
 #' data(pol)
 #' (inp <- check.inp(pol$albacore))
 #' @export
-check.inp <- function(inp){
+check.inp <- function(inp, verbose = TRUE){
 
     set.default <- function(inpin, key, val){
         if (!key %in% names(inpin)){
@@ -491,21 +492,21 @@ check.inp <- function(inp){
     # Time interval for management
     if ("maninterval" %in% names(inp)){
         if (min(inp$maninterval) < max(inp$timeC + inp$dtc)){
-            cat("Start of management interval (min(inp$maninterval))",
-                min(inp$maninterval),
-                "must be equal to or later than the end of the last catch observation interval:",
-                max(inp$timeC + inp$dtc), '!\n')
+            if(verbose) cat("Start of management interval (min(inp$maninterval))",
+                            min(inp$maninterval),
+                            "must be equal to or later than the end of the last catch observation interval:",
+                            max(inp$timeC + inp$dtc), '!\n')
         }
         if (abs(diff(inp$maninterval)) < inp$dteuler){
-            cat("Management interval (abs(diff(inp$maninterval))", abs(diff(inp$maninterval)),
-                "must be larger than the Euler discretisation time step:",
-                inp$dteuler, '!\n') }
+            if(verbose) cat("Management interval (abs(diff(inp$maninterval))", abs(diff(inp$maninterval)),
+                            "must be larger than the Euler discretisation time step:",
+                            inp$dteuler, '!\n') }
         if ("timepredc" %in% names(inp) && inp$timepredc != min(inp$maninterval))
-            cat("Both arguments 'inp$maninterval' and 'inp$timepredc' are specified. Only 'inp$maninterval'",
-                inp$maninterval, "will be used!\n")
+            if(verbose) cat("Both arguments 'inp$maninterval' and 'inp$timepredc' are specified. Only 'inp$maninterval'",
+                            inp$maninterval, "will be used!\n")
         if ("manstart" %in% names(inp) && inp$manstart != min(inp$maninterval))
-            cat("Both arguments 'inp$maninterval' and 'inp$manstart' are specified. Only 'inp$maninterval'",
-                inp$maninterval, "will be used!\n")
+            if(verbose) cat("Both arguments 'inp$maninterval' and 'inp$manstart' are specified. Only 'inp$maninterval'",
+                            inp$maninterval, "will be used!\n")
         inp$maninterval <- sort(inp$maninterval)
         inp$timepredc <- min(inp$maninterval)
         inp$dtpredc <- abs(diff(inp$maninterval))
@@ -513,9 +514,9 @@ check.inp <- function(inp){
     }
     # Time point to evaluate model states for management
     if ("maneval" %in% names(inp)){
-        if ("timepredi" %in% names(inp) && inp$timepredi != inp$maneval)
-            cat("Both arguments 'inp$maneval' and 'inp$timepredi' are specified. Only 'inp$maneval'",
-                inp$maneval, "will be used!\n")
+        if(verbose) if ("timepredi" %in% names(inp) && inp$timepredi != inp$maneval)
+                        cat("Both arguments 'inp$maneval' and 'inp$timepredi' are specified. Only 'inp$maneval'",
+                            inp$maneval, "will be used!\n")
         inp$timepredi <- inp$maneval
     }
     # Catch prediction time step (dtpredc)
@@ -726,7 +727,6 @@ check.inp <- function(inp){
     #    dtcpred <- 1
     #}
     dtcpred <- inp$dtpredc
-
     inp$timeCpred <- unique(c(inp$timeC, (seq(tail(inp$timeC,1), inp$timepredc, by=tail(inp$dtc,1))), inp$timepredc))
     inp$nobsCp <- length(inp$timeCpred)
     if( inp$nobsCp > inp$nobsC )  inp$dtcp <- c(inp$dtc, rep(tail(inp$dtc,1), inp$nobsCp-inp$nobsC-1),dtcpred) else inp$dtcp <- inp$dtc
@@ -885,11 +885,13 @@ check.inp <- function(inp){
     if ('logr' %in% names(inp$ini) & 'logm' %in% names(inp$ini)){
         inp$ini$logr <- NULL # If both r and m are specified use m and discard r
     }
+
     # find number of regimes for 'm'
     if(!'MSYregime' %in% names(inp)){
-        inp$MSYregime<-factor(rep(1,length(inp$time)))
-    } else if(length(inp$MSYregime)<length(inp$time)) { # manage changes number of time steps!
-        inp$MSYregime<-c( inp$MSYregime, rep( tail(inp$MSYregime,1), length(inp$time)-length(inp$MSYregime)) )
+        inp$MSYregime <- factor(rep(1,length(inp$time)))
+    } else if(length(inp$MSYregime)<length(inp$time)){ # manage changes number of time steps!
+        inp$MSYregime <- factor(c(inp$MSYregime,
+                                  rep( tail(inp$MSYregime,1), length(inp$time)-length(inp$MSYregime))))
     }
     if(inp$timevaryinggrowth && nlevels(inp$MSYregime)>1)
         stop("'timevaryinggrowth' and multiple MSYregimes cannot be used at the same time")
@@ -898,6 +900,7 @@ check.inp <- function(inp){
 
     if (!'logitSARphi' %in% names(inp$ini)) inp$ini$logitSARphi <- 0
     if (!'logSdSAR' %in% names(inp$ini)) inp$ini$logSdSAR <- -2
+
 
     if (!'logr' %in% names(inp$ini)){
         if (!'logm' %in% names(inp$ini) | length(inp$ini$logm)!=inp$noms){
@@ -913,6 +916,7 @@ check.inp <- function(inp){
         #}
     }
     if(length(inp$ini$logm)!=inp$noms) inp$ini$logm <- rep(inp$ini$logm,noms)
+
 
     if ('logr' %in% names(inp$ini)){
         nr <- length(inp$ini$logr)
@@ -1050,7 +1054,7 @@ check.inp <- function(inp){
         }
     }
     if ("logu" %in% names(inp$ini)){
-        if (dim(inp$ini$logu)[1] != 2*length(inp$ini$logsdu) & dim(inp$ini$logu)[2] != inp$ns){
+        if (dim(inp$ini$logu)[1] != 2*length(inp$ini$logsdu) || dim(inp$ini$logu)[2] != inp$ns){
             warning('Wrong dimension of inp$ini$logu: ', dim(inp$ini$logu)[1], 'x',
                     dim(inp$ini$logu)[2], ' should be equal to 2*length(inp$ini$logsdu) x inp$ns: ',
                     2*length(inp$ini$logsdu), 'x', inp$ns,', Filling with log(1).')
@@ -1072,6 +1076,13 @@ check.inp <- function(inp){
     }
     if (!"logmre" %in% names(inp$ini)){
         inp$ini$logmre <- rep(log(1), inp$ns)
+    } else {
+        if (length(inp$ini$logmre) != inp$ns){
+            warning('Wrong length of inp$ini$logmre: ', length(inp$ini$logmre),
+                    ' Should be equal to inp$ns: ', inp$ns,
+                    ' Setting length of logmre equal to inp$ns (removing beyond inp$ns).')
+            inp$ini$logmre <- inp$ini$logmre[1:inp$ns]
+        }
     }
     #if ("logmre" %in% names(inp$ini)){
     #    inp$ini$logmre <- check.mat(inp$ini$logmre, c(inp$nstocks, inp$ns), 'inp$ini$logmre')

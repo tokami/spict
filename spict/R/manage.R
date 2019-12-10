@@ -27,105 +27,142 @@
 #'   \item{"4"}{ No fishing, reduce to 1\% of current F.}
 #'   \item{"5"}{ Reduce F by X\%. Default X = 25.}
 #'   \item{"6"}{ Increase F by X\%. Default X = 25.}
-#'   \item{"7"}{ Use ICES MSY advice rule (ICES, 2017).}
+#'   \item{"7"}{ Use ICES MSY hockey-stick advice rule (ICES, 2017).}
+#'   \item{"8"}{ Use ICES MSY 35th hockey-stick advice rule (ICES, 2019).}}
 #'
-#' Scenario 7 implements the ICES MSY advice rule for stocks that are assessed using spict (ICES 2017). MSY B_{trigger} is set equal to B_{MSY} / 2. Then fishing mortality in the short forecast is calculated as:
+#' Scenario 7 implements the ICES MSY advice rule for stocks that are assessed
+#' using spict (ICES 2017). MSY B_{trigger} is set equal to B_{MSY} / 2. Then
+#' fishing mortality in the short forecast is calculated as:
 #'
 #' F(y+1) = F(y) * min{ 1, median[B(y+1) / MSY B_{trigger}] } /
-#' median[F(y)/F_{MSY}] }
+#' median[F(y)/F_{MSY}
+#'
 #' @param repin Result list from fit.spict().
 #' @param scenarios Vector of integers specifying which scenarios to run.
 #'     Default: 'all'.
-#' @param manstart Year that management should be initiated.
-#' @param catch Catch which will be taken each year in the prediction period. By
-#'     default (\code{NULL}) catch is equal to last year's catch.
-#' @param sdfac Take catch with this 'stdevfacC' (default = 1e-3)
-#' @param catchList List with elements: "obsC", "timeC", "stdevfacC", and "dtc"
-#'     specifying the catch, the time of catch, the factor of the standard
-#'     deviation of the catch, and the catch time interval. By default
-#'     (\code{NULL}) settings are based on the last year.
+#' @param maninterval Year that management should be initiated.
+#' @param maneval when to evaluate management
+#' @param verbose more output?
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @return List containing results of management calculations.
 #' @references ICES. 2017. Report of the Workshop on the Development of the ICES
 #'     approach to providing MSY advice for category 3 and 4 stocks
 #'     (WKMSYCat34), 6-10 March 2017, Copenhagen, Denmark. ICES CM 2017/ACOM:47.
 #'     53 pp.
+#'
 #' @export
+#'
 #' @examples
 #' data(pol)
 #' rep <- fit.spict(pol$albacore)
 #' repman <- manage(rep)
-#' mansummary(repman) # To print projections
-manage <- function(repin, scenarios='all', manstart=NULL, dbg=0, catch=NULL, sdfac = 1, catchList=NULL){
+#' sumspict.manage(repman) # To print projections
+#'
+manage <- function(rep, scenarios = 'all',
+                   maninterval = NULL,
+                   maneval = NULL,
+                   verbose = TRUE,
+                   dbg = 0){
+    if(!inherits(rep, "spictcls")) stop("rep needs to be a fitted spict object!")
+    repin <- rep
+
     if (scenarios == 'all'){
-        scenarios <- 1:7
+        scenarios <- 1:8
     }
-    if (is.null(manstart)){
-        manstart <- repin$inp$manstart
-    } else {
-        repin$inp$manstart <- manstart
-    }
-    maninds <- which(repin$inp$time >= manstart)
-    inpin <- repin$inp
+
+    ## check if management time within model time
+    repin <- check.man.time(repin, maninterval = maninterval, maneval = maneval, verbose = verbose)
 
     timelastobs <- repin$inp$time[repin$inp$indlastobs]
-    if (!repin$inp$timepredc < timelastobs){
-        # Add prediction horizons
-        inpin$timepredc <- repin$inp$timepredc
-        inpin$timepredi <- repin$inp$timepredi
-        inpin$manstart <- repin$inp$manstart
+    if(!repin$inp$timepredc < timelastobs){
+
         repman <- list() # Output list
         attr(repman, "scenarios") <- scenarios
         if (1 %in% scenarios){
-            # 1. Specify the catch, which will be taken each year in the prediction period
-            lastyearidxs <- min( which( cumsum(rev(inpin$dtc))>=1 ) ) ## warning: this will not make sense with subannual/mixed data with missing values
-            if(is.null(catch)) catch <- sum(tail(inpin$obsC, lastyearidxs))
-            repman[[1]] <- take.c(catch, inpin, repin, dbg=dbg, sdfac=sdfac, catchList=catchList)
+            # 1. Keep current catch
+            repman$currentCatch <- man.scenario(repin, currentCatch = 1.0)
+
+            ## CHECK: same results?
+            ## BUG: warning: this will not make sense with subannual/mixed data with missing values
+            lastyearidxs <- min(which(cumsum(rev(inpin$dtc))>=1))
+            if(is.null(catchIntermediateYear)) catchIntermediateYear <- sum(tail(inpin$obsC, lastyearidxs))
+            repman[[1]] <- take.c(catchIntermediateYear, inpin, repin, dbg=dbg,
+                                  sdfac=catchIntermediateYearSDFac, catchList=catchList)
+
         }
         if (2 %in% scenarios){
-            # Keep current F
+            # 2. Keep current F
+            repman$currentF <- man.scenario(repin, currentF = 1.0)
+
+            ## CHECK: same results?
             fac2 <- 1.0
             repman[[2]] <- prop.F(fac2, inpin, repin, maninds, dbg=dbg)
+
         }
         if (3 %in% scenarios){
-            # Fish at Fmsy
+            # 3. Fish at Fmsy
+            repman$Fmsy <- man.scenario(repin)
+
+            ## CHECK: same results?
             Fmsy <- get.par('logFmsy', repin, exp=TRUE)[2]
             Flast <- get.par('logFnotS', repin, exp=TRUE)[repin$inp$indpred[1], 2]
             fac3 <- Fmsy / Flast
             repman[[3]] <- prop.F(fac3, inpin, repin, maninds, dbg=dbg)
+
         }
         if (4 %in% scenarios){
-            # No fishing, reduce to 0.1% of last F
+            # 4. No fishing, reduce to 0.1% of last F
+            repman$noF <- man.scenario(repin, currentF = 0.001)
+
+            ## CHECK: same results?
             fac4 <- 0.001
             repman[[4]] <- prop.F(fac4, inpin, repin, maninds, dbg=dbg)
         }
         if (5 %in% scenarios){
-            # Reduce F by X%
+            # 5. Reduce F by X%
+            repman$redF25 <- man.scenario(repin, currentF = 0.75)
+
+            ## CHECK: same results?
             fac5 <- 0.75
             repman[[5]] <- prop.F(fac5, inpin, repin, maninds, dbg=dbg)
         }
         if (6 %in% scenarios){
-            # Increase F by X%
+            # 6. Increase F by 25%
+            repman$incrF25 <- man.scenario(repin, currentF = 1.25)
+
+            ## CHECK: same results?
             fac6 <- 1.25
             repman[[6]] <- prop.F(fac6, inpin, repin, maninds, dbg=dbg)
         }
         if (7 %in% scenarios){
-          ## F is equal to Fmsy if B>MSYBtrigger. F is reduced linearly to zero if B<MSYBtrigger
-          Fmsy <- get.par('logFmsy', repin, exp=TRUE)[2]
-          Bmsy <- get.par('logBmsy', repin, exp=TRUE)[2]
-          MSYBtrig <- Bmsy / 2
-          Flast <- get.par('logFp', repin, exp=TRUE)[2]
-          Blast <- get.par('logBp', repin, exp=TRUE)[2]
-          Bcorrection <- min(1, Blast / MSYBtrig)
-          fac7 <- Bcorrection * (Fmsy / Flast)
-          repman[[7]] <- prop.F(fac7, inpin, repin, maninds, dbg=dbg)
+            # 7. Fish at Fmsy with hockey stick rule
+            repman$msyHockeyStick <- man.scenario(repin, breakpointB = 0.5)
 
+            ## CHECK: same results? but below wrong (not seasonal!)
+          ## ## F is equal to Fmsy if B>MSYBtrigger. F is reduced linearly to zero if B<MSYBtrigger
+          ## Fmsy <- get.par('logFmsy', repin, exp=TRUE)[2]
+          ## Bmsy <- get.par('logBmsy', repin, exp=TRUE)[2]
+          ## MSYBtrig <- Bmsy / 2
+          ## Flast <- get.par('logFp', repin, exp=TRUE)[2]
+          ## Blast <- get.par('logBp', repin, exp=TRUE)[2]
+          ## Bcorrection <- min(1, Blast / MSYBtrig)
+          ## fac7 <- Bcorrection * (Fmsy / Flast)
+          ## repman[[7]] <- prop.F(fac7, inpin, repin, maninds, dbg=dbg)
         }
+        if (8 %in% scenarios){
+            # 6. Fish at Fmsy with hockey stick rule plus 35th percentile
+            repman$ices <- get.tac.ices(repin)
+        }
+
         repin$man <- repman
         # Create an baseline F trajectory with constant F and store
+        repin$manbase <- man.scenario(repin, currentF = 1.0)
+
+        ## CHECK: same results?
         repin$manbase <- prop.F(fac=1, inpin, repin, maninds, dbg=dbg)
-    } else {
-        stop('Error: Could not do management calculations because prediction horizon is too short. Increase inp$timepredc to be at least one timestep into the future.\n')
+
+    }else{
+        stop('Error: Could not do management calculations because prediction horizon is too short. Increase inp$maninterval to be at least one timestep into the future.\n')
     }
     return(repin)
 }
@@ -138,9 +175,8 @@ manage <- function(repin, scenarios='all', manstart=NULL, dbg=0, catch=NULL, sdf
 #' @param repin Results list.
 #' @param maninds Indices of time vector for which to apply management.
 #' @param corF Make correction to F process such that the drift (-0.5*sdf^2*dt) is cancelled and F remains constant in projection mode
-#' @param dbg Debug flag, dbg=1 some output, dbg=2 more ourput.
+#' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @return List containing results of management calculations.
-#' @export
 prop.F <- function(fac, inpin, repin, maninds, corF=FALSE, dbg=0){
     inpt <- check.inp(inpin)
     inpt <- make.ffacvec(inpt, fac)
@@ -186,7 +222,6 @@ prop.F <- function(fac, inpin, repin, maninds, corF=FALSE, dbg=0){
 #'     deviation of the catch, and the catch time interval. By default
 #'     (\code{NULL}) settings are based on the last year.
 #' @return List containing results of management calculations.
-#' @export
 take.c <- function(catch, inpin, repin, dbg=0, sdfac=1, catchList=NULL){
 
     inpt <- inpin
@@ -223,16 +258,20 @@ take.c <- function(catch, inpin, repin, dbg=0, sdfac=1, catchList=NULL){
 }
 
 
-#' @name mansummary
+#' @name sumspict.manage
+#'
 #' @title Print management summary.
+#'
 #' @param repin Result list as output from manage().
 #' @param ypred Show results for ypred years from manstart.
 #' @param include.EBinf Include EBinf/Bmsy in the output.
 #' @param include.unc Include uncertainty of management quantities.
 #' @param verbose Print more details on observed and predicted time intervals.
+#'
 #' @return Data frame containing management summary.
+#'
 #' @export
-mansummary <- function(repin, ypred=1, include.EBinf=FALSE, include.unc=TRUE, verbose=TRUE){
+sumspict.manage <- function(repin, ypred=1, include.EBinf=FALSE, include.unc=TRUE, verbose=TRUE){
     if (!'man' %in% names(repin)){
         stop('Management calculations not found, run manage() to include them.')
     } else {
@@ -320,7 +359,8 @@ mansummary <- function(repin, ypred=1, include.EBinf=FALSE, include.unc=TRUE, ve
             # Set row names
             scenarios <- attr(repman, "scenarios")
             rn <- c('1. Keep current catch', '2. Keep current F', '3. Fish at Fmsy',
-                    '4. No fishing', '5. Reduce F 25%', '6. Increase F 25%', '7. MSY advice rule')[scenarios]
+                    '4. No fishing', '5. Reduce F 25%', '6. Increase F 25%',
+                    '7. MSY advice rule', '8. ICES advice rule')[scenarios]
 
             rownames(df) <- rn
             rownames(dfrel) <- rn
@@ -370,6 +410,26 @@ mansummary <- function(repin, ypred=1, include.EBinf=FALSE, include.unc=TRUE, ve
 }
 
 
+#' @name mansummary
+#'
+#' @title Print management summary.
+#'
+#' @param repin Result list as output from manage().
+#' @param ypred Show results for ypred years from manstart.
+#' @param include.EBinf Include EBinf/Bmsy in the output.
+#' @param include.unc Include uncertainty of management quantities.
+#' @param verbose Print more details on observed and predicted time intervals.
+#'
+#' @aliases sumspict.manage
+#'
+#' @return Data frame containing management summary.
+#' @export
+mansummary <- function(repin, ypred=1, include.EBinf=FALSE, include.unc=TRUE, verbose=TRUE){
+    sumspict.manage(repin = repin, ypred = ypred,
+                    include.EBinf=include.EBinf, include.unc=include.unc, verbose=verbose)
+}
+
+
 #' @name pred.catch
 #' @title Predict the catch of the prediction interval specified in inp
 #' @param rep Result list as output from fit.spict().
@@ -412,280 +472,4 @@ pred.catch <- function(repin, fmsyfac=1, get.sd=FALSE, exp=FALSE, dbg=0){
         names(Cp) <- names(get.par('logK', repin)) # Just to get the names
     }
     return(Cp)
-}
-
-
-#' @name get.TAC
-#' @title Estimate the Total Allowable Catch (TAC)
-#' @param rep Result list from fit.spict().
-#' @param fractiles List defining the fractiles of the 3 distributions of
-#'     "catch", "bbmsy", and "ffmsy" (see details for more information). By
-#'     default (0.5) median is used for all 3 quantities.
-#' @param breakpointBBmsy Breakpoint in terms of \eqn{B/B_{MSY}} for the
-#'     hockey-stick HCR (see details for more information). By default (0) no
-#'     breakpoint is assumed.
-#' @param paList List defining an optional precautionary buffer by means of a
-#'     biomass reference level relative to \eqn{B/B_{MSY}} ("bbmsy"; default =
-#'     0, i.e. deactivating the PA buffer) and the risk aversion probability
-#'     ("prob"; default = 0.95). For more information see details.
-#' @param catch_pred Catch during assessment year (corresponding to argument
-#'     \code{catch} in \code{\link{take.c}}), e.g. last year's TAC (default:
-#'     \code{NULL}; see details for more information).
-#' @param sdfac Factor for the multiplication of the standard deveiation of the
-#'     catch during the assessment year (\code{stdevfacC}; default = 1; see
-#'     \code{\link{take.c}}).
-#' @param getFit Logical; if \code{TRUE} the function returns the fitted
-#'     'spictcls' object with respective HCR (\code{FALSE} by default).
-#'
-#' @details The combination of the arguments in the "fractiles",
-#'     "breakpoint_bbmsy", and "paList" allow defining a number of different
-#'     harvest control rules (HCRs):
-#'\itemize{
-#' \item{Fishing at F_{MSY}: if \code{breakpoint_bbmsy == 0} and
-#'     \code{paList$bbmsy == 0}.}
-#' \item{MSY hockey-stick rule: Fishing at F_{MSY} above a certain biomass reference
-#'     level (here defined as a fraction of B_{MSY} with \code{breakpoint_bbmsy}).
-#'     Below the reference level, fishing is reduced linearly to 0 as suggested in
-#'     ICES (2017).}
-#' \item{MSY (hockey-stick) rule with additional precautionary buffer: As long
-#'     as the probability of the predicted biomass relative to a reference
-#'     biomass level (e.g. 0.3 B_{MSY}, defined by \code{paList$bbmsy}) is smaller or
-#'     equal to a specified risk aversion probability (e.g. 95%, defined by
-#'     \code{paList$prob}), fishing at F_{MSY} or following the hockey-stick rule
-#'     (if \code{breakpoint != 0}), otherwise reduce fishing mortality to meet
-#'     specified risk aversion probability (\code{paList$prob}) as introduced in
-#'     ICES (2018).}
-#' \item{By ICES (2019) recommended MSY hockey-stick rule with 35th percentiles:
-#'     Fishing at 35th percentile of F_{MSY} above the 35th percentile of 0.5
-#'     \eqn{B/B_{MSY}} (\code{breakpoint_bbmsy = 0.5}) and 35th percentile of
-#'     linearly reduced F_{MSY} below the 35th percentile of 0.5
-#'     \eqn{B/B_{MSY}}. TAC corresponds to 35th percentile of predicted catch.
-#'     Rule is applied with \code{fractileList = list(catch=0.35, bbmsy=0.35,
-#'     ffmsy=0.35)}, \code{breakpoint_bbmsy = 0.5}, and \code{paList =
-#'     list(bbmsy = 0, prob = 0.95)}.}}
-#'
-#' More information about the function arguments controlling the HCRs. The
-#' arguments of the "fractiles" are:
-#' \itemize{
-#' \item{catch - Fractile of the predicted catch distribution. Default: 0.5.}
-#' \item{bbmsy - Fractile of the \eqn{B/B_{MSY}} distribution. Default: 0.5.}
-#' \item{ffmsy - Fractile of the \eqn{F/F_{MSY}} distribution. Default: 0.5.}}
-#'
-#' The argument "breakpointBBmsy" allows to define the MSY hockey-stick rule,
-#' which reduces fishing linearly if the biomass is below specified reference
-#' level as specified here relative to B_{MSY}. Theoretically, any value below 1
-#' is meaningful, but ICES (2017 to 2019) recommend 50% of B_{MSY}
-#' (\code{breakpointBBmsy = 0.5}).
-#'
-#'
-#' The argument list "paList" includes:
-#' \itemize{
-#' \item{bbmsy - Reference level for the evaluation of the predicted biomass
-#'   defined as fraction of \eqn{B/B_{MSY}}. By default (\code{paList$bbmsy == 0})
-#'   the PA buffer is not used. Theoretically, any value smaller than 1 is
-#'   meaningful, but an ICES recommended value would be 30% \code{paList$bbmsy = 0.3}
-#' (ICES, 2018).}
-#' \item{prob - Risk aversion probability of the predicted biomass relative to
-#'   specified reference level (\code{paList$bbmsy}) for all rules with PA
-#'   buffer (\code{paList$bbmsy != 0}). Default: 0.95 as recommended by ICES
-#'   (2018).}}
-#'
-#' Dependent on the start of the management period (e.g. advice year), there
-#' might be a time lag between the last observation and the start of the
-#' management period. If this is the case, an assumption about the intermediate
-#' time period (e.g. assessment year) has to be made. Either the fishing
-#' mortality is extrapolated for the intermediate time period (\code{catch_pred
-#' = NULL}; default), or the argument \code{catch_pred} can be used to set the
-#' catch in that period. The argument \code{sdfac} allows to adjust the standard
-#' deviation of the catch in the intermediate time period.
-#'
-#' @return A list with the TAC and management relevant quantities; if
-#'     \code{getFit} is \code{TRUE} the fitted object with the respective HCR is
-#'     returned.
-#'
-#' @references
-#' ICES. 2017. Report of the Workshop on the Development of the ICES
-#' approach to providing MSY advice for category 3 and 4 stocks
-#' (WKMSYCat34), 6-10 March 2017, Copenhagen, Denmark. ICES CM 2017/
-#' ACOM:47. 53 pp.
-#'
-#' ICES. 2018. Report of the Eighth Workshop on the Development of
-#' Quantitative Assessment Methodologies based on LIFE-history traits,
-#' exploitation characteristics, and other relevant parameters for
-#' data-limited stocks (WKLIFE VIII), 8-12 October 2018, Lisbon,
-#' Portugal. ICES CM 2018/ACOM:40. 172 pp.
-#'
-#' ICES 2019. Report of the Ninth Workshop on the Development of
-#' Quantitative Assessment Methodologies based on LIFE-history traits,
-#' exploitation characteristics, and other relevant parameters for
-#' data-limited stocks (WKLIFE IX), 30 September-4 October 2019,
-#' Lisbon, Portugal.
-#'
-#' @export
-#' @examples
-#' rep <- fit.spict(pol$albacore)
-#'
-#' ## Fishing at Fmsy
-#' get.TAC(rep)
-#'
-#' ## MSY hockey-stick rule
-#' get.TAC(rep, breakpoint_bbmsy = 0.5)
-#'
-#' ## ICES (2019) recommended HCR
-#' get.TAC(rep, fractileList = list(catch=0.35, bbmsy=0.35, ffmsy=0.35), breakpoint_bbmsy=0.5)
-#'
-add.man.scenario <- function(rep,
-                    fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5),
-                    breakpointB = 0,
-                    safeguardB = list(limitB = 0, prob = 0.95),
-                    catchIntermediateYear = NULL,
-                    catchIntermediateYearSDFac = 1,
-                    getFit = FALSE){
-    reppa <- repin <- rep
-    inpin <- repin$inp
-
-    ## Default lists (if user mis-specifies list or changes single element only)
-    ## fractile list
-    if(!is.list(fractileList)) stop("Please provide 'fractileList' with the arguments: 'catch', 'bbmsy', and 'ffmsy'!")
-    default_fractileList = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5)
-    fList <- default_fractileList[which(!names(default_fractileList) %in% names(fractileList))]
-    fList <- c(fList,fractileList)
-    ## PA list
-    if(!is.list(paList)) stop("Please provide 'paList' with the arguments: 'bbmsy' and 'prob'!")
-    default_paList = list(bbmsy = 0, prob = 0.95)
-    pList <- default_paList[which(!names(default_paList) %in% names(paList))]
-    pList <- c(pList,paList)
-
-    ## option for assessment year (intermediate year between last data and advice year)
-    inttime <- inpin$dtpredcinds[1] - min(inpin$indpred)
-    if(inttime > 0 && !is.null(catch_pred) && !is.na(catch_pred) && is.numeric(catch_pred)){
-        ## make catchList for projected years (timesteps) before manstart
-        catchList <- list()
-        catchList$timeC <- inpin$time[min(inpin$indpred)]
-        catchList$obsC <- catch_pred
-        catchList$stdevfacC <- sdfac
-        catchList$dtc <- (inpin$dtpredcinds[1] - min(inpin$indpred)) * inpin$dteuler
-        inpin$reportmode <- 1
-        repin <- take.c(catch_pred, inpin, repin, catchList = catchList)
-        inpin <- repin$inp
-    }
-
-    ## quantities
-    fmanstart <- get.par('logFm', repin, exp=TRUE)[2]
-    fmsy <- get.par('logFmsy', repin, exp=TRUE)[2]
-    bmsy <- get.par('logBmsy', repin, exp=TRUE)[2]
-    logFpFmsy <- get.par("logFpFmsynotS", repin)
-    logBpBmsy <- get.par("logBpBmsy", repin)
-    logFmFmsy <- get.par("logFmFmsynotS", repin)
-    logBmBmsy <- get.par("logBmBmsy", repin)
-
-    ## HCRs
-    ## FFmsy component
-    fi <- 1 - fList$ffmsy
-    fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
-    fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
-    fred <- fmfmsy5 / fmfmsyi
-    ## BBmsy component (hockey stick HCR)
-    if(!is.na(breakpoint_bbmsy) && is.numeric(breakpoint_bbmsy) && breakpoint_bbmsy != 0){
-        bmbmsyi <- 1/breakpoint_bbmsy * exp(qnorm(fList$bbmsy, logBmBmsy[2], logBmBmsy[4]))
-        fred <- fred * min(1, bmbmsyi)
-    }
-    ## F reduction factor
-    ffac <- (fred + 1e-8) * fmsy / fmanstart
-    ## PA component
-    if(!is.na(pList$bbmsy) && is.numeric(pList$bbmsy) && pList$bbmsy != 0){
-        inppa <- make.ffacvec(inpin, ffac)
-        reppa$obj$env$data$ffacvec <- inppa$ffacvec
-        reppa$obj$env$data$reportmode <- 1
-        reppa$obj$retape()
-        reppa$obj$fn(repin$opt$par)
-        sdr <- try(sdreport(reppa$obj), silent=TRUE)
-        if(is(sdr,"try-error")) stop("Model variances could not be estimated with the PA.")
-        logBpBmsyPA <- get.par("logBpBmsy", sdr)
-        probi <- 1 - pList$prob
-        bpbmsyiPA <- exp(qnorm(probi, logBpBmsyPA[2], logBpBmsyPA[4]))
-        if((bpbmsyiPA - pList$bbmsy) < -1e-3){
-            ffac <- try(get.ffac(reppa, frac_relstate=pList$bbmsy,
-                                 problevel=pList$prob,
-                                 relstate="logBpBmsy",
-                                 reportmode = 1), silent=TRUE)
-            if(is(ffac,"try-error")) stop("F multiplication factor could not be estimated with the PA.")
-        }
-    }
-    ## Catch component
-    tac <- try(calc.tac(rep=repin, ffac=ffac, fracile_catch=fList$catch), silent=TRUE)
-    if(is(tac,"try-error")) stop("TAC could not be estimated.")
-
-    ## get fitted object
-    if(getFit){
-        inpt <- make.ffacvec(repin$inp, ffac)
-        repin$obj$env$data$ffacvec <- inpt$ffacvec
-        repin$obj$env$data$reportmode <- 0
-        repin$obj$retape()
-        repin$obj$fn(repin$opt$par)
-        fit <- try(sdreport(repin$obj),silent=TRUE)
-        if(!is(fit,"try-error")) return(fit) else stop("The model could not be fitted.")
-    }
-
-    ## results
-    reslist <- list(TAC = tac,
-                    maninterval = inpin$maninterval,
-                    maneval = inpin$maneval,
-                    ffac = ffac,
-                    fractileList = fList,
-                    breakpoint_bbmsy = breakpoint_bbmsy,
-                    paList = pList,
-                    catch_pred = catch_pred,
-                    sdfac = sdfac)
-    ## return
-    return(reslist)
-}
-
-#' @name get.TAC.ices
-#' @title Estimate the Total Allowable Catch (TAC) based on the ICES (2019) recommended HCR
-#' @param rep Result list from fit.spict().
-#' @param catch_pred Catch during assessment year (corresponding to argument
-#'     \code{catch} in \code{\link{take.c}}), e.g. last year's TAC (default:
-#'     \code{NULL}; see details for more information).
-#' @param sdfac Factor for the multiplication of the standard deveiation of the
-#'     catch during the assessment year (\code{stdevfacC}; default = 1; see
-#'     \code{\link{take.c}}).
-#' @param getFit Logical; if \code{TRUE} the function returns the fitted
-#'     'spictcls' object with respective HCR (\code{FALSE} by default).
-#'
-#' @details
-#' Dependent on the start of the management period (e.g. advice year), there
-#' might be a time lag between the last observation and the start of the
-#' management period. If this is the case, an assumption about the intermediate
-#' time period (e.g. assessment year) has to be made. Either the fishing
-#' mortality is extrapolated for the intermediate time period (\code{catch_pred
-#' = NULL}; default), or the argument \code{catch_pred} can be used to set the
-#' catch in that period. The argument \code{sdfac} allows to adjust the standard
-#' deviation of the catch in the intermediate time period.
-#'
-#' @return A list with the TAC and management relevant quantities; if
-#'     \code{getFit} is \code{TRUE} the fitted object with the respective HCR is
-#'     returned.
-#'
-#' @references
-#' ICES 2019. Report of the Ninth Workshop on the Development of
-#' Quantitative Assessment Methodologies based on LIFE-history traits,
-#' exploitation characteristics, and other relevant parameters for
-#' data-limited stocks (WKLIFE IX), 30 September-4 October 2019,
-#' Lisbon, Portugal.
-#'
-#' @export
-#' @examples
-#' rep <- fit.spict(pol$albacore)
-#'
-#' ## ICES (2019) recommended HCR
-#' get.TAC.ices(rep)
-#'
-get.TAC.ices <- function(rep,
-                         catchIntermediateYear = NULL,
-                         sdfac = 1,
-                         getFit = FALSE){
-    res <- get.TAC(rep, fractileList = list(catch=0.35, bbmsy=0.35, ffmsy=0.35), breakpointBBmsy=0.5,
-                   sdfac = sdfac, getFit=getFit, catchIntermediateYear=catchIntermediateYear)
-    return(res)
 }
