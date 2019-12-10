@@ -4,7 +4,14 @@
 \alias{manage}
 \title{Calculate predictions under different management scenarios}
 \usage{
-manage(rep, scenarios = "all", maninterval = NULL, dbg = 0)
+manage(
+  rep,
+  scenarios = "all",
+  maninterval = NULL,
+  maneval = NULL,
+  verbose = TRUE,
+  dbg = 0
+)
 }
 \arguments{
 \item{scenarios}{Vector of integers specifying which scenarios to run.
@@ -12,19 +19,13 @@ Default: 'all'.}
 
 \item{maninterval}{Year that management should be initiated.}
 
+\item{maneval}{when to evaluate management}
+
+\item{verbose}{more output?}
+
 \item{dbg}{Debug flag, dbg=1 some output, dbg=2 more output.}
 
 \item{repin}{Result list from fit.spict().}
-
-\item{catchIntermediateYear}{Catch which will be taken each year in the prediction period. By
-default (\code{NULL}) catch is equal to last year's catch.}
-
-\item{catchIntermediateYearSDFac}{Take catch with this 'stdevfacC' (default = 1e-3)}
-
-\item{catchList}{List with elements: "obsC", "timeC", "stdevfacC", and "dtc"
-specifying the catch, the time of catch, the factor of the standard
-deviation of the catch, and the catch time interval. By default
-(\code{NULL}) settings are based on the last year.}
 }
 \value{
 List containing results of management calculations.

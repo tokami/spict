@@ -4,10 +4,12 @@
 \alias{check.inp}
 \title{Check list of input variables}
 \usage{
-check.inp(inp)
+check.inp(inp, verbose = TRUE)
 }
 \arguments{
 \item{inp}{List of input variables, see details for required variables.}
+
+\item{verbose}{Should informative messages be printed to console (default: TRUE)}
 }
 \value{
 An updated list of input variables checked for consistency and with defaults added.

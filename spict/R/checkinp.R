@@ -533,9 +533,9 @@ check.inp <- function(inp, verbose = TRUE){
         inp$timepredc <- max(timeobsall)
     } else {
         if (inp$timepredc < max(inp$timeC + inp$dtc)){
-            cat('inp$timepredc:', inp$timepredc,
-                ' must be equal to or later than the end of the last catch observation interval: ',
-                max(inp$timeC + inp$dtc), '!')
+            if(verbose) cat('inp$timepredc:', inp$timepredc,
+                            ' must be equal to or later than the end of the last catch observation interval: ',
+                            max(inp$timeC + inp$dtc), '!')
         }
     }
     # Time point to predict indices until

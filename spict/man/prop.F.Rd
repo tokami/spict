@@ -5,8 +5,6 @@
 \title{Calculate management for changing F by a given factor.}
 \usage{
 prop.F(fac, inpin, repin, maninds, corF = FALSE, dbg = 0)
-
-prop.F(fac, inpin, repin, maninds, corF = FALSE, dbg = 0)
 }
 \arguments{
 \item{fac}{Factor to multiply current F with.}
@@ -23,11 +21,7 @@ prop.F(fac, inpin, repin, maninds, corF = FALSE, dbg = 0)
 }
 \value{
 List containing results of management calculations.
-
-List containing results of management calculations.
 }
 \description{
-Calculate management for changing F by a given factor.
-
 Calculate management for changing F by a given factor.
 }

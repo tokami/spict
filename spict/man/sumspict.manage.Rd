@@ -5,7 +5,7 @@
 \title{Print management summary.}
 \usage{
 sumspict.manage(
-  repin,
+  rep,
   ypred = 1,
   include.EBinf = FALSE,
   include.unc = TRUE,
@@ -13,9 +13,9 @@ sumspict.manage(
 )
 }
 \arguments{
-\item{repin}{Result list as output from manage().}
+\item{rep}{Result list as output from manage().}
 
-\item{ypred}{Show results for ypred years from manstart.}
+\item{ypred}{Show results for ypred years from manstart.  ## BUG: more or less what maneval stands for}
 
 \item{include.EBinf}{Include EBinf/Bmsy in the output.}
 

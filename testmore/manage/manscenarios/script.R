@@ -1,12 +1,12 @@
 ## Testing some new functions and modifications
 ## T.K. Mildenberger <t.k.mildenberger@gmail.com>
-## 26/11/2019
+## 10/12/2019
 
 ## set seed
 set.seed(123)
 
 ## load spict
-library(spict)
+require(spict)
 
 ## Test functions
 out <- function(..., sep = "", append = TRUE)
@@ -15,7 +15,7 @@ get_nchar <- function(...)
   nchar(paste(as.character(unlist(list(...))), collapse = " "))
 header <- function(..., append = TRUE)
   out("\n", ..., "\n", rep("=", get_nchar(...)), "\n", append = append)
-test_this <- function(title="", expression) {
+test_this <- function(title = "", expression) {
   out(title)
   tryCatch(out(capture.output(eval(expression)), sep = "\n"),
            error = function(e) out("Error:", e$message))
@@ -23,39 +23,55 @@ test_this <- function(title="", expression) {
 
 
 header("1: annual data", append = FALSE)
+## load data
+inp <- pol$albacore
+inp <- check.inp(inp)
 
-inp <- pol$lobster
-fit1 <- fit.spict(inp)
+## fit spict
+rep <- fit.spict(inp)
 
-out(fit1$opt$convergence)
-
-test_this("Test 1.1: calculate Bmsy/K ratio", {
-  round(calc.bmsyk(fit1), 3)
+## manage
+test_this("1.1: run manage",{
+    repman <- manage(rep, scenarios = c(1,5))
 })
 
-test_this("Test 1.2: calculate order of magnitude", {
-  round(calc.om(fit1), 3)
+out(sumspict.manage(repman))
+
+
+
+## testing adding scenarios
+test_this("1.1: run manage",{
+    repman1 <- man.scenario(repman)
+    repman1 <- man.scenario(repman1, ffac = 0.5)
+    repman1 <- man.scenario(repman1, ffac = 0.25)
 })
 
-## ## 1.3: shorten input
-## writeLines("Test 1.3: shorten.inp")
-## inp_full <- check.inp(inp)
+## scenarios should not be overwritten:
+length(repman1$man)
 
-## ## 1.3.1: no mintime and maxtime
-## inp_full2 <- shorten.inp(inp)
-## all.equal(inp_full, inp_full2)
+## names should bemeaningful:
+names(repman1$man)
 
-## ## 1.3.2: only mintime
-## inp_mintime <- shorten.inp(inp, mintime=1980)
-## all.equal(capture.output(inp_full), capture.output(inp_mintime))
 
-## ## 1.3.3: only maxtime
-## inp_maxtime <- shorten.inp(inp, maxtime=1982)
-## all.equal(inp_full, inp_full2)
+## BUG: ypred=2 in sumspict.manage does not work
 
-## ## 1.3.4: mintime and maxtime
-## inp_both <- shorten.inp(inp, mintime=1975.001, maxtime=1981.999)
-## all.equal(inp_full, inp_full2)
+
+## change management interval:
+
+inp <- pol$albacore
+inp$maninterval <- c(1992,1993)
+res <- fit.spict(inp)
+res <- manage(res)
+## should be the same as this:
+res <- manage(res, maninterval = c(1992,1993))
+
+
+## report tac only
+tac <- man.scenario(rep, ffac = 1, getFit = FALSE)
+
+
+## use fixed catch in intermediate year
+
 
 
 header("2: seasonal data")
@@ -120,25 +136,4 @@ out("4.1: wrong input")
 
 test_this("4.1.1: Bmsy/K ratio", {
   calc.bmsyk(inp)
-})
-
-
-test_this("4.1.2: calculate order of magnitude", {
-  calc.om(inp)
-})
-
-
-out("4.2: with non converged model")
-
-inp <- pol$lobster
-inp$obsC <- rnorm(46, 2000, 3)
-fit4 <- fit.spict(inp)
-
-out(fit4$opt$convergence)
-
-test_this("4.2.1: calculate Bmsy/K ratio", {
-  round(calc.bmsyk(fit4), 3)
-})
-test_this("4.2.2: calculate order of magnitude", {
-  round(calc.om(fit4), 3)
 })

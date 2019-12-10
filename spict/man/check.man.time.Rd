@@ -4,10 +4,16 @@
 \alias{check.man.time}
 \title{Checks if management time is within model time}
 \usage{
-check.man.time(rep, verbose = TRUE)
+check.man.time(rep, maninterval = NULL, maneval = NULL, verbose = TRUE)
 }
 \arguments{
 \item{rep}{rep list}
+
+\item{maninterval}{man interval}
+
+\item{maneval}{man eval}
+
+\item{verbose}{more output}
 }
 \value{
 rep

@@ -6,8 +6,6 @@
     TAC).}
 \usage{
 take.c(catch, inpin, repin, dbg = 0, sdfac = 1, catchList = NULL)
-
-take.c(catch, inpin, repin, dbg = 0, sdfac = 1, catchList = NULL)
 }
 \arguments{
 \item{catch}{Take this catch 'dtpredc' ahead from manstart time}
@@ -27,13 +25,8 @@ deviation of the catch, and the catch time interval. By default
 }
 \value{
 List containing results of management calculations.
-
-List containing results of management calculations.
 }
 \description{
-Calculate management when taking a constant catch (proxy for setting a
-    TAC).
-
 Calculate management when taking a constant catch (proxy for setting a
     TAC).
 }

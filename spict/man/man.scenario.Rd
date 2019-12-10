@@ -6,16 +6,25 @@
 \usage{
 man.scenario(
   rep,
+  scenarioTitle = "",
+  ffac = NULL,
+  cfac = NULL,
+  csdfac = 1,
   fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5),
   breakpointB = 0,
   safeguardB = list(limitB = 0, prob = 0.95),
   catchIntermediateYear = NULL,
   catchIntermediateYearSDFac = 1,
-  getFit = FALSE
+  catchList = NULL,
+  getFit = TRUE,
+  verbose = TRUE,
+  dbg = 0
 )
 }
 \arguments{
 \item{rep}{Result list from fit.spict().}
+
+\item{scenarioTitle}{title of scenario}
 
 \item{fractiles}{List defining the fractiles of the 3 distributions of
 "catch", "bbmsy", and "ffmsy" (see details for more information). By
