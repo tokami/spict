@@ -481,7 +481,7 @@ check.inp <- function(inp, verbose = TRUE){
             } else {
                 inp$dteuler <- alloweddteuler[ind]
             }
-            cat('The dteuler used is not allowed! using inp$dteuler:', inp$dteuler, '\n')
+            if(verbose) cat('The dteuler used is not allowed! using inp$dteuler:', inp$dteuler, '\n')
         }
     }
 
@@ -491,30 +491,32 @@ check.inp <- function(inp, verbose = TRUE){
                          inp$timeE, inp$timeE + inp$dte))
     # Time interval for management
     if ("maninterval" %in% names(inp)){
-        if (min(inp$maninterval) < max(inp$timeC + inp$dtc)){
-            if(verbose) cat("Start of management interval (min(inp$maninterval))",
-                            min(inp$maninterval),
-                            "must be equal to or later than the end of the last catch observation interval:",
-                            max(inp$timeC + inp$dtc), '!\n')
+        inp$maninterval <- sort(inp$maninterval)
+        if (inp$maninterval[1] < max(inp$timeC + inp$dtc)){
+            if(verbose) warning("The specified management interval [",
+                            inp$maninterval[1],",",inp$maninterval[2],
+                            "] must start at or after the last catch observation interval:",
+                            max(inp$timeC + inp$dtc),"!")
         }
         if (abs(diff(inp$maninterval)) < inp$dteuler){
-            if(verbose) cat("Management interval (abs(diff(inp$maninterval))", abs(diff(inp$maninterval)),
-                            "must be larger than the Euler discretisation time step:",
-                            inp$dteuler, '!\n') }
+            if(verbose) warning("The specified management interval [",
+                            inp$maninterval[1],",",inp$maninterval[2],
+                            "] must be larger than the Euler discretisation time step:",
+                            inp$dteuler,"!")
+            }
         if ("timepredc" %in% names(inp) && inp$timepredc != min(inp$maninterval))
             if(verbose) cat("Both arguments 'inp$maninterval' and 'inp$timepredc' are specified. Only 'inp$maninterval'",
                             inp$maninterval, "will be used!\n")
         if ("manstart" %in% names(inp) && inp$manstart != min(inp$maninterval))
             if(verbose) cat("Both arguments 'inp$maninterval' and 'inp$manstart' are specified. Only 'inp$maninterval'",
                             inp$maninterval, "will be used!\n")
-        inp$maninterval <- sort(inp$maninterval)
         inp$timepredc <- min(inp$maninterval)
         inp$dtpredc <- abs(diff(inp$maninterval))
         inp$manstart <- min(inp$maninterval)
     }
     # Time point to evaluate model states for management
     if ("maneval" %in% names(inp)){
-        if(verbose) if ("timepredi" %in% names(inp) && inp$timepredi != inp$maneval)
+        if(verbose && "timepredi" %in% names(inp) && inp$timepredi != inp$maneval)
                         cat("Both arguments 'inp$maneval' and 'inp$timepredi' are specified. Only 'inp$maneval'",
                             inp$maneval, "will be used!\n")
         inp$timepredi <- inp$maneval
@@ -525,7 +527,7 @@ check.inp <- function(inp, verbose = TRUE){
             inp$dtpredc <- max(inp$dtc)
         } else {
             inp$dtpredc <- 1
-            cat('Assuming a 1 year prediction interval for catch.\n')
+            if(verbose) cat('Assuming a 1 year prediction interval for catch.\n')
         }
     }
     # Time point to predict catches until
@@ -535,7 +537,7 @@ check.inp <- function(inp, verbose = TRUE){
         if (inp$timepredc < max(inp$timeC + inp$dtc)){
             if(verbose) cat('inp$timepredc:', inp$timepredc,
                             ' must be equal to or later than the end of the last catch observation interval: ',
-                            max(inp$timeC + inp$dtc), '!')
+                            max(inp$timeC + inp$dtc), '!\n')
         }
     }
     # Time point to predict indices until

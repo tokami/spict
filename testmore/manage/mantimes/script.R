@@ -1,5 +1,25 @@
-## testing order of defining management times
+## Testing order of defining management times
+## T.K. Mildenberger <t.k.mildenberger@gmail.com>
+## 10/12/2019
+
+## set seed
+set.seed(123)
+
+## load spict
 require(spict)
+
+## Test functions
+out <- function(..., sep = "", append = TRUE)
+  cat(..., "\n", file = "res.out", append = append, sep = sep)
+get_nchar <- function(...)
+  nchar(paste(as.character(unlist(list(...))), collapse = " "))
+header <- function(..., append = TRUE)
+  out("\n", ..., "\n", rep("=", get_nchar(...)), "\n", append = append)
+test_this <- function(title="", expression) {
+  out(title)
+  tryCatch(out(capture.output(eval(expression)), sep = "\n"),
+           error = function(e) out("Error:", e$message))
+}
 
 ## data
 inpori <- pol$albacore
@@ -7,6 +27,11 @@ inpori <- pol$albacore
 ## Default assessment
 inp <- check.inp(inpori)
 rep1 <- fit.spict(inp)
+
+
+
+header("1: 4 sequences with the same result", append = FALSE)
+###################################################################
 
 ## Postponing maninterval # 1st way
 inpori$maninterval <- c(1991,1992)
@@ -26,32 +51,29 @@ rep3 <- fit.spict(inp3)
 ## Postponing maninterval # New function
 rep4 <- check.man.time(rep1, maninterval = c(1991,1992))
 
-
 ## All approaches should give same parameter estimates
-all.equal(sumspict.parest(rep1),
-          sumspict.parest(rep2), tolerance = 0.01)
+out(all.equal(sumspict.parest(rep1),
+          sumspict.parest(rep2), tolerance = 0.01))
 
-all.equal(sumspict.parest(rep1),
-          sumspict.parest(rep3), tolerance = 0.01)
+out(all.equal(sumspict.parest(rep1),
+          sumspict.parest(rep3), tolerance = 0.01))
 
-all.equal(sumspict.parest(rep1),
-          sumspict.parest(rep4), tolerance = 0.01)
+out(all.equal(sumspict.parest(rep1),
+          sumspict.parest(rep4), tolerance = 0.01))
 
-## q.e.d.
-
-
-## more tests needed?
 b1=get.par("logBBmsy",rep1)[,2]
 b2=get.par("logBBmsy",rep2)[,2]
 b3=get.par("logBBmsy",rep3)[,2]
+b4=get.par("logBBmsy",rep4)[,2]
 
+## Last 3 reps are one year longer than first rep
+out(all.equal(length(b1) + 1/rep1$inp$dteuler, length(b2), tolerance = 0.01))
+out(all.equal(length(b1) + 1/rep1$inp$dteuler, length(b3), tolerance = 0.01))
+out(all.equal(length(b1) + 1/rep1$inp$dteuler, length(b4), tolerance = 0.01))
 
-plot(b2,t='l',col=2,lwd=3)
-lines(b1,col=4,lty=3,lwd=2)
-lines(b3,col=3,lty=2,lwd=1)
+## Last 3 reps should give same predictions
+out(all.equal(sumspict.parest(rep2),
+              sumspict.parest(rep3), tolerance = 0.01))
 
-## works! same parameter estimates -> how to make this work with retape()?
-
-str(inp, list.len=length(inp))
-str(inp2, list.len=length(inp2))
-str(inp3, list.len=length(inp3))
+out(all.equal(sumspict.parest(rep3),
+          sumspict.parest(rep4), tolerance = 0.01))

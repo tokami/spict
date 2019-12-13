@@ -53,7 +53,7 @@ add.manlines <- function(rep, par, par2=NULL, index.shift=0, plot.legend=TRUE, .
         }
         lines(x, bman, col=man.cols()[i], ...)
     }
-    nouse <- capture.output(nms <- rownames(sumspict.manage(rep, ypred=1, include.unc=FALSE)))
+    nouse <- capture.output(nms <- rownames(sumspict.manage(rep, include.unc=FALSE)))
     if (plot.legend){
         legend('topleft', legend=nms, lty=1, col=man.cols()[1:nman], bg='white', cex=0.8)
     }
