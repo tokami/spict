@@ -1,3 +1,27 @@
+spict v1.3.0 (Release date: 2020-01-27)
+============
+
+New features:
+
+* management functions and functionality, new variables
+
+Minor changes:
+
+*
+*
+
+Bug fixes:
+
+* Default settings for management and catch forecasting period with seasonal data
+*
+
+Changes of defaults:
+
+* timepredc and timepredi have new default!
+* new default management scenario "ices"
+* new default timeline in mansummary
+
+
 spict v1.2.8 (Release date: 2019-12-02)
 ============
 

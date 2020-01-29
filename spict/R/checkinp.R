@@ -17,6 +17,13 @@
 
 #' @name check.inp
 #' @title Check list of input variables
+#'
+#' @param inp List of input variables, see details for required variables.
+#' @param verbose Should detailed outputs be provided (default: TRUE).
+#' @param mancheck Should the time-dependent objects in \code{inp} be
+#'     checked against the management time and corrected if necessary? (Default: TRUE)
+#'
+#'
 #' @details Fills in default values if missing.
 #'
 #' Required inputs:
@@ -104,14 +111,21 @@
 #'  \item{"inp$seasontype"}{ If set to 1 use the spline-based representation of seasonality. If set to 2 use the oscillatory SDE system (this is more unstable and difficult to fit, but also more flexible).}
 #' \item{"inp$reportmode"}{ Integer between 0 and 2 determining which objects will be adreported. Default: 0 = all quantities are adreported. Example: inp$reportmode <- 1}
 #' }
-#' @param inp List of input variables, see details for required variables.
-#' @param verbose Should informative messages be printed to console (default: TRUE)
+#'
 #' @return An updated list of input variables checked for consistency and with defaults added.
+#'
 #' @examples
 #' data(pol)
 #' (inp <- check.inp(pol$albacore))
+#'
 #' @export
-check.inp <- function(inp, verbose = TRUE){
+check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
+
+    # Check management settings if inp is 'checked' list
+    isChecked <- ifelse(inherits(inp, "spictcls"), 1, 0)
+    if(isChecked && mancheck){
+        inp = check.man.time(inp, printTimeline = FALSE)
+    }
 
     set.default <- function(inpin, key, val){
         if (!key %in% names(inpin)){
@@ -491,34 +505,51 @@ check.inp <- function(inp, verbose = TRUE){
                          inp$timeE, inp$timeE + inp$dte))
     # Time interval for management
     if ("maninterval" %in% names(inp)){
-        inp$maninterval <- sort(inp$maninterval)
-        if (inp$maninterval[1] < max(inp$timeC + inp$dtc)){
-            if(verbose) warning("The specified management interval [",
-                            inp$maninterval[1],",",inp$maninterval[2],
-                            "] must start at or after the last catch observation interval:",
-                            max(inp$timeC + inp$dtc),"!")
-        }
-        if (abs(diff(inp$maninterval)) < inp$dteuler){
-            if(verbose) warning("The specified management interval [",
-                            inp$maninterval[1],",",inp$maninterval[2],
-                            "] must be larger than the Euler discretisation time step:",
-                            inp$dteuler,"!")
+        if (length(inp$maninterval) < 2){
+            inp$maninterval <- NULL
+            if(verbose) warning("Only one of the two times of the management interval specified! The default management interval will be used!\n")
+        }else if (inp$maninterval[1] == inp$maninterval[2]){
+            inp$maninterval <- NULL
+            if(verbose) warning("The times of the specified management interval are equal! The default management interval will be used!\n")
+        }else{
+            if (inp$maninterval[1] > inp$maninterval[2]){
+                inp$maninterval <- sort(inp$maninterval)
+                if(verbose) warning("The specified management interval is not increasing! 'inp$maninterval'",
+                                    inp$maninterval, "will be used!\n")
             }
-        if ("timepredc" %in% names(inp) && inp$timepredc != min(inp$maninterval))
-            if(verbose) cat("Both arguments 'inp$maninterval' and 'inp$timepredc' are specified. Only 'inp$maninterval'",
-                            inp$maninterval, "will be used!\n")
-        if ("manstart" %in% names(inp) && inp$manstart != min(inp$maninterval))
-            if(verbose) cat("Both arguments 'inp$maninterval' and 'inp$manstart' are specified. Only 'inp$maninterval'",
-                            inp$maninterval, "will be used!\n")
-        inp$timepredc <- min(inp$maninterval)
-        inp$dtpredc <- abs(diff(inp$maninterval))
-        inp$manstart <- min(inp$maninterval)
+            if (inp$maninterval[1] < max(timeobsall)){
+                if(mancheck){
+                    manint <- c(max(timeobsall),max(timeobsall) + diff(inp$maninterval))
+                    if(verbose) warning("The specified management interval [",
+                                        inp$maninterval[1],",",inp$maninterval[2],
+                                        "] must start at or after the time of the last observation:",
+                                        max(timeobsall),"! Using the interval [",manint[1],",",
+                                        manint[2],"] instead.")
+                    inp$maninterval <- manint
+                }
+            }
+            if (abs(diff(inp$maninterval)) < inp$dteuler){
+                if(verbose) warning("The specified management interval [",
+                                    inp$maninterval[1],",",inp$maninterval[2],
+                                    "] must be larger than the Euler discretisation time step:",
+                                    inp$dteuler,"!")
+            }
+            if ("timepredc" %in% names(inp) && inp$timepredc != min(inp$maninterval))
+                if(verbose) cat("Both arguments 'inp$maninterval' and 'inp$timepredc' are specified. Only 'inp$maninterval'",
+                                inp$maninterval, "will be used! \n")
+            if ("manstart" %in% names(inp) && inp$manstart != min(inp$maninterval))
+                if(verbose) cat("Both arguments 'inp$maninterval' and 'inp$manstart' are specified. Only 'inp$maninterval'",
+                                inp$maninterval, "will be used! \n")
+            inp$timepredc <- min(inp$maninterval)
+            inp$dtpredc <- abs(diff(inp$maninterval))
+            inp$manstart <- min(inp$maninterval)
+        }
     }
     # Time point to evaluate model states for management
     if ("maneval" %in% names(inp)){
         if(verbose && "timepredi" %in% names(inp) && inp$timepredi != inp$maneval)
                         cat("Both arguments 'inp$maneval' and 'inp$timepredi' are specified. Only 'inp$maneval'",
-                            inp$maneval, "will be used!\n")
+                            inp$maneval, "will be used! \n")
         inp$timepredi <- inp$maneval
     }
     # Catch prediction time step (dtpredc)
@@ -527,7 +558,7 @@ check.inp <- function(inp, verbose = TRUE){
             inp$dtpredc <- max(inp$dtc)
         } else {
             inp$dtpredc <- 1
-            if(verbose) cat('Assuming a 1 year prediction interval for catch.\n')
+            if(verbose) cat('Assuming a 1 year prediction interval for catch. \n')
         }
     }
     # Time point to predict catches until
@@ -537,7 +568,7 @@ check.inp <- function(inp, verbose = TRUE){
         if (inp$timepredc < max(inp$timeC + inp$dtc)){
             if(verbose) cat('inp$timepredc:', inp$timepredc,
                             ' must be equal to or later than the end of the last catch observation interval: ',
-                            max(inp$timeC + inp$dtc), '!\n')
+                            max(inp$timeC + inp$dtc), '! \n')
         }
     }
     # Time point to predict indices until
@@ -574,7 +605,7 @@ check.inp <- function(inp, verbose = TRUE){
         if (inp$nobsE > 0){
             if (inp$timeprede < max(inp$timeE)){
                 cat('inp$timeprede:', inp$timeprede,
-                    ' must be equal to or later than last effort observation: ', max(inp$timeE), '!')
+                    ' must be equal to or later than last effort observation: ', max(inp$timeE), '!  \n')
             }
         }
     }
@@ -657,26 +688,34 @@ check.inp <- function(inp, verbose = TRUE){
     inp$indpred <- which(inp$time >= inp$timerange[2])
     inp$indCpred <- which(inp$time >= max(inp$timeC + inp$dtc))
     # Management
-    if (!"maninterval" %in% names(inp)){
-        inp$maninterval <- c(inp$timepredc, inp$timepredc + inp$dtpredc)
-    }
-    if (!"maneval" %in% names(inp)){
-        inp$maneval <- inp$timepredi
-    }
     if (!"manstart" %in% names(inp)){
         inp$manstart <- ceiling(inp$time[inp$indpred[1]])
     }
+    if (!"maninterval" %in% names(inp)){
+        inp$maninterval <- c(inp$manstart, inp$manstart + inp$dtpredc)
+    }
+    if (!"maneval" %in% names(inp)){
+        inp$maneval <- inp$maninterval[1]
+    }
     if (!"ffac" %in% names(inp)) inp$ffac <- 1
     if ("ffac" %in% names(inp)){
+        if (!is.numeric(inp$ffac)){
+            cat('Warning: ffac not numeric, which is not allowed, setting ffac = 1. \n')
+            inp$ffac <- 1
+        }
         if (inp$ffac < 0){
-            cat('Warning: ffac < 0, which is not allowed, setting ffac = 0.')
+            cat('Warning: ffac < 0, which is not allowed, setting ffac = 0. \n')
             inp$ffac <- 0
         }
     }
     if (!"fcon" %in% names(inp)) inp$fcon <- 0
     if ("fcon" %in% names(inp)){
+        if (!is.numeric(inp$fcon)){
+            cat('Warning: fcon not numeric, which is not allowed, setting fcon = 0. \n')
+            inp$fcon <- 0
+        }
         if (inp$fcon < 0){
-            cat('Warning: fcon < 0, which is not allowed, setting fcon = 0.')
+            cat('Warning: fcon < 0, which is not allowed, setting fcon = 0. \n')
             inp$fcon <- 0
         }
     }
@@ -731,7 +770,10 @@ check.inp <- function(inp, verbose = TRUE){
     dtcpred <- inp$dtpredc
     inp$timeCpred <- unique(c(inp$timeC, (seq(tail(inp$timeC,1), inp$timepredc, by=tail(inp$dtc,1))), inp$timepredc))
     inp$nobsCp <- length(inp$timeCpred)
-    if( inp$nobsCp > inp$nobsC )  inp$dtcp <- c(inp$dtc, rep(tail(inp$dtc,1), inp$nobsCp-inp$nobsC-1),dtcpred) else inp$dtcp <- inp$dtc
+    if( inp$nobsCp > inp$nobsC ){
+        ## inp$dtcp <- c(inp$dtc, rep(tail(inp$dtc,1), inp$nobsCp-inp$nobsC-1),dtcpred) ##wrong if int period 0.5yr
+        inp$dtcp <- c(diff(inp$timeCpred), dtcpred)
+    }else inp$dtcp <- inp$dtc
 
     inp$ic <- cut(inp$timeCpred, inp$time, right=FALSE, labels=FALSE)
 
@@ -1093,6 +1135,9 @@ check.inp <- function(inp, verbose = TRUE){
 
     ## reporting
     if(!"reportmode" %in% names(inp)) inp$reportmode <- 0
+
+    ## timerange of original observations
+    if(!"timerangeObs" %in% names(inp)) inp$timerangeObs <- inp$timerange
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
