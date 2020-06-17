@@ -301,6 +301,8 @@ make.datin <- function(inp, dbg=0){
 
                   simple=inp$simple,
                   reportmode=inp$reportmode,
+                  SARcode = inp$SARcode,
+
                   dbg=dbg)
     return(datin)
 }

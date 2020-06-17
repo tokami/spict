@@ -157,6 +157,7 @@ Type objective_function<Type>::operator() ()
     DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
   DATA_SCALAR(dbg);            // Debug flag, if == 1 then print stuff.
   DATA_INTEGER(reportmode);    // If 1-5 only specific quantities are ADreported (increases speed, relevant for fitting within MSE)
+  DATA_INTEGER(SARcode);
 
   // PARAMETERS
   PARAMETER_VECTOR(logm);      // m following the Fletcher formulation (see Prager 2002)
@@ -614,14 +615,46 @@ Type objective_function<Type>::operator() ()
 
   // FISHING MORTALITY
 
-  int stepsPrYear = CppAD::Integer(1/dt[0]);
-  vector<Type> SARphivec(nseasons);
-  SARphivec.setZero();
-  SARphivec(nseasons-1) = SARphi;
+  if(SARcode == 0){
+    int stepsPrYear = CppAD::Integer(1/dt[0]);
+    vector<Type> SARphivec(nseasons);
+    SARphivec.setZero();
+    SARphivec(nseasons-1) = SARphi;
 
-  using namespace density;
-  ARk_t<Type> nldens(SARphivec);
-  if(seasontype==3) ans += SCALE(nldens, sdSAR)(vector<Type>(SARvec));
+    for(int i=0; i<nseasons; i++){
+      std::cout << "SARphivec " << SARphivec(i) << std::endl;
+    }
+
+    for(int i=0; i<SARvec.size(); i++){
+      std::cout << "SARvec " << SARvec(i) << std::endl;
+    }
+
+    using namespace density;
+    ARk_t<Type> nldens(SARphivec);
+    if(seasontype==3){
+      ans += SCALE(nldens, sdSAR)(vector<Type>(SARvec));
+      // SIMULATE{
+      //   SARvec = nldens.simulate();
+      //   REPORT(SARvec);
+      // }
+    }
+  }
+
+  if(SARcode == 1){
+    if(seasontype == 3){
+      ans -= dnorm(SARvec(0), Type(0), sqrt(sdSAR * sdSAR/(1-SARphi*SARphi)), true);
+      SIMULATE{
+        SARvec(0) = rnorm(Type(0), sqrt(sdSAR * sdSAR/(1-SARphi*SARphi)));
+      }
+      for(int i=1; i<SARvec.size(); i++){
+        ans -= dnorm(SARvec(i), SARphi * SARvec(i-1), sdSAR, true);
+        SIMULATE{
+          SARvec(i) = rnorm(SARvec(i-1) * SARphi, sdSAR);
+        }
+      }
+      REPORT(SARvec);
+    }
+  }
 
   //vector<Type> logFs = logF
   vector<Type> logS(ns);
@@ -643,10 +676,16 @@ Type objective_function<Type>::operator() ()
       Type logFpred = log( ffacvec(i) * Fpredtmp + fconvec(i) );
       likval = dnorm(logF(i), logFpred, sqrt(dt(i-1))*sdf(iisdf), 1);
       ans-=likval;
+      SIMULATE{
+        logF(i) = rnorm(logFpred, sqrt(dt(i-1))*sdf(iisdf));
+      }
       // DEBUGGING
       if(dbg>1){
         std::cout << "-- i: " << i << " -   logF(i-1): " << logF(i-1) << "  logF(i): " << logF(i) << "  ffacvec(i): " << ffacvec(i) << "  fconvec(i): " << fconvec(i) << "  iisdf: " << iisdf << "  sdf: " << sdf(iisdf) << "  efforttype: " << efforttype << "  likval: " << likval << "  ans:" << ans << std::endl;
       }
+    }
+    SIMULATE{
+      REPORT(logF);
     }
 
     // Seasonal component
@@ -698,6 +737,9 @@ Type objective_function<Type>::operator() ()
           for(int k=0; k<logupred.size(); k++){
             if(dbg>0){ std::cout << "-- k: " << k << "- 2*j+k: " << 2*j+k << " - logu(2*j+k, i): " << logu(2*j+k, i) << std::endl; }
             likval += dnorm(logu(2*j+k, i), logupred(k), sduana, 1);
+            SIMULATE{
+              logu(2*j+k, i) = rnorm(logupred(k), sduana);
+            }
           }
           ans-=likval;
           // DEBUGGING
@@ -708,6 +750,9 @@ Type objective_function<Type>::operator() ()
         //for(int i=0; i<ns; i++) logFs(i) += logu(2*j, i); // Sum diffusion and seasonal component
         for(int i=0; i<ns; i++) logS(i) += logu(2*j, i); // Sum diffusion and seasonal component
       }
+    }
+    SIMULATE{
+      REPORT(logu);
     }
   } else {
     for(int i=0; i<ns; i++) logS(i) = -30; // If using simple set fishing mortality to something small.
@@ -723,17 +768,26 @@ Type objective_function<Type>::operator() ()
     }
     // Compare initial value with stationary distribution of OU
     likval = dnorm(logmre(0), Type(0.0), sdm/sqrt(2.0*psi), 1);
+    SIMULATE{
+      logmre(0) = rnorm(Type(0.0), sdm/sqrt(2.0*psi));
+    }
     //likval = dnorm(logmre(0), logm(0), sdm/sqrt(2.0*psi), 1);
     ans -= likval;
     for (int i=1; i < ns; i++){
       Type logmrepred = predictm(logmre(i-1), dt(i-1), sdm2, psi);
       likval = dnorm(logmre(i), logmrepred, sqrt(dt(i-1))*sdm, 1);
+      SIMULATE{
+        logmre(i) = rnorm(logmrepred, sqrt(dt(i-1))*sdm);
+      }
       //likval = dnorm(logmre(i), logmre(i-1), sqrt(dt(i-1))*sdm, 1);
       ans -= likval;
       // DEBUGGING
       if (dbg > 1){
         std::cout << "-- i: " << i << " -   logmre(i-1): " << logmre(i-1) << "  sdm: " << sdm << "  likval: " << likval << "  ans:" << ans << std::endl;
       }
+    }
+    SIMULATE{
+      REPORT(logmre);
     }
   }
 
@@ -755,11 +809,17 @@ Type objective_function<Type>::operator() ()
       logFs(i) = logobsC(i) - logB(i); // Calculate fishing mortality
     }
     likval = dnorm(logBpred(i+1), logB(i+1), sqrt(dt(i))*sdb, 1);
+    SIMULATE{
+      logB(i+1) = rnorm(logBpred(i+1), sqrt(dt(i))*sdb);
+    }
     ans-=likval;
     // DEBUGGING
     if(dbg>1){
       std::cout << "-- i: " << i << " -   logB(i+1): " << logB(i+1) << "  logBpred(i+1): " << logBpred(i+1) << "  sdb: " << sdb << "  likval: " << likval << "  ans:" << ans << std::endl;
     }
+  }
+  SIMULATE{
+    REPORT(logB);
   }
   if(simple==1){ logFs(ns-1) = logFs(ns-2);}
 
@@ -829,14 +889,29 @@ Type objective_function<Type>::operator() ()
       inds = CppAD::Integer(isc(i)-1);
       if(robflagc==1){
         likval = log(pp*dnorm(logCpred(i), logobsC(i), stdevfacc(i)*sdc, 0) + (1.0-pp)*dnorm(logCpred(i), logobsC(i), robfac*stdevfacc(i)*sdc, 0));
+        SIMULATE{
+          Type uu = runif(0.0,1.0);
+          if(uu < pp){
+            logobsC(i) = log(rnorm(logCpred(i), stdevfacc(i) * sdc));
+          }else{
+            logobsC(i) = log(rnorm(logCpred(i), robfac * stdevfacc(i) * sdc));
+          }
+        }
       } else {
         likval = dnorm(logCpred(i), logobsC(i), stdevfacc(i)*sdc, 1);
+        SIMULATE{
+          logobsC(i) = rnorm(logCpred(i), stdevfacc(i)*sdc);
+        }
       }
       ans-= keep(inds) * likval;
       // DEBUGGING
       if(dbg>1){
         std::cout << "-- i: " << i << " -   logobsC(i): " << logobsC(i) << " -   stdevfacc(i): " << stdevfacc(i) << "  sdc: " << sdc << "  likval: " << likval << "  ans:" << ans << std::endl;
       }
+    }
+    SIMULATE{
+      vector<Type> obsC = exp(logobsC);
+      REPORT(obsC);
     }
   }
 
@@ -849,8 +924,19 @@ Type objective_function<Type>::operator() ()
       logEpred(i) = logFcumpred(i) - logqf; // E = 1/q * integral{F_t dt}
       if(robflage==1){
         likval = log(pp*dnorm(logEpred(i), logobsE(i), stdevface(i)*sde, 0) + (1.0-pp)*dnorm(logEpred(i), logobsE(i), robfac*stdevface(i)*sde, 0));
+        SIMULATE{
+          Type uu = runif(0.0,1.0);
+          if(uu < pp){
+            logobsE(i) = log(rnorm(logEpred(i), stdevface(i) * sde));
+          }else{
+            logobsE(i) = log(rnorm(logEpred(i), robfac * stdevface(i) * sde));  // same robfac and pp for C and E?
+          }
+        }
       } else {
         likval = dnorm(logEpred(i), logobsE(i), stdevface(i)*sde, 1);
+        SIMULATE{
+          logobsE(i) = rnorm(logEpred(i), stdevface(i)*sde);
+        }
       }
       inds = CppAD::Integer(ise(i)-1);
       ans-= keep(inds) * likval;
@@ -858,6 +944,10 @@ Type objective_function<Type>::operator() ()
       if(dbg>1){
         std::cout << "-- i: " << i << " -   logobsE(i): " << logobsE(i) << " -   stdevface(i): " << stdevface(i) << "  sde: " << sde << "  likval: " << likval << "  ans:" << ans << std::endl;
       }
+    }
+    SIMULATE{
+      vector<Type> obsE = exp(logobsE);
+      REPORT(obsE);
     }
   }
 
@@ -876,14 +966,29 @@ Type objective_function<Type>::operator() ()
     logIpred(i) = logq(indq) + log(B(ind));
     if(robflagi(indsdi)==1){
       likval = log(pp*dnorm(logobsI(i), logIpred(i), stdevfaci(i)*sdi(indsdi), 0) + (1.0-pp)*dnorm(logobsI(i), logIpred(i), robfac*stdevfaci(i)*sdi(indsdi), 0));
+      SIMULATE{
+        Type uu = runif(0.0,1.0);
+        if(uu < pp){
+          logobsI(i) = log(rnorm(logIpred(i), stdevfaci(i) * sdi(indsdi)));
+        }else{
+          logobsI(i) = log(rnorm(logIpred(i), robfac * stdevfaci(i) * sdi(indsdi)));
+        }
+      }
     } else {
       likval = dnorm(logobsI(i), logIpred(i), stdevfaci(i)*sdi(indsdi), 1);
+      SIMULATE{
+        logobsI(i) = rnorm(logIpred(i), stdevfaci(i) * sdi(indsdi));
+      }
     }
     ans-= keep(inds) * likval;
     // DEBUGGING
     if(dbg>1){
       std::cout << "-- i: " << i << " -  ind: " << ind << " -  indq: " << indq << " -  indsdi: " << indsdi << " -  inds: " << inds << " -   logobsI(i): " << logobsI(i) << "  logIpred(i): " << logIpred(i) << "  stdevfaci(i): " << stdevfaci(i) << "  likval: " << likval << "  sdi: " << sdi << "  ans:" << ans << std::endl;
     }
+  }
+  SIMULATE{
+    vector<Type> obsI = exp(logobsI);
+    REPORT(obsI);
   }
 
 

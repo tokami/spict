@@ -80,7 +80,7 @@ predict.logmre <- function(logmre0, dt, sdm, psi, logm){
 #'
 #' Estimated parameters:
 #' Simply take the output from a fit.spict() run and use as input to sim.spict().
-#' 
+#'
 #' @param input Either an inp list with an ini key (see ?check.inp) or a rep list where rep is the output of running fit.spict().
 #' @param nobs Optional specification of the number of simulated observations.
 #' @return A list containing the simulated data.
@@ -270,15 +270,17 @@ sim.spict <- function(input, nobs=100){
     sde <- exp(pl$logsde)
     lambda <- exp(pl$loglambda)
     omega <- inp$omega
-    
+    sdSAR <- exp(pl$logSdSAR)
+    SARphi <- 1/(1 + exp(-pl$logitSARphi))
+
     # B[t] is biomass at the beginning of the time interval starting at time t
     # I[t] is an index of biomass (e.g. CPUE) at time t
     # P[t] is the accumulated biomass production over the interval starting at time t
     # F[t] is the constant fishing mortality during the interval starting at time t
-    # C[t] is the catch removed during the interval starting at time t. 
+    # C[t] is the catch removed during the interval starting at time t.
     # obsC[j] is the catch removed over the interval starting at time j, this will typically be the accumulated catch over the year.
 
-    if (inp$seasontype==1){ # Use spline to generate season
+    if (inp$seasontype == 1 || inp$seasontype == 3){ # Use spline to generate season
         seasonspline <- get.spline(pl$logphi, order=inp$splineorder, dtfine=dt)
         nseasonspline <- length(seasonspline)
     }
@@ -296,8 +298,23 @@ sim.spict <- function(input, nobs=100){
         #logFbase <- c(log(F0), log(F0) + cumsum(ef)) # Fishing mortality
         # Impose seasons
         season <- numeric(length(logFbase))
-        if (inp$seasontype == 1){ # Spline-based seasonality
+        if (inp$seasontype == 1 || inp$seasontype == 3){ # Spline-based seasonality
             season <- seasonspline[inp$seasonindex+1]
+
+            if(inp$seasontype == 3){
+                SARvec <- numeric(max(inp$seasonindex2))
+                SARvec[1] <- rnorm(1, 0, sqrt(sdSAR * sdSAR/(1-SARphi*SARphi)))
+                for(i in 2:length(SARvec)){
+                    SARvec[i] <- rnorm(1, SARphi * SARvec[i-1], sdSAR)
+                }
+                print(SARphi)
+                par(mfrow=c(2,2))
+                plot(SARvec)
+                plot(SARvec[inp$seasonindex2])
+                plot(season)
+                season <- season + SARvec[inp$seasonindex2]
+                plot(season)
+            }
         }
         if (inp$seasontype == 2){ # This one should not be used yet!
             # These expressions are based on analytical results
@@ -436,7 +453,7 @@ sim.spict <- function(input, nobs=100){
             }
         }
     }
-    
+
     sim <- list()
     sim$obsC <- obsC
     sim$timeC <- inp$timeC
@@ -496,6 +513,7 @@ sim.spict <- function(input, nobs=100){
     sim$true$B <- B
     sim$true$F <- exp(logFbase)
     sim$true$Fs <- F
+    sim$true$season <- season
     sim$true$gamma <- gamma
     sim$true$seasontype <- inp$seasontype
     sim$true$e.c <- e.c
@@ -503,7 +521,7 @@ sim.spict <- function(input, nobs=100){
     sim$true$e.i <- e.i
     sim$true$e.b <- e.b
     sim$true$e.f <- e.f
-    
+
     sign <- 1
     R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
     p <- n-1
@@ -602,7 +620,7 @@ validate.spict <- function(inp, nsim=50, invec=c(15, 60, 240), estinp=NULL, back
                 if (!is.null(summ.ex.file)){
                     # This line causes problems when running simulation2.R, the problem is
                     # that log cannot be taken of the derout variable of the summary.
-                    capture.output(summary(rep), file=summ.ex.file) 
+                    capture.output(summary(rep), file=summ.ex.file)
                 }
                 s$type <- type
                 s[[type]] <- val
@@ -616,7 +634,7 @@ validate.spict <- function(inp, nsim=50, invec=c(15, 60, 240), estinp=NULL, back
             sim$meyermillar$bugfn <- paste0('sp', i, '.bug')
             # Fit Meyer & Millar model
             res <- fit.meyermillar(sim)
-            
+
             # Extract relevant values
             resmat <- res$resmat
             nms <- rownames(resmat)
@@ -763,7 +781,7 @@ validate.spict <- function(inp, nsim=50, invec=c(15, 60, 240), estinp=NULL, back
             save(ss, file=backup)
         }
     }
-    
+
     if (df.out & model == 'spict'){
         ss <- validation.data.frame(ss)
     }
@@ -864,7 +882,7 @@ extract.simstats <- function(rep, inp=NULL, exp=NULL, parnames=NULL){
             true <- ifelse(exp[i], exp(true), true)
             ss[[pn]] <- calc.simstats(pn, rep, exp=exp[i], true)
         }
-        
+
         # Convergence for all values
         uss <- unlist(ss)
         ss$convall <- (any(is.na(uss) | !is.finite(uss)) | ss$conv > 0)
@@ -927,4 +945,3 @@ validation.data.frame <- function(ss){
     df <- df[-1, ] # Remove dummy first line create when initialising
     return(df)
 }
-
