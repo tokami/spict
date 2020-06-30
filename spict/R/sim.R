@@ -301,20 +301,7 @@ sim.spict <- function(input, nobs=100){
         if (inp$seasontype == 1 || inp$seasontype == 3){ # Spline-based seasonality
             season <- seasonspline[inp$seasonindex+1]
 
-            if(inp$seasontype == 3){
-                SARvec <- numeric(max(inp$seasonindex2))
-                SARvec[1] <- rnorm(1, 0, sqrt(sdSAR * sdSAR/(1-SARphi*SARphi)))
-                for(i in 2:length(SARvec)){
-                    SARvec[i] <- rnorm(1, SARphi * SARvec[i-1], sdSAR)
-                }
-                print(SARphi)
-                par(mfrow=c(2,2))
-                plot(SARvec)
-                plot(SARvec[inp$seasonindex2])
-                plot(season)
-                season <- season + SARvec[inp$seasonindex2]
-                plot(season)
-            }
+            if(inp$seasontype == 3) stop("inp$seasontype == 3 not yet implemented in the sim.spict().")
         }
         if (inp$seasontype == 2){ # This one should not be used yet!
             # These expressions are based on analytical results
@@ -944,4 +931,260 @@ validation.data.frame <- function(ss){
     }
     df <- df[-1, ] # Remove dummy first line create when initialising
     return(df)
+}
+
+
+
+
+#' @name sim.spict.tmb
+#' @title Simulate data from Pella-Tomlinson model using TMB
+#' @details Simulates data using either manually specified parameters values or parameters estimated by fit.spict().
+#'
+#' Manual specification:
+#' To specify parameters manually use the inp$ini format similar to when specifying initial values for running fit.spict(). Observations can be simulated at specific times using inp$timeC and inp$timeI. If these are not specified then the length of inp$obsC or inp$obsI is used to determine the number of observations of catches and indices respectively. If none of these are specified then nobs observations of catch and index will be simulated evenly distributed in time.
+#'
+#' Estimated parameters:
+#' Simply take the output from a fit.spict() run and use as input to sim.spict().
+#'
+#' @param input Either an inp list with an ini key (see ?check.inp) or a rep list where rep is the output of running fit.spict().
+#' @param nobs Optional specification of the number of simulated observations.
+#' @return A list containing the simulated data.
+#' @examples
+#' data(pol)
+#' repin <- fit.spict(pol$albacore)
+#' # Simulate a specific number of observations
+#' inp <- list()
+#' inp$dteuler <- 1/4 # To reduce calculation time
+#' inp$ini <- repin$inp$ini
+#' inp$ini$logF <- NULL
+#' inp$ini$logB <- NULL
+#' set.seed(1)
+#' sim <- sim.spict.tmb(inp, nobs=150)
+#' repsim <- fit.spict(sim)
+#' summary(repsim) # Note true values are listed in the summary
+#' plot(repsim) # Note true states are shown with orange colour
+#'
+#' # Simulate data with seasonal F
+#' inp <- list()
+#' inp$dteuler <- 1/4
+#' inp$nseasons <- 2
+#' inp$splineorder <- 1
+#' inp$obsC <- 1:80
+#' inp$obsI <- 1:80
+#' inp$ini <- repin$inp$ini
+#' inp$ini$logF <- NULL
+#' inp$ini$logB <- NULL
+#' inp$ini$logphi <- log(2) # Seasonality introduced here
+#' inp <- check.inp(inp)
+#' sim2 <- sim.spict.tmb(inp)
+#' par(mfrow=c(2, 1))
+#' plot(sim2$obsC, typ='l')
+#' plot(sim2$obsI[[1]], typ='l')
+#' @export
+sim.spict.tmb <- function(input, nobs=100){
+
+    # Check if input is a inp (initial values) or rep (results).
+    use.effort.flag <- TRUE
+    use.index.flag <- TRUE
+    check.effort <- function(inp){
+        nm <- names(inp)
+        if (!'timeE' %in% nm){
+            if (!'obsE' %in% nm){
+                #inp$nobsE <- inp$nobsC
+                #inp$timeE <- inp$timeC
+                inp$nobsE <- 0
+                inp$timeE <- numeric(0)
+                inp$stdevfacE <- NULL
+                inp$timeprede <- NULL
+                use.effort.flag <<- FALSE
+            } else {
+                inp$nobsE <- length(inp$obsE)
+                inp$timeE <- 1:inp$nobsE
+            }
+        } else {
+            inp$nobsE <- length(inp$timeE)
+        }
+        if (!'obsE' %in% nm){
+            inp$obsE <- numeric(inp$nobsE) # Insert dummy
+        }
+        return(inp)
+    }
+    check.index <- function(inp){
+        if (!'logq' %in% names(inp$ini)){
+            stop('logq not specified in inp$ini!')
+        }
+        inp$nindex <- length(inp$ini$logq)
+        nm <- names(inp)
+        if (!'timeI' %in% nm){
+            if (!'obsI' %in% nm){
+                inp$nobsI <- inp$nobsC
+                inp$timeI <- inp$timeC
+                inp$stdevfacI <- NULL
+                inp$timepredi <- NULL
+                use.index.flag <<- FALSE
+                inp$nobsI <- nobs
+            } else {
+                if (class(inp$obsI)!='list'){
+                    tmp <- inp$obsI
+                    inp$obsI <- list()
+                    inp$obsI[[1]] <- tmp
+                }
+                inp$nobsI <- rep(0, inp$nindex)
+                for (i in 1:inp$nindex){
+                    inp$nobsI[i] <- length(inp$obsI[[i]])
+                }
+            }
+            inp$timeI <- list()
+            for (i in 1:inp$nindex){
+                inp$timeI[[i]] <- 1:inp$nobsI[i]
+            }
+        } else {
+            if (class(inp$timeI)!='list'){
+                tmp <- inp$timeI
+                inp$timeI <- list()
+                inp$timeI[[1]] <- tmp
+            }
+            inp$nobsI <- rep(0, inp$nindex)
+            for (i in 1:inp$nindex){
+                inp$nobsI[i] <- length(inp$timeI[[i]])
+            }
+        }
+        if (!'obsI' %in% nm){
+            inp$obsI <- list()
+            for (i in 1:inp$nindex){
+                inp$obsI[[i]] <- rep(10, inp$nobsI[i]) # Insert dummy
+            }
+        }
+        return(inp)
+    }
+    check.catch <- function(inp){
+        nm <- names(inp)
+        if (!'timeC' %in% nm){
+            if (!'obsC' %in% nm){
+                inp$nobsC <- nobs
+            } else {
+                inp$nobsC <- length(inp$obsC)
+            }
+            inp$timeC <- 1:inp$nobsC
+        } else {
+            inp$nobsC <- length(inp$timeC)
+        }
+        if (!'obsC' %in% nm){
+            inp$obsC <- rep(10, inp$nobsC) # Insert dummy, req by check.inp().
+        }
+        return(inp)
+    }
+
+    if ('par.fixed' %in% names(input)){
+        rep <- input
+        inp <- rep$inp
+        inp <- check.effort(inp)
+        inp <- check.index(inp)
+        inp <- check.inp(inp)
+        pl <- rep$pl
+        plin <- inp$ini
+        obj <- rep$obj
+    } else {
+        if ('ini' %in% names(input)){
+            inp <- input
+            nm <- names(inp)
+            inp <- check.catch(inp)
+            inp <- check.effort(inp)
+            inp <- check.index(inp)
+            plin <- inp$ini
+            inp <- check.inp(inp)
+            pl <- inp$parlist
+            if ('logbkfrac' %in% names(inp$ini)){
+                pl$logB[1] <- log(exp(inp$ini$logbkfrac)*exp(pl$logK))
+            } else {
+                pl$logB[1] <- log(0.5*exp(pl$logK))
+            }
+            if ('logF0' %in% names(inp$ini)){
+                pl$logF[1] <- inp$ini$logF0
+            } else {
+                pl$logF[1] <- log(0.2*exp(inp$ini$logr))
+            }
+            dat <- make.datin(inp)
+            obj <- make.obj(datin = dat, pl = pl, inp = inp)
+        } else {
+            stop('Invalid input! Use either an inp list (with parameters specified in inp$ini) or a fit.spict() result.')
+        }
+    }
+
+
+    ## HERE: option to choose how to simulate using priors
+    ## or if fitted object with priors => random effects
+    ## if new object no priors?
+
+    simdat <- obj$simulate(par = obj$env$par, complete = TRUE)
+    inp$obsC <- simdat$obsC
+    inp$obsI <- simdat$obsI
+    inp$obsE <- simdat$obsE
+
+    ## true parameters and states
+    inp$true <- pl
+    inp$true$logalpha <- inp$true$logsdi - inp$true$logsdb
+    inp$true$logbeta <- inp$true$logsdc - inp$true$logsdf
+    inp$true$dteuler <- inp$dteuler
+    inp$true$splineorder <- inp$splineorder
+    inp$true$time <- inp$time
+
+    ## possible to get from TMB without errors?
+    inp$true$C <- simdat$trueC[1:inp$nobsC]  ## includes forecast
+    inp$true$E <- simdat$trueE[1:inp$nobsE]  ## includes forecast
+    inp$true$I <- simdat$trueI[1:inp$nobsI]  ## CHECK: 2 indices different times
+    inp$true$B <- exp(simdat$logB)
+    inp$true$F <- exp(simdat$logF)
+    inp$true$Fs <- exp(simdat$logFs)
+    inp$true$season <- simdat$logS
+    n <- exp(pl$logn)
+    gamma <- n^(n/(n-1.0)) / (n-1.0)
+    inp$true$gamma <- gamma
+    inp$true$seasontype <- inp$seasontype
+    inp$true$e.c <- inp$obsC - inp$true$C
+    inp$true$e.e <- inp$obsE - inp$true$E
+    inp$true$e.i <- inp$obsI - inp$true$I  ## several indices
+    inp$true$e.b <- inp$true$B - simdat$trueB
+    inp$true$e.f <- inp$true$F - simdat$trueF
+
+    sign <- 1
+    K <- exp(pl$logK)
+    m <- exp(pl$logm)
+    R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
+    p <- n-1
+    inp$true$R <- R
+    inp$true$logrold <- log(abs(gamma * mean(m[inp$ir]) / K))
+    inp$true$logr <- log(mean(m[inp$ir]) / K * n^(n/(n-1.0)))
+    inp$true$logrc <- log(2 * R)
+    # Deterministic reference points
+    inp$true$Bmsyd <- K/(n^(1/(n-1)))
+    inp$true$MSYd <- mean(m[inp$ir])
+    inp$true$Fmsyd <- inp$true$MSYd/inp$true$Bmsyd
+    # Stochastic reference points from Bordet & Rivest (2014)
+    sdb <- exp(pl$logsdb)
+    inp$true$Bmsys <- K/(p+1)^(1/p) * (1- (1+R*(p-1)/2)/(R*(2-R)^2)*sdb^2)
+    inp$true$Fmsys <- R - p*(1-R)*sdb^2/((2-R)^2)
+    inp$true$MSYs <- K*R/((p+1)^(1/p)) * (1 - (p+1)/2*sdb^2/(1-(1-R)^2))
+    if (inp$msytype == 's'){
+        inp$true$Bmsy <- inp$true$Bmsys
+        inp$true$Fmsy <- inp$true$Fmsys
+        inp$true$MSY <- inp$true$MSYs
+    } else {
+        inp$true$Bmsy <- inp$true$Bmsyd
+        inp$true$Fmsy <- inp$true$Fmsyd
+        inp$true$MSY <- inp$true$MSYd
+    }
+    # Calculate relative B and F
+    inp$true$BBmsy <- inp$true$B/inp$true$Bmsy
+    inp$true$FFmsy <- inp$true$F/inp$true$Fmsy
+    # include the log of some quantities
+    lognames <- c('B', 'F', 'Bmsy', 'Fmsy', 'MSY', 'FFmsy', 'BBmsy')
+    for (pn in lognames){
+        inp$true[[paste0('log', pn)]] <- log(inp$true[[pn]])
+    }
+##    inp$true$errI <- errI  ## CHECK: needed?
+    inp$true$logB <- NULL
+    inp$true$logF <- NULL
+
+    return(inp)
 }

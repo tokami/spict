@@ -1178,12 +1178,12 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## reporting
     if(!"reportmode" %in% names(inp)) inp$reportmode <- 0
 
-    ## remove later
-    if(!"SARcode" %in% names(inp)) inp$SARcode <- 1
-
     ## timerange of original observations (required for intermediate catch)
     if(!"lastCatchObs" %in% names(inp)) inp$lastCatchObs <- max(inp$timeC + inp$dtc)
     if(!"timerangeObs" %in% names(inp)) inp$timerangeObs <- inp$timerange
+
+    ## Simulate random effects?
+    if(!"simRand" %in% names(inp)) inp$simRand <- 1
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
