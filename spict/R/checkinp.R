@@ -1185,6 +1185,17 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## Simulate random effects?
     if(!"simRand" %in% names(inp)) inp$simRand <- 1
 
+    ## Noise ratios (for simulation of priors as random effects)
+    if(!"simPriors" %in% names(inp)) inp$simPriors <- 0
+    if(!"logalpha" %in% names(inp$ini)) inp$ini$logalpha <- log(1)
+    if(!"logbeta" %in% names(inp$ini)) inp$ini$logbeta <- log(1)
+    if (inp$simPriors && inp$priors$logn[3]){
+        inp$RE <- c(inp$RE, "logn")
+    }
+
+    ## more control over stabilising option
+    if(!"stabiliseVec" %in% names(inp)) inp$stabiliseVec <- rep(1, 6)
+
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
                         mu=inp$ini$mu,
@@ -1212,7 +1223,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
                         logmre=inp$ini$logmre,
                         SARvec=inp$ini$SARvec,
                         logitSARphi=inp$ini$logitSARphi,
-                        logSdSAR=inp$ini$logSdSAR)
+                        logSdSAR=inp$ini$logSdSAR,
+                        logalpha=inp$ini$logalpha,
+                        logbeta=inp$ini$logbeta)
 
 
     # -- PRIORS --
@@ -1397,6 +1410,18 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     }
     if (!inp$timevaryinggrowth){
         forcefixpars <- c('logmre', 'logsdm', 'logpsi', forcefixpars)
+    }
+    if (inp$simPriors && inp$priors$logalpha[3]){
+        forcefixpars <- c('logsdi', forcefixpars)
+        inp$RE <- c(inp$RE, "logalpha")
+    }else{
+        forcefixpars <- c('logalpha', forcefixpars)
+    }
+    if (inp$simPriors && inp$priors$logbeta[3]){
+        forcefixpars <- c('logsdc', forcefixpars)
+        inp$RE <- c(inp$RE, "logbeta")
+    }else{
+        forcefixpars <- c('logbeta', forcefixpars)
     }
     # Determine phases
     if (!"phases" %in% names(inp)){

@@ -302,6 +302,8 @@ make.datin <- function(inp, dbg=0){
                   simple=inp$simple,
                   reportmode=inp$reportmode,
                   simRand=inp$simRand,
+                  simPriors=inp$simPriors,
+                  stabiliseVec=inp$stabiliseVec,
 
                   dbg=dbg)
     return(datin)

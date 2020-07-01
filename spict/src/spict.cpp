@@ -17,6 +17,7 @@
 */
 
 // 14.10.2014
+#define TMB_LIB_INIT R_init_spict
 #include <TMB.hpp>
 
 /* Predict biomass */
@@ -158,6 +159,8 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(dbg);            // Debug flag, if == 1 then print stuff.
   DATA_INTEGER(reportmode);    // If 1-5 only specific quantities are ADreported (increases speed, relevant for fitting within MSE)
   DATA_INTEGER(simRand);      // flag turning simulation of random effects on/off
+  DATA_INTEGER(simPriors);    // flag turning simulation of priors as random effects on/off
+  DATA_VECTOR(stabiliseVec);
 
   // PARAMETERS
   PARAMETER_VECTOR(logm);      // m following the Fletcher formulation (see Prager 2002)
@@ -187,6 +190,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(SARvec);    // Autoregressive deviations to seasonal spline
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
+  // noise ratios as random effects for simulation with priors
+  PARAMETER_VECTOR(logalpha);  // log(sdi(i)/sdb)
+  PARAMETER(logbeta);          // log(sdc/sdf)
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
   if(dbg > 0){
@@ -243,8 +249,6 @@ Type objective_function<Type>::operator() ()
   vector<Type> logq2(nq);
   for(int i=0; i<nq; i++){ logq2(i) = log(100) + logq(i); }
   //Type qf = exp(logqf);
-  Type n = exp(logn);
-  Type gamma = pow(n, n/(n-1.0)) / (n-1.0);
   Type lambda = exp(loglambda);
   Type delta = exp(logdelta);
   vector<Type> sdf(nsdf);
@@ -254,7 +258,6 @@ Type objective_function<Type>::operator() ()
     sdf(i) = exp(logsdf(i));
     sdf2(i) = sdf(i)*sdf(i);
     isdf2(i) = 1.0/sdf2(i);
-
   }
   vector<Type> sdu = exp(logsdu);
   Type sdb = exp(logsdb);
@@ -263,23 +266,9 @@ Type objective_function<Type>::operator() ()
   Type sdm = exp(logsdm);
   Type sdm2 = sdm*sdm;
   //Type isdm2 = 1.0/sdm2;
-  vector<Type> sdi = exp(logsdi);
-  vector<Type> sdi2(nsdi);
-  vector<Type> isdi2(nsdi);
-  for(int i=0; i<nsdi; i++){
-    sdi2(i) = sdi(i)*sdi(i);
-    isdi2(i) = 1.0/sdi2(i);
-  }
-  vector<Type> alpha = sdi/sdb;
-  vector<Type> logalpha = log(alpha);
   Type sde = exp(logsde);
   Type sde2 = sde*sde;
   Type isde2 = 1.0/sde2;
-  Type sdc = exp(logsdc);
-  Type sdc2 = sdc*sdc;
-  Type isdc2 = 1.0/sdc2;
-  Type beta = sdc/sdf(0);
-  Type logbeta = log(beta);
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
 
@@ -308,6 +297,81 @@ Type objective_function<Type>::operator() ()
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
     mvec(i) = exp(logmc(i) + logmre(i));
   }
+
+
+  // priors are used in estimation of reference points
+  if(priorn(2) == 1){
+    ans-= dnorm(logn, priorn(0), priorn(1), 1); // Prior for logn
+    SIMULATE{
+      logn = rnorm(priorn(0), priorn(1));
+      REPORT(logn)
+    }
+  }
+  Type n = exp(logn);
+  Type gamma = pow(n, n/(n-1.0)) / (n-1.0);
+
+  //  std::cout << "B: logsdi(0): " << logsdi(0) << " - logsdb: " << logsdb << " - logalpha: " << logalpha << std::endl;
+
+  vector<Type> sdi(nsdi);
+  vector<Type> sdi2(nsdi);
+  vector<Type> isdi2(nsdi);
+  if(prioralpha(2) == 1){
+    for(int i=0; i<nsdi; i++){
+      ans-= dnorm(logalpha(i), prioralpha(0), prioralpha(1), 1);  // Prior for logalpha
+      SIMULATE{
+        logalpha(i) = rnorm(prioralpha(0), prioralpha(1));
+      }
+      if(simPriors == 1){
+        logsdi(i) = logsdb + logalpha(i);
+        sdi(i) = exp(logsdi(i));
+        sdi2(i) = sdi(i)*sdi(i);
+        isdi2(i) = 1.0/sdi2(i);
+      }
+    }
+    SIMULATE{
+      REPORT(logalpha);
+    }
+  }
+  if(simPriors == 0){
+    sdi = exp(logsdi);
+    for(int i=0; i<nsdi; i++){
+      sdi2(i) = sdi(i)*sdi(i);
+      isdi2(i) = 1.0/sdi2(i);
+    }
+    vector<Type> alpha = sdi/sdb;
+    logalpha = log(alpha);
+  }
+
+  //  std::cout << "A: logsdi(0): " << logsdi(0) << " - logsdb: " << logsdb << " - logalpha: " << logalpha << std::endl;
+
+
+  //  std::cout << "B: logsdc: " << logsdc << " - logsdf: " << logsdf << " - logbeta: " << logbeta << std::endl;
+
+  Type sdc;
+  Type sdc2;
+  Type isdc2;
+  if(priorbeta(2) == 1){
+    ans -= dnorm(logbeta, priorbeta(0), priorbeta(1), 1); // Prior for logbeta
+    SIMULATE{
+      logbeta = rnorm(priorbeta(0), priorbeta(1));
+      REPORT(logbeta);
+    }
+    if(simPriors == 1){
+      logsdc = logsdf(0) + logbeta;
+      sdc = exp(logsdc);
+      sdc2 = sdc*sdc;
+      isdc2 = 1.0/sdc2;
+    }
+  }
+  if(simPriors == 0){
+    sdc = exp(logsdc);
+    sdc2 = sdc*sdc;
+    isdc2 = 1.0/sdc2;
+    Type beta = sdc/sdf(0);
+    logbeta = log(beta);
+  }
+
+  //  std::cout << "A: logsdc: " << logsdc << " - logsdf: " << logsdf << " - logbeta: " << logbeta << std::endl;
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);
@@ -478,25 +542,25 @@ Type objective_function<Type>::operator() ()
   // Only apply these if there is no "manual" prior on the parameter and if stabilise == 1
   if (stabilise == 1){
     if (priorbkfrac(2) != 1){
-      ans -= dnorm(logB(0) - logK, Type(-0.2234), Type(10.0), 1);
+      if(stabiliseVec(0) == 1) ans -= dnorm(logB(0) - logK, Type(-0.2234), Type(10.0), 1);
     }
     //ans -= dnorm(logB(0), Type(10.0), Type(10.0), 1);
     if(priorF(2) != 1){
-      ans -= dnorm(logF(0), Type(-0.2234), Type(10.0), 1);
+      if(stabiliseVec(1) == 1) ans -= dnorm(logF(0), Type(-0.2234), Type(10.0), 1);
     }
     if(priorn(2) != 1){
-      ans -= dnorm(logn, Type(0.6931472), Type(10.0), 1); // log(2) = 0.6931472
+      if(stabiliseVec(2) == 1) ans -= dnorm(logn, Type(0.6931472), Type(10.0), 1); // log(2) = 0.6931472
     }
     if(priorbeta(2) != 1){
-      ans -= dnorm(logbeta, Type(0.0), Type(10.0), 1);
+      if(stabiliseVec(3) == 1) ans -= dnorm(logbeta, Type(0.0), Type(10.0), 1);
     }
     if(prioralpha(2) != 1){
       for(int i=0; i<nsdi; i++){
-        ans -= dnorm(logalpha(i), Type(0.0), Type(10.0), 1);
+        if(stabiliseVec(4) == 1) ans -= dnorm(logalpha(i), Type(0.0), Type(10.0), 1);
       }
     }
     if(priorsde(2) != 1){
-      ans -= dnorm(logsde, Type(-0.9162907), Type(10.0), 1); // log(0.4) = -0.9162907
+      if(stabiliseVec(5) == 1) ans -= dnorm(logsde, Type(-0.9162907), Type(10.0), 1); // log(0.4) = -0.9162907
     }
   }
 
@@ -514,13 +578,6 @@ Type objective_function<Type>::operator() ()
     ans-= dgamma(logn, priorngamma(0), 1.0/priorngamma(1), 1);
   }
   // Log-normal priors
-  if(priorn(2) == 1){
-    ans-= dnorm(logn, priorn(0), priorn(1), 1); // Prior for logn
-    SIMULATE{
-      logn = rnorm(priorn(0), priorn(1));
-      REPORT(logn)
-    }
-  }
   if((priorr(2) == 1) & (nm == 1)){
     ans-= dnorm(logr(0), priorr(0), priorr(1), 1); // Prior for logr
   }
@@ -565,14 +622,6 @@ Type objective_function<Type>::operator() ()
   }
   if(priorsdc(2) == 1){
     ans-= dnorm(logsdc, priorsdc(0), priorsdc(1), 1); // Prior for logsdc
-  }
-  if(prioralpha(2) == 1){
-    for(int i=0; i<nsdi; i++){
-      ans-= dnorm(logalpha(i), prioralpha(0), prioralpha(1), 1);  // Prior for logalpha
-    }
-  }
-  if(priorbeta(2) == 1){
-    ans-= dnorm(logbeta, priorbeta(0), priorbeta(1), 1); // Prior for logbeta
   }
   if(priorpsi(2) == 1){
     ans-= dnorm(logpsi, priorpsi(0), priorpsi(1), 1); // Prior for logsdm
@@ -633,6 +682,10 @@ Type objective_function<Type>::operator() ()
       REPORT(SARvec)
     }
   }
+
+
+  // std::cout << "-- sdf2: " << sdf2 << std::endl;
+  // std::cout << "-- sdf: " << sdf << std::endl;
 
   //vector<Type> logFs = logF
   vector<Type> logS(ns);
@@ -776,6 +829,9 @@ Type objective_function<Type>::operator() ()
       REPORT(logmre)
     }
   }
+
+  // std::cout << "-- sdb2: " << sdb2 << std::endl;
+  // std::cout << "-- sdb: " << sdb << std::endl;
 
   // BIOMASS PREDICTIONS
   if(dbg>0){
@@ -964,9 +1020,9 @@ Type objective_function<Type>::operator() ()
       SIMULATE{
         Type uu = runif(0.0,1.0);
         if(uu < pp){
-          logobsI(i) = log(rnorm(logIpred(i), stdevfaci(i) * sdi(indsdi)));
+          logobsI(i) = rnorm(logIpred(i), stdevfaci(i) * sdi(indsdi));
         }else{
-          logobsI(i) = log(rnorm(logIpred(i), robfac * stdevfaci(i) * sdi(indsdi)));
+          logobsI(i) = rnorm(logIpred(i), robfac * stdevfaci(i) * sdi(indsdi));
         }
       }
     } else {
