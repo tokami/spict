@@ -708,7 +708,8 @@ make.man.inp <- function(rep, scenarioTitle = "",
                          ffac = NULL,   ## if NULL default fishing at fmsy
                          cfac = NULL,
                          csdfac = 1,
-                         fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5),
+                         fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
+                                          bmsy = 0.5, fmsy = 0.5),
                          breakpointB = 0,
                          safeguardB = list(limitB = 0, prob = 0.95),
                          intermediatePeriodCatch = NULL,
@@ -748,8 +749,9 @@ make.man.inp <- function(rep, scenarioTitle = "",
     repout <- reppa <- rep
 
     ## FRACTILES
-    if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', and 'ffmsy'!")
-    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5)
+    if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', 'ffmsy', 'fmsy' or 'bmsy'!")
+    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
+                                          bmsy = 0.5, fmsy = 0.5)
     fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
     fList <- c(fList,fractiles)
 
@@ -802,19 +804,47 @@ make.man.inp <- function(rep, scenarioTitle = "",
             fmanstart <- get.par('logFm', rep, exp=TRUE)[2]
             fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
             bmsy <- get.par('logBmsy', rep, exp=TRUE)[2]
-            logFpFmsy <- get.par("logFpFmsynotS", rep)
-            logBpBmsy <- get.par("logBpBmsy", rep)
+            logFmsy <- get.par("logFmsy", rep)
+            logFm <- get.par("logFmnotS", rep)
             logFmFmsy <- get.par("logFmFmsynotS", rep)
-            logBmBmsy <- get.par("logBmBmsy", rep)
+            logFpFmsy <- get.par("logFpFmsynotS", rep)
+            logBmsy <- get.par("logBmsy", rep)
+            logBp <- get.par("logBp", rep)
+            logBpBmsy <- get.par("logBpBmsy", rep)
             ## FFmsy component
-            fi <- 1 - fList$ffmsy
-            fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
-            fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
-            fred <- fmfmsy5 / fmfmsyi
-            ## BBmsy component (hockey stick HCR)
+            if(fList$ffmsy < 0.5 && fList$fmsy < 0.5){
+                if(verbose) warning("Percentile defined for both F/Fmsy and Fmsy! Only using percentile on Fmsy!")
+                fList$ffmsy <- 0.5
+            }
+            if(fList$ffmsy < 0.5){
+                fi <- 1 - fList$ffmsy
+                fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
+                fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
+                fred <- fmfmsy5 / fmfmsyi
+            }
+            if(fList$fmsy < 0.5){
+                fi <- fList$fmsy
+                fmsyi <- exp(qnorm(fi, logFmsy[2], logFmsy[4]))
+                fm5 <- exp(qnorm(0.5, logFm[2], logFm[4]))
+                fmfmsyi <- fm5/fmsyi
+                fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
+                fred <- fmfmsy5 / fmfmsyi
+            }
+            ## BpBmsy component (hockey stick HCR)
             if(!is.na(breakpointB) && is.numeric(breakpointB) && breakpointB != 0){
-                bmbmsyi <- 1/breakpointB * exp(qnorm(fList$bbmsy, logBmBmsy[2], logBmBmsy[4]))
-                fred <- fred * min(1, bmbmsyi)
+                if(fList$bbmsy < 0.5 && fList$bmsy < 0.5){
+                    if(verbose) warning("Percentile defined for both B/Bmsy and Bmsy! Only using percentile on Bmsy!")
+                    fList$bbmsy <- 0.5
+                }
+                if(fList$bbmsy < 0.5){
+                    bpbmsyi <- 1/breakpointB * exp(qnorm(fList$bbmsy, logBpBmsy[2], logBpBmsy[4]))
+                }
+                if(fList$bmsy < 0.5){
+                    bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
+                    bp5 <- exp(qnorm(0.5, logBp[2], logBp[4]))
+                    bpbmsyi <- 1/breakpointB * (bp5/bmsyi)
+                }
+                fred <- fred * min(1, bpbmsyi)
             }
             ## F reduction factor
             ffac <- (fred + 1e-8) * fmsy / fmanstart
@@ -1079,7 +1109,8 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                              ffac = NULL,   ## if NULL default fishing at fmsy
                              cfac = NULL,
                              csdfac = 1,
-                             fractiles = list(catch = 0.5, bbmsy =  0.5, ffmsy = 0.5),
+                             fractiles = list(catch = 0.5, bbmsy =  0.5, ffmsy = 0.5,
+                                              bmsy = 0.5, fmsy = 0.5),
                              breakpointB = 0,
                              safeguardB = list(limitB = 0, prob = 0.95),
                              intermediatePeriodCatch = NULL,
@@ -1137,6 +1168,13 @@ add.man.scenario <- function(rep, scenarioTitle = "",
     rep$inp$ffacvec <- make.ffacvec(rep$inp, 1.0)$ffacvec
     rep$inp$fconvec <- make.fconvec(rep$inp, 0.0)$fconvec
 
+    ## fractile list
+    if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', 'ffmsy', 'bmsy' or 'fmsy'!")
+    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5, bmsy = 0.5, fmsy = 0.5)
+    fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
+    fList <- c(fList,fractiles)
+
+
     ## get inpt for retape
     ## get updated inp
     inpt <- make.man.inp(rep=rep,
@@ -1146,7 +1184,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                          ffac = ffac,
                          cfac = cfac,
                          csdfac = csdfac,
-                         fractiles = fractiles,
+                         fractiles = fList,
                          breakpointB = breakpointB,
                          safeguardB = safeguardB,
                          intermediatePeriodCatch = intermediatePeriodCatch,
@@ -1574,7 +1612,8 @@ get.TAC <- function(rep,
                     ffac = NULL,   ## if NULL default fishing at fmsy
                     cfac = NULL,
                     csdfac = 1,
-                    fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5),
+                    fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
+                                     bmsy = 0.5, fmsy = 0.5),
                     breakpointB = 0,
                     safeguardB = list(limitB = 0, prob = 0.95),
                     intermediatePeriodCatch = NULL,
@@ -1634,7 +1673,8 @@ get.TAC <- function(rep,
 
     ## fractile list
     if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', and 'ffmsy'!")
-    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5)
+    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
+                             bmsy = 0.5, fmsy = 0.5)
     fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
     fList <- c(fList,fractiles)
 
