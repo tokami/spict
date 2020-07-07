@@ -1678,6 +1678,7 @@ get.TAC <- function(rep,
     fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
     fList <- c(fList,fractiles)
 
+
     ## get updated inp
     inpt <- make.man.inp(rep=rep,
                          scenarioTitle = scenarioTitle,
