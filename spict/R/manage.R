@@ -796,6 +796,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
         inp <- inpt
     }
 
+
     ## ADVICE RULES
     ## ---------------
     if(!is.numeric(cfac) || is.na(cfac)){
