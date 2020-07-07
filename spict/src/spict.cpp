@@ -1305,6 +1305,10 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFmFmsynotS);
     ADREPORT(logBmBmsy);
     ADREPORT(logCp);
+    ADREPORT(logFnotS);
+    ADREPORT(logB);
+    ADREPORT(logBBmsy);
+    ADREPORT(logFFmsynotS);
   }else if(reportmode == 2){
     ADREPORT(logCp);
   }
