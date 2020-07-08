@@ -411,7 +411,7 @@ plot.col <- function(time, obs, obsx=NULL, pch=1, add=FALSE, typ='p', do.line=TR
         x <- obsx
     }
     nobs <- length(obs)
-    mods <- time%%1
+    mods <- round(time%%1,5)
     cols <- season.cols(mods)
     if (!add){
         plot(x, obs, typ='n', ...)
