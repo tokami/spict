@@ -707,6 +707,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
                          maneval = NULL,
                          ffac = NULL,   ## if NULL default fishing at fmsy
                          cfac = NULL,
+                         bfac = NULL,
                          csdfac = 1,
                          fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
                                           bmsy = 0.5, fmsy = 0.5),
@@ -796,79 +797,101 @@ make.man.inp <- function(rep, scenarioTitle = "",
         inp <- inpt
     }
 
-
     ## ADVICE RULES
     ## ---------------
     if(!is.numeric(cfac) || is.na(cfac)){
         if(!is.numeric(ffac) || is.na(ffac)){
-            ## Quantities
-            fmanstart <- get.par('logFm', rep, exp=TRUE)[2]
-            fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
-            bmsy <- get.par('logBmsy', rep, exp=TRUE)[2]
-            logFmsy <- get.par("logFmsy", rep)
-            logFm <- get.par("logFmnotS", rep)
-            logFmFmsy <- get.par("logFmFmsynotS", rep)
-            logFpFmsy <- get.par("logFpFmsynotS", rep)
-            logBmsy <- get.par("logBmsy", rep)
-            logBp <- get.par("logBp", rep)
-            logBpBmsy <- get.par("logBpBmsy", rep)
-            ## FFmsy component
-            if(fList$ffmsy < 0.5 && fList$fmsy < 0.5){
-                if(verbose) warning("Percentile smaller 50% defined for both F/Fmsy and Fmsy! Only using percentile on F/Fmsy!")
-                fList$fmsy <- 0.5
-            }
-            if(fList$fmsy < 0.5 && fList$ffmsy == 0.5){
-                fi <- fList$fmsy
-                fmsyi <- exp(qnorm(fi, logFmsy[2], logFmsy[4]))
-                fm5 <- exp(qnorm(0.5, logFm[2], logFm[4]))
-                fmfmsyi <- fm5/fmsyi
-                fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
-                fred <- fmfmsy5 / fmfmsyi
+            if(is.numeric(bfac)){
+                ## Quantities
+                logBpBm <- get.par("logBpBm", rep, exp = FALSE)
+                logBBm <- get.par("logBBm", rep, exp = FALSE)
+                ## Default: Fish at current F
+                ffac <- 1
+                ## Trend in B
+                if(!is.numeric(pList$prob)) pList$prob <- 0.5
+                ## CHECK: new retaped obj with ffac=1 needed?
+                probi <- 1 - pList$prob
+                bpbm <- exp(qnorm(probi, logBpBm[2], logBpBm[4]))
+                if((bpbm - bfac) < -1e-3){
+                    ffac <- try(get.ffac(rep, ref=bfac,
+                                         problevel=pList$prob,
+                                         var="logBpBm",
+                                         reportmode = 3), silent=TRUE)
+                    if(inherits(ffac,"try-error")){
+                        if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when optimising the risk aversion probability over F. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
+                        ffac <- 1
+                    }
+                }
             }else{
-                fi <- 1 - fList$ffmsy
-                fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
-                fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
-                fred <- fmfmsy5 / fmfmsyi
-            }
-            ## BpBmsy component (hockey stick HCR)
-            if(!is.na(breakpointB) && is.numeric(breakpointB) && breakpointB != 0){
-                if(fList$bbmsy < 0.5 && fList$bmsy < 0.5){
-                    if(verbose) warning("Percentile smaller 50% defined for both B/Bmsy and Bmsy! Only using percentile on B/Bmsy!")
-                    fList$bmsy <- 0.5
+                ## Quantities
+                fmanstart <- get.par('logFm', rep, exp=TRUE)[2]
+                fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
+                bmsy <- get.par('logBmsy', rep, exp=TRUE)[2]
+                logFmsy <- get.par("logFmsy", rep)
+                logFm <- get.par("logFmnotS", rep)
+                logFmFmsy <- get.par("logFmFmsynotS", rep)
+                logFpFmsy <- get.par("logFpFmsynotS", rep)
+                logBmsy <- get.par("logBmsy", rep)
+                logBp <- get.par("logBp", rep)
+                logBpBmsy <- get.par("logBpBmsy", rep)
+                ## FFmsy component
+                if(fList$ffmsy < 0.5 && fList$fmsy < 0.5){
+                    if(verbose) warning("Percentile smaller 50% defined for both F/Fmsy and Fmsy! Only using percentile on F/Fmsy!")
+                    fList$fmsy <- 0.5
                 }
-                if(fList$bmsy < 0.5 && fList$bbmsy == 0.5){
-                    bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
-                    bp5 <- exp(qnorm(0.5, logBp[2], logBp[4]))
-                    bpbmsyi <- 1/breakpointB * (bp5/bmsyi)
+                if(fList$fmsy < 0.5 && fList$ffmsy == 0.5){
+                    fi <- fList$fmsy
+                    fmsyi <- exp(qnorm(fi, logFmsy[2], logFmsy[4]))
+                    fm5 <- exp(qnorm(0.5, logFm[2], logFm[4]))
+                    fmfmsyi <- fm5/fmsyi
+                    fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
+                    fred <- fmfmsy5 / fmfmsyi
                 }else{
-                    bpbmsyi <- 1/breakpointB * exp(qnorm(fList$bbmsy, logBpBmsy[2], logBpBmsy[4]))
+                    fi <- 1 - fList$ffmsy
+                    fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
+                    fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
+                    fred <- fmfmsy5 / fmfmsyi
                 }
-                fred <- fred * min(1, bpbmsyi)
-            }
-            ## F reduction factor
-            ffac <- (fred + 1e-8) * fmsy / fmanstart
-            ## PA component
-            if(!is.na(pList$limitB) && is.numeric(pList$limitB) && pList$limitB != 0){
-                inppa <- make.ffacvec(inp, ffac)
-                inppa$reportmode <- 1
-                reppa <- try(retape.spict(reppa, inppa, verbose=verbose, mancheck=FALSE), silent=TRUE)
-                if(inherits(reppa,"try-error")){
-                    if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when retaping the updated spict model. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
-                    ffac <- 1
-                }else{
-                    logBpBmsyPA <- get.par("logBpBmsy", reppa)
-                    probi <- 1 - pList$prob
-                    bpbmsyiPA <- exp(qnorm(probi, logBpBmsyPA[2], logBpBmsyPA[4]))
-                    if((bpbmsyiPA - pList$limitB) < -1e-3){
-                        ffac <- try(get.ffac(reppa, ref=pList$limitB,
-                                             problevel=pList$prob,
-                                             var="logBpBmsy",
-                                             reportmode = 1), silent=TRUE)
-                        if(inherits(ffac,"try-error")){
-                            if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when optimising the risk aversion probability over F. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
-                            ffac <- 1
-                        }
+                ## BpBmsy component (hockey stick HCR)
+                if(!is.na(breakpointB) && is.numeric(breakpointB) && breakpointB != 0){
+                    if(fList$bbmsy < 0.5 && fList$bmsy < 0.5){
+                        if(verbose) warning("Percentile smaller 50% defined for both B/Bmsy and Bmsy! Only using percentile on B/Bmsy!")
+                        fList$bmsy <- 0.5
+                    }
+                    if(fList$bmsy < 0.5 && fList$bbmsy == 0.5){
+                        bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
+                        bp5 <- exp(qnorm(0.5, logBp[2], logBp[4]))
+                        bpbmsyi <- 1/breakpointB * (bp5/bmsyi)
+                    }else{
+                        bpbmsyi <- 1/breakpointB * exp(qnorm(fList$bbmsy, logBpBmsy[2], logBpBmsy[4]))
+                    }
+                    fred <- fred * min(1, bpbmsyi)
+                }
+                ## F reduction factor
+                ffac <- (fred + 1e-8) * fmsy / fmanstart
+                ## PA component
+                if(!is.na(pList$limitB) && is.numeric(pList$limitB) && pList$limitB != 0){
+                    inppa <- make.ffacvec(inp, ffac)
+                    inppa$reportmode <- 1
+                    reppa <- try(retape.spict(reppa, inppa, verbose=verbose, mancheck=FALSE), silent=TRUE)
+                    if(inherits(reppa,"try-error")){
+                        if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when retaping the updated spict model. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
+                        ffac <- 1
+                    }else{
+                        logBpBmsyPA <- get.par("logBpBmsy", reppa)
+                        probi <- 1 - pList$prob
+                        bpbmsyiPA <- exp(qnorm(probi, logBpBmsyPA[2], logBpBmsyPA[4]))
+                        if((bpbmsyiPA - pList$limitB) < -1e-3){
+                            ffac <- try(get.ffac(reppa, ref=pList$limitB,
+                                                 problevel=pList$prob,
+                                                 var="logBpBmsy",
+                                                 reportmode = 1), silent=TRUE)
+                            if(inherits(ffac,"try-error")){
+                                if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when optimising the risk aversion probability over F. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
+                                ffac <- 1
+                            }
 
+                        }
                     }
                 }
             }
@@ -1107,6 +1130,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                              maneval = NULL,
                              ffac = NULL,   ## if NULL default fishing at fmsy
                              cfac = NULL,
+                             bfac = NULL,
                              csdfac = 1,
                              fractiles = list(catch = 0.5, bbmsy =  0.5, ffmsy = 0.5,
                                               bmsy = 0.5, fmsy = 0.5),
@@ -1182,6 +1206,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                          maneval = maneval,
                          ffac = ffac,
                          cfac = cfac,
+                         bfac = bfac,
                          csdfac = csdfac,
                          fractiles = fList,
                          breakpointB = breakpointB,
@@ -1610,6 +1635,7 @@ get.TAC <- function(rep,
                     maneval = NULL,
                     ffac = NULL,   ## if NULL default fishing at fmsy
                     cfac = NULL,
+                    bfac = NULL,
                     csdfac = 1,
                     fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
                                      bmsy = 0.5, fmsy = 0.5),
@@ -1685,6 +1711,7 @@ get.TAC <- function(rep,
                          maneval = maneval,
                          ffac = ffac,
                          cfac = cfac,
+                         bfac = bfac,
                          csdfac = csdfac,
                          fractiles = fList,
                          breakpointB = breakpointB,

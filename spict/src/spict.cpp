@@ -1012,6 +1012,15 @@ Type objective_function<Type>::operator() ()
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
 
+  // Btrigger and Blim
+  // vector<Type> logBBtrigger = (Type(1.0)/Type(0.5)) * logBBmsy;
+  // vector<Type> logBBlim = (Type(1.0)/Type(0.3)) * logBBmsy;
+
+  // B/B(manstart)
+  vector<Type> logBBm = logB - logBm;
+  Type logBpBm = logBp - logBm;
+
+
   // ADREPORTS
   if(reportmode == 0){
     ADREPORT(Bmsy);
@@ -1118,6 +1127,8 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFlFmsynotS);
     ADREPORT(logFmFmsynotS);
     ADREPORT(logFpFmsynotS);
+    ADREPORT(logBBm);
+    ADREPORT(logBpBm);
 
   }else if(reportmode == 1){
     ADREPORT(logFm);
@@ -1140,6 +1151,10 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFFmsynotS);
   }else if(reportmode == 2){
     ADREPORT(logCp);
+  }else if(reportmode == 3){
+    ADREPORT(logCp);
+    ADREPORT(logBBm);
+    ADREPORT(logBpBm);
   }
 
   // REPORTS (these don't require sdreport to be output)
