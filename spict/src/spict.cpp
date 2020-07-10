@@ -127,6 +127,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  DATA_INTEGER(indBpBx);       // index for logBpBx
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -1019,6 +1020,9 @@ Type objective_function<Type>::operator() ()
   // B/B(manstart)
   vector<Type> logBBm = logB - logBm;
   Type logBpBm = logBp - logBm;
+  Type Bx = B(indBpBx-1);
+  Type logBx = log(Bx);
+  Type logBpBx = logBp - logBx;
 
 
   // ADREPORTS
@@ -1129,6 +1133,7 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFpFmsynotS);
     ADREPORT(logBBm);
     ADREPORT(logBpBm);
+    ADREPORT(logBpBx);
 
   }else if(reportmode == 1){
     ADREPORT(logFm);
@@ -1155,6 +1160,7 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logCp);
     ADREPORT(logBBm);
     ADREPORT(logBpBm);
+    ADREPORT(logBpBx);
   }
 
   // REPORTS (these don't require sdreport to be output)

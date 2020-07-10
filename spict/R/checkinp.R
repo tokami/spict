@@ -1182,6 +1182,8 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if(!"lastCatchObs" %in% names(inp)) inp$lastCatchObs <- max(inp$timeC + inp$dtc)
     if(!"timerangeObs" %in% names(inp)) inp$timerangeObs <- inp$timerange
 
+    if(!"indBpBx" %in% names(inp)) inp$indBpBx <- match.times(inp$manstart, inp$time) ## by default => BpBx  == BpBm
+
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
                         mu=inp$ini$mu,

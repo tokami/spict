@@ -804,6 +804,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
             if(is.numeric(bfac)){
                 ## Quantities
                 logBpBm <- get.par("logBpBm", rep, exp = FALSE)
+                logBpBx <- get.par("logBpBx", rep, exp = FALSE)
                 logBBm <- get.par("logBBm", rep, exp = FALSE)
                 ## Default: Fish at current F
                 ffac <- 1
@@ -811,7 +812,11 @@ make.man.inp <- function(rep, scenarioTitle = "",
                 if(!is.numeric(pList$prob)) pList$prob <- 0.5
                 ## CHECK: new retaped obj with ffac=1 needed?
                 probi <- 1 - pList$prob
-                bpbm <- exp(qnorm(probi, logBpBm[2], logBpBm[4]))
+                ## if(!is.null(bfacTime)){
+                ##     bpbm <- exp(qnorm(probi, logBpBm[2], logBpBm[4]))
+                ## }else{
+                bpbm <- exp(qnorm(probi, logBpBx[2], logBpBx[4]))
+                ## }
                 if((bpbm - bfac) < -1e-3){
                     ffac <- try(get.ffac(rep, ref=bfac,
                                          problevel=pList$prob,
