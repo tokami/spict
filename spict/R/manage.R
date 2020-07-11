@@ -803,9 +803,8 @@ make.man.inp <- function(rep, scenarioTitle = "",
         if(!is.numeric(ffac) || is.na(ffac)){
             if(is.numeric(bfac)){
                 ## Quantities
-                logBpBm <- get.par("logBpBm", rep, exp = FALSE)
+##                logBpBm <- get.par("logBpBm", rep, exp = FALSE)
                 logBpBx <- get.par("logBpBx", rep, exp = FALSE)
-                logBBm <- get.par("logBBm", rep, exp = FALSE)
                 ## Default: Fish at current F
                 ffac <- 1
                 ## Trend in B
@@ -820,7 +819,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
 ##                if((bpbm - bfac) < -1e-3){  ## CHECK: this means BpBx can be larger than 1
                     ffac <- try(get.ffac(rep, ref=bfac,
                                          problevel=pList$prob,
-                                         var="logBpBm",
+                                         var="logBpBx",
                                          reportmode = 3), silent=TRUE)
                     if(inherits(ffac,"try-error")){
                         if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when optimising the risk aversion probability over F. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
