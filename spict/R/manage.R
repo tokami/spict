@@ -817,7 +817,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
                 ## }else{
                 bpbm <- exp(qnorm(probi, logBpBx[2], logBpBx[4]))
                 ## }
-                if((bpbm - bfac) < -1e-3){
+##                if((bpbm - bfac) < -1e-3){  ## CHECK: this means BpBx can be larger than 1
                     ffac <- try(get.ffac(rep, ref=bfac,
                                          problevel=pList$prob,
                                          var="logBpBm",
@@ -826,7 +826,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
                         if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when optimising the risk aversion probability over F. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
                         ffac <- 1
                     }
-                }
+##                }
             }else{
                 ## Quantities
                 fmanstart <- get.par('logFm', rep, exp=TRUE)[2]
