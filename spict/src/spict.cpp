@@ -1022,6 +1022,7 @@ Type objective_function<Type>::operator() ()
   Type logBpBm = logBp - logBm;
   Type Bx = B(indBpBx-1);
   Type logBx = log(Bx);
+  vector<Type> logBBx = logB - logBx;
   Type logBpBx = logBp - logBx;
 
 
@@ -1131,8 +1132,7 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFlFmsynotS);
     ADREPORT(logFmFmsynotS);
     ADREPORT(logFpFmsynotS);
-    ADREPORT(logBBm);
-    ADREPORT(logBpBm);
+    ADREPORT(logBBx);
     ADREPORT(logBpBx);
 
   }else if(reportmode == 1){
@@ -1158,8 +1158,7 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logCp);
   }else if(reportmode == 3){
     ADREPORT(logCp);
-    ADREPORT(logBBm);
-    ADREPORT(logBpBm);
+    ADREPORT(logBBx);
     ADREPORT(logBpBx);
   }
 
