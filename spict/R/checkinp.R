@@ -146,7 +146,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
                 for (i in 1:nnms){
                     tmpout[[nms[i]]] <- tmpin[[nms[i]]][-neg]
                 }
-                cat('Removing zero, negative, and NAs in ', nam, ' series ', j, ' \n')
+                if(verbose) cat('Removing zero, negative, and NAs in ', nam, ' series ', j, ' \n')
             }
             return(tmpout)
         }
@@ -1182,7 +1182,10 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if(!"lastCatchObs" %in% names(inp)) inp$lastCatchObs <- max(inp$timeC + inp$dtc)
     if(!"timerangeObs" %in% names(inp)) inp$timerangeObs <- inp$timerange
 
-    if(!"indBpBx" %in% names(inp)) inp$indBpBx <- match.times(inp$manstart, inp$time) ## by default => BpBx  == BpBm
+    ## index of reference biomass for relative biomass trend rule
+    ## by default => BpBx  == BpBm
+    if(!"indBpBx" %in% names(inp)) inp$indBpBx <- match.times(inp$manstart, inp$time)
+    if(!"bref" %in% names(inp)) inp$bref <- 0
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,

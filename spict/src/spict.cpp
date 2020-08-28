@@ -111,23 +111,24 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(seasonindex);    // A vector of length ns giving the number stepped within the current year
   DATA_INTEGER(nseasons);      // Number of seasons pr year
   DATA_VECTOR(seasonindex2)    // A vector of length ns mapping states to seasonal AR component (for seasontype=3)
-    DATA_MATRIX(splinemat);      // Design matrix for the seasonal spline
+  DATA_MATRIX(splinemat);      // Design matrix for the seasonal spline
   DATA_MATRIX(splinematfine);  // Design matrix for the seasonal spline on a fine time scale to get spline uncertainty
   DATA_SCALAR(omega);          // Period time of seasonal SDEs (2*pi = 1 year period)
-  DATA_INTEGER(seasontype);     // Variable indicating whether to use 1=spline, 2=coupled SDEs
-  DATA_INTEGER(efforttype);     // Variable indicating whether to use 1=spline, 2=coupled SDEs
+  DATA_INTEGER(seasontype);    // Variable indicating whether to use 1=spline, 2=coupled SDEs
+  DATA_INTEGER(efforttype);    // Variable indicating whether to use 1=spline, 2=coupled SDEs
   DATA_INTEGER(timevaryinggrowth); //  Flag indicating whether REs are used for growth
   DATA_INTEGER(logmcovflag);   // Flag indicating whether covariate information is available
   DATA_VECTOR(ffacvec);        // Management factor each year multiply the predicted F with ffac
   DATA_VECTOR(fconvec);        // Management factor each year add this constant to the predicted F
-  DATA_INTEGER(robflagc);       // If 1 use robust observation error for catches
-  DATA_IVECTOR(robflagi);       // If 1 use robust observation error for index
-  DATA_INTEGER(robflage);       // If 1 use robust observation error for effort
+  DATA_INTEGER(robflagc);      // If 1 use robust observation error for catches
+  DATA_IVECTOR(robflagi);      // If 1 use robust observation error for index
+  DATA_INTEGER(robflage);      // If 1 use robust observation error for effort
   DATA_INTEGER(stochmsy);      // Use stochastic msy?
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
-  //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
+  //DATA_SCALAR(effortflag);   // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
-  DATA_INTEGER(indBpBx);       // index for logBpBx
+  DATA_VECTOR(indBpBx);        // index for logBpBx
+  DATA_INTEGER(bref);          // biomass referenece for relative B rule 0 = current, 1 = lowest, 2 = average
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -154,8 +155,8 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(priorBBmsy);     // Prior vector for B/Bmsy, [log(mean), stdev in log, useflag, year, ib]
   DATA_VECTOR(priorFFmsy);     // Prior vector for F/Fmsy, [log(mean), stdev in log, useflag, year, if]
   DATA_VECTOR(priorBmsyB0)     // Prior vector for Bmsy/B_0, [mean, stdev, useflag]
-    // Options
-    DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
+  // Options
+  DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
   DATA_SCALAR(dbg);            // Debug flag, if == 1 then print stuff.
   DATA_INTEGER(reportmode);    // If 1-5 only specific quantities are ADreported (increases speed, relevant for fitting within MSE)
 
@@ -1017,10 +1018,31 @@ Type objective_function<Type>::operator() ()
   // vector<Type> logBBtrigger = (Type(1.0)/Type(0.5)) * logBBmsy;
   // vector<Type> logBBlim = (Type(1.0)/Type(0.3)) * logBBmsy;
 
-  // B/B(manstart)
+  // B/Bm
   vector<Type> logBBm = logB - logBm;
   Type logBpBm = logBp - logBm;
-  Type Bx = B(indBpBx-1);
+
+  // B/Bref where Bref either current, lowest, or average biomass
+  Type Bx = 0;
+  Type minB = B(0);
+  int indminB = 0;
+  // find lowest B if bref == 1
+  if(bref == 1){
+    for(int i=1; i<B.size(); i++){
+      if(B(i) < minB){
+        minB = B(i);
+        indminB = i;
+      }
+    }
+    indBpBx(0) = indminB;
+    Bx = minB;
+  }else{
+    for(int i=0; i<indBpBx.size(); i++){
+      ind = CppAD::Integer(indBpBx(i)-1);
+      Bx += B(ind);
+    }
+    Bx = Bx / indBpBx.size();
+  }
   Type logBx = log(Bx);
   vector<Type> logBBx = logB - logBx;
   Type logBpBx = logBp - logBx;
