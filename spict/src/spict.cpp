@@ -1023,12 +1023,13 @@ Type objective_function<Type>::operator() ()
   Type logBpBm = logBp - logBm;
 
   // B/Bref where Bref either current, lowest, or average biomass
+  // be aware that this requires retaping after optimising:
   Type Bx = 0;
   Type minB = B(0);
   int indminB = 0;
   // find lowest B if bref == 1
   if(bref == 1){
-    for(int i=1; i<B.size(); i++){
+    for(int i=1; i<mind; i++){ // do not include forecast period
       if(B(i) < minB){
         minB = B(i);
         indminB = i;
@@ -1043,6 +1044,7 @@ Type objective_function<Type>::operator() ()
     }
     Bx = Bx / indBpBx.size();
   }
+
   Type logBx = log(Bx);
   vector<Type> logBBx = logB - logBx;
   Type logBpBx = logBp - logBx;
