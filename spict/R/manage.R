@@ -664,8 +664,8 @@ check.catchList <- function(catchList, sdfac = 1){
 #' @param maneval Time at which to evaluate model states. Example: \code{maneval
 #'     = 2021.25}. Default: NULL.
 #' @param ffac Factor to multiply current fishing mortality by (default: NULL).
-#' @param cfac Factor to multiply current catch by (default: NULL). Please refer to
-#'     the details for more information.
+#' @param cfac Factor to multiply current catch by (default: NULL). Please refer
+#'     to the details for more information.
 #' @param csdfac Factor for the multiplication of the standard deviation of the
 #'     catch (default: 1). Please refer to the details for more information.
 #' @param fractiles List defining the fractiles of the 3 distributions of
@@ -692,6 +692,11 @@ check.catchList <- function(catchList, sdfac = 1){
 #' @param catchList List obtaining the elements 'obsC', 'timeC', and 'dtc'
 #'     (optional element 'stdevfacC' which is 1 if not provided). Please refer
 #'     to the details for more information.
+#' @param bfacRef Defining if biomass reference point used for the 'bfac' rule
+#'     is either a 'target' or a 'limit' reference point. 'target' implies that
+#'     F is used which brings biomass closest to reference biomass values,
+#'     'limit' implies that current F is used unless biomass falls below
+#'     reference values.
 #' @param verbose Should detailed outputs be provided (default: TRUE).
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @param mancheck Should the time-dependent objects in \code{inp} be checked
@@ -717,6 +722,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
                          intermediatePeriodCatchSDFac = 1,
                          intermediatePeriodCatchList = NULL,
                          catchList = NULL,
+                         bfacRef = "target",
                          verbose = TRUE,
                          dbg = 0,
                          mancheck = TRUE){
@@ -803,20 +809,17 @@ make.man.inp <- function(rep, scenarioTitle = "",
         if(!is.numeric(ffac) || is.na(ffac)){
             if(is.numeric(bfac)){
                 ## Quantities
-##                logBpBm <- get.par("logBpBm", rep, exp = FALSE)
                 logBpBx <- get.par("logBpBx", rep, exp = FALSE)
                 ## Default: Fish at current F
                 ffac <- 1
                 ## Trend in B
                 if(!is.numeric(pList$prob)) pList$prob <- 0.5
-                ## CHECK: new retaped obj with ffac=1 needed?
                 probi <- 1 - pList$prob
-                ## if(!is.null(bfacTime)){
-                ##     bpbm <- exp(qnorm(probi, logBpBm[2], logBpBm[4]))
-                ## }else{
-                bpbm <- exp(qnorm(probi, logBpBx[2], logBpBx[4]))
-                ## }
-##                if((bpbm - bfac) < -1e-3){  ## CHECK: this means BpBx can be larger than 1
+                bpbx <- exp(qnorm(probi, logBpBx[2], logBpBx[4]))
+                ## Given bfac, find best F if target bref,
+                ## or fish at current F as long as save if limit bref
+                ## browser()
+                if(bfacRef == "target" || (bfacRef == "limit" && (bpbx - bfac) < -1e-3)){
                     ffac <- try(get.ffac(rep, ref=bfac,
                                          problevel=pList$prob,
                                          var="logBpBx",
@@ -825,7 +828,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
                         if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when optimising the risk aversion probability over F. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
                         ffac <- 1
                     }
-##                }
+                }
             }else{
                 ## Quantities
                 fmanstart <- get.par('logFm', rep, exp=TRUE)[2]
@@ -994,6 +997,11 @@ make.man.inp <- function(rep, scenarioTitle = "",
 #' @param catchList List obtaining the elements 'obsC', 'timeC', and 'dtc'
 #'     (optional element 'stdevfacC' which is 1 if not provided). Please refer
 #'     to the details for more information.
+#' @param bfacRef Defining if biomass reference point used for the 'bfac' rule
+#'     is either a 'target' or a 'limit' reference point. 'target' implies that
+#'     F is used which brings biomass closest to reference biomass values,
+#'     'limit' implies that current F is used unless biomass falls below
+#'     reference values.
 #' @param verbose Should detailed outputs be provided (default: TRUE).
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @param mancheck Should the time-dependent objects in \code{inp} be checked
@@ -1144,6 +1152,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                              intermediatePeriodCatchSDFac = 1,
                              intermediatePeriodCatchList = NULL,
                              catchList = NULL,
+                             bfacRef = "target",
                              verbose = TRUE,
                              dbg = 0,
                              mancheck = TRUE){
@@ -1219,6 +1228,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                          intermediatePeriodCatchSDFac = intermediatePeriodCatchSDFac,
                          intermediatePeriodCatchList = intermediatePeriodCatchList,
                          catchList = catchList,
+                         bfacRef = bfacRef,
                          verbose = verbose,
                          dbg = dbg,
                          mancheck = FALSE)
@@ -1610,6 +1620,11 @@ man.timeline <- function(x, verbose = TRUE, obsonly = FALSE){
 #' @param catchList List obtaining the elements 'obsC', 'timeC', and 'dtc'
 #'     (optional element 'stdevfacC' which is 1 if not provided). Please refer
 #'     to the details for more information.
+#' @param bfacRef Defining if biomass reference point used for the 'bfac' rule
+#'     is either a 'target' or a 'limit' reference point. 'target' implies that
+#'     F is used which brings biomass closest to reference biomass values,
+#'     'limit' implies that current F is used unless biomass falls below
+#'     reference values.
 #' @param verbose Should detailed outputs be provided (default: TRUE).
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @param mancheck Should the time-dependent objects in \code{inp} be checked
@@ -1649,6 +1664,7 @@ get.TAC <- function(rep,
                     intermediatePeriodCatchSDFac = 1,
                     intermediatePeriodCatchList = NULL,
                     catchList = NULL,
+                    bfacRef = "target",
                     verbose = TRUE,
                     dbg = 0,
                     mancheck = TRUE){
@@ -1724,6 +1740,7 @@ get.TAC <- function(rep,
                          intermediatePeriodCatchSDFac = intermediatePeriodCatchSDFac,
                          intermediatePeriodCatchList = intermediatePeriodCatchList,
                          catchList = catchList,
+                         bfacRef = bfacRef,
                          verbose = verbose,
                          dbg = dbg,
                          mancheck = FALSE)
