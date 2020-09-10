@@ -11,14 +11,16 @@ make.man.inp(
   maneval = NULL,
   ffac = NULL,
   cfac = NULL,
+  bfac = NULL,
   csdfac = 1,
-  fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5),
+  fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5, bmsy = 0.5, fmsy = 0.5),
   breakpointB = 0,
   safeguardB = list(limitB = 0, prob = 0.95),
   intermediatePeriodCatch = NULL,
   intermediatePeriodCatchSDFac = 1,
   intermediatePeriodCatchList = NULL,
   catchList = NULL,
+  bref.type = "target",
   verbose = TRUE,
   dbg = 0,
   mancheck = TRUE
@@ -40,8 +42,8 @@ Default: NULL.}
 
 \item{ffac}{Factor to multiply current fishing mortality by (default: NULL).}
 
-\item{cfac}{Factor to multiply current catch by (default: NULL). Please refer to
-the details for more information.}
+\item{cfac}{Factor to multiply current catch by (default: NULL). Please refer
+to the details for more information.}
 
 \item{csdfac}{Factor for the multiplication of the standard deviation of the
 catch (default: 1). Please refer to the details for more information.}
@@ -72,6 +74,10 @@ details for more information.}
 \item{catchList}{List obtaining the elements 'obsC', 'timeC', and 'dtc'
 (optional element 'stdevfacC' which is 1 if not provided). Please refer
 to the details for more information.}
+
+\item{bref.type}{Is Bref a 'target' or 'limit' reference point, i.e. is F
+increased if B>Bref and decreased if B<Bref ('target') or is F only
+decreased if B<Bref ('limit')?}
 
 \item{verbose}{Should detailed outputs be provided (default: TRUE).}
 

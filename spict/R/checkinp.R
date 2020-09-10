@@ -1182,10 +1182,8 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if(!"lastCatchObs" %in% names(inp)) inp$lastCatchObs <- max(inp$timeC + inp$dtc)
     if(!"timerangeObs" %in% names(inp)) inp$timerangeObs <- inp$timerange
 
-    ## index of reference biomass for relative biomass trend rule
-    ## by default => BpBx  == BpBm
-    if(!"indBpBx" %in% names(inp)) inp$indBpBx <- match.times(inp$manstart, inp$time)
-    if(!"bref" %in% names(inp)) inp$bref <- 0
+    ## index of reference biomass for relative biomass trend rule (Bref)
+    if(!"indBref" %in% names(inp)) inp$indBref <- match.times(inp$manstart, inp$time)
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,

@@ -127,8 +127,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);   // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
-  DATA_VECTOR(indBpBx);        // index for logBpBx
-  DATA_INTEGER(bref);          // biomass referenece for relative B rule 0 = current, 1 = lowest, 2 = average
+  DATA_VECTOR(indBref);        // time index for Bref
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -1023,32 +1022,16 @@ Type objective_function<Type>::operator() ()
   Type logBpBm = logBp - logBm;
 
   // B/Bref where Bref either current, lowest, or average biomass
-  // be aware that this requires retaping after optimising:
-  Type Bx = 0;
-  Type minB = B(0);
-  int indminB = 0;
-  // find lowest B if bref == 1
-  if(bref == 1){
-    for(int i=1; i<mind; i++){ // do not include forecast period
-      if(B(i) < minB){
-        minB = B(i);
-        indminB = i;
-      }
-    }
-    indBpBx(0) = indminB;
-    Bx = minB;
-  }else{
-    for(int i=0; i<indBpBx.size(); i++){
-      ind = CppAD::Integer(indBpBx(i)-1);
-      Bx += B(ind);
-    }
-    Bx = Bx / indBpBx.size();
+  Type Bref = 0;
+  // average if several indBrefs
+  for(int i=0; i<indBref.size(); i++){
+    ind = CppAD::Integer(indBref(i)-1);
+    Bref += B(ind);
   }
-
-  Type logBx = log(Bx);
-  vector<Type> logBBx = logB - logBx;
-  Type logBpBx = logBp - logBx;
-
+  Bref = Bref / indBref.size();
+  Type logBref = log(Bref);
+  vector<Type> logBBref = logB - logBref;
+  Type logBpBref = logBp - logBref;
 
   // ADREPORTS
   if(reportmode == 0){
@@ -1156,8 +1139,8 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFlFmsynotS);
     ADREPORT(logFmFmsynotS);
     ADREPORT(logFpFmsynotS);
-    ADREPORT(logBBx);
-    ADREPORT(logBpBx);
+    ADREPORT(logBBref);
+    ADREPORT(logBpBref);
 
   }else if(reportmode == 1){
     ADREPORT(logFm);
@@ -1182,8 +1165,8 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logCp);
   }else if(reportmode == 3){
     ADREPORT(logCp);
-    ADREPORT(logBBx);
-    ADREPORT(logBpBx);
+    ADREPORT(logBBref);
+    ADREPORT(logBpBref);
   }
 
   // REPORTS (these don't require sdreport to be output)
