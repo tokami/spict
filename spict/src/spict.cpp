@@ -1166,6 +1166,7 @@ Type objective_function<Type>::operator() ()
   }else if(reportmode == 3){
     ADREPORT(logCpred);
     ADREPORT(logCp);
+    ADREPORT(logBref);
     ADREPORT(logBBref);
     ADREPORT(logBpBref);
   }
