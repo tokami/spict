@@ -298,14 +298,13 @@ Type objective_function<Type>::operator() ()
     mvec(i) = exp(logmc(i) + logmre(i));
   }
 
-
   // priors are used in estimation of reference points
   if(priorn(2) == 1){
     ans-= dnorm(logn, priorn(0), priorn(1), 1); // Prior for logn
     SIMULATE{
       logn = rnorm(priorn(0), priorn(1));
-      REPORT(logn)
-        }
+      REPORT(logn);
+    }
   }
   Type n = exp(logn);
   Type gamma = pow(n, n/(n-1.0)) / (n-1.0);
@@ -321,18 +320,16 @@ Type objective_function<Type>::operator() ()
       SIMULATE{
         logalpha(i) = rnorm(prioralpha(0), prioralpha(1));
       }
-      if(simPriors == 1){
-        logsdi(i) = logsdb + logalpha(i);
-        sdi(i) = exp(logsdi(i));
-        sdi2(i) = sdi(i)*sdi(i);
-        isdi2(i) = 1.0/sdi2(i);
-      }
+      logsdi(i) = logsdb + logalpha(i);
+      sdi(i) = exp(logsdi(i));
+      sdi2(i) = sdi(i)*sdi(i);
+      isdi2(i) = 1.0/sdi2(i);
     }
     SIMULATE{
       REPORT(logalpha);
+      REPORT(logsdi);
     }
-  }
-  if(simPriors == 0){
+  }else{
     sdi = exp(logsdi);
     for(int i=0; i<nsdi; i++){
       sdi2(i) = sdi(i)*sdi(i);
@@ -354,16 +351,16 @@ Type objective_function<Type>::operator() ()
     ans -= dnorm(logbeta, priorbeta(0), priorbeta(1), 1); // Prior for logbeta
     SIMULATE{
       logbeta = rnorm(priorbeta(0), priorbeta(1));
+    }
+    logsdc = logsdf(0) + logbeta;
+    sdc = exp(logsdc);
+    sdc2 = sdc*sdc;
+    isdc2 = 1.0/sdc2;
+    SIMULATE{
       REPORT(logbeta);
+      REPORT(logsdc);
     }
-    if(simPriors == 1){
-      logsdc = logsdf(0) + logbeta;
-      sdc = exp(logsdc);
-      sdc2 = sdc*sdc;
-      isdc2 = 1.0/sdc2;
-    }
-  }
-  if(simPriors == 0){
+  }else{
     sdc = exp(logsdc);
     sdc2 = sdc*sdc;
     isdc2 = 1.0/sdc2;
