@@ -305,7 +305,7 @@ Type objective_function<Type>::operator() ()
     SIMULATE{
       logn = rnorm(priorn(0), priorn(1));
       REPORT(logn)
-    }
+        }
   }
   Type n = exp(logn);
   Type gamma = pow(n, n/(n-1.0)) / (n-1.0);
@@ -680,7 +680,7 @@ Type objective_function<Type>::operator() ()
     SIMULATE{
       if(simRand == 1) nldens.simulate(SARvec);
       REPORT(SARvec)
-    }
+        }
   }
 
 
@@ -787,7 +787,7 @@ Type objective_function<Type>::operator() ()
     }
     SIMULATE{
       REPORT(logu)
-    }
+        }
   } else {
     for(int i=0; i<ns; i++) logS(i) = -30; // If using simple set fishing mortality to something small.
   }
@@ -827,7 +827,7 @@ Type objective_function<Type>::operator() ()
     }
     SIMULATE{
       REPORT(logmre)
-    }
+        }
   }
 
   // std::cout << "-- sdb2: " << sdb2 << std::endl;
@@ -1060,7 +1060,7 @@ Type objective_function<Type>::operator() ()
       obssrt(ind) = logobsE(i);
     }
     REPORT(obssrt)
-  }
+      }
 
 
   /*
