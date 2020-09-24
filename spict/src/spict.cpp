@@ -309,66 +309,43 @@ Type objective_function<Type>::operator() ()
   Type n = exp(logn);
   Type gamma = pow(n, n/(n-1.0)) / (n-1.0);
 
-  //  std::cout << "B: logsdi(0): " << logsdi(0) << " - logsdb: " << logsdb << " - logalpha: " << logalpha << std::endl;
-
-  vector<Type> sdi(nsdi);
+  vector<Type> sdi = exp(logsdi);
   vector<Type> sdi2(nsdi);
   vector<Type> isdi2(nsdi);
   if(prioralpha(2) == 1){
     for(int i=0; i<nsdi; i++){
-      ans-= dnorm(logalpha(i), prioralpha(0), prioralpha(1), 1);  // Prior for logalpha
+      ans -= dnorm(logalpha(i), prioralpha(0), prioralpha(1), 1);  // Prior for logalpha
       SIMULATE{
         logalpha(i) = rnorm(prioralpha(0), prioralpha(1));
       }
-      logsdi(i) = logsdb + logalpha(i);
-      sdi(i) = exp(logsdi(i));
-      sdi2(i) = sdi(i)*sdi(i);
-      isdi2(i) = 1.0/sdi2(i);
+      ans -= dnorm(logalpha(i), logsdi(i) - logsdb, Type(0.001), 1);
     }
     SIMULATE{
       REPORT(logalpha);
-      REPORT(logsdi);
     }
   }else{
-    sdi = exp(logsdi);
-    for(int i=0; i<nsdi; i++){
-      sdi2(i) = sdi(i)*sdi(i);
-      isdi2(i) = 1.0/sdi2(i);
-    }
     vector<Type> alpha = sdi/sdb;
     logalpha = log(alpha);
   }
+  for(int i=0; i<nsdi; i++){
+    sdi2(i) = sdi(i)*sdi(i);
+    isdi2(i) = 1.0/sdi2(i);
+  }
 
-  //  std::cout << "A: logsdi(0): " << logsdi(0) << " - logsdb: " << logsdb << " - logalpha: " << logalpha << std::endl;
-
-
-  //  std::cout << "B: logsdc: " << logsdc << " - logsdf: " << logsdf << " - logbeta: " << logbeta << std::endl;
-
-  Type sdc;
-  Type sdc2;
-  Type isdc2;
+  Type sdc = exp(logsdc);
+  Type sdc2 = sdc*sdc;
+  Type isdc2 = 1.0/sdc2;
   if(priorbeta(2) == 1){
     ans -= dnorm(logbeta, priorbeta(0), priorbeta(1), 1); // Prior for logbeta
     SIMULATE{
       logbeta = rnorm(priorbeta(0), priorbeta(1));
-    }
-    logsdc = logsdf(0) + logbeta;
-    sdc = exp(logsdc);
-    sdc2 = sdc*sdc;
-    isdc2 = 1.0/sdc2;
-    SIMULATE{
       REPORT(logbeta);
-      REPORT(logsdc);
     }
+    ans -= dnorm(logbeta, logsdc - logsdf(0), Type(0.001), 1);
   }else{
-    sdc = exp(logsdc);
-    sdc2 = sdc*sdc;
-    isdc2 = 1.0/sdc2;
     Type beta = sdc/sdf(0);
     logbeta = log(beta);
   }
-
-  //  std::cout << "A: logsdc: " << logsdc << " - logsdf: " << logsdf << " - logbeta: " << logbeta << std::endl;
 
   Type p = n - 1.0;
   vector<Type> Bmsyd(nm);

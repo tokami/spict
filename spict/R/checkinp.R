@@ -1412,13 +1412,11 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         forcefixpars <- c('logmre', 'logsdm', 'logpsi', forcefixpars)
     }
     if (inp$simPriors && inp$priors$logalpha[3]){
-        forcefixpars <- c('logsdi', forcefixpars)
         inp$RE <- c(inp$RE, "logalpha")
     }else{
         forcefixpars <- c('logalpha', forcefixpars)
     }
     if (inp$simPriors && inp$priors$logbeta[3]){
-        forcefixpars <- c('logsdc', forcefixpars)
         inp$RE <- c(inp$RE, "logbeta")
     }else{
         forcefixpars <- c('logbeta', forcefixpars)
