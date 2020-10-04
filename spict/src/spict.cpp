@@ -1014,8 +1014,10 @@ Type objective_function<Type>::operator() ()
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
 
   // Btrigger and Blim
-  // vector<Type> logBBtrigger = (Type(1.0)/Type(0.5)) * logBBmsy;
-  // vector<Type> logBBlim = (Type(1.0)/Type(0.3)) * logBBmsy;
+  // vector<Type> logBBtrigger = log(Type(1.0)/Type(0.5)) + logBBmsy;
+  // vector<Type> logBBlim = log(Type(1.0)/Type(0.3)) + logBBmsy;
+  Type logBpBtrigger = log(Type(1.0)/Type(0.5)) + logBpBmsy;
+  Type logBpBlim = log(Type(1.0)/Type(0.3)) + logBpBmsy;
 
   // B/Bm
   vector<Type> logBBm = logB - logBm;
@@ -1169,6 +1171,9 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logBref);
     ADREPORT(logBBref);
     ADREPORT(logBpBref);
+    ADREPORT(logBpBmsy);
+    ADREPORT(logBpBtrigger);
+    ADREPORT(logFmFmsynotS);
   }
 
   // REPORTS (these don't require sdreport to be output)
