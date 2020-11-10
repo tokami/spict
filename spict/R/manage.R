@@ -318,7 +318,7 @@ sumspict.manage <- function(rep, include.EBinf=FALSE, include.unc=TRUE, timeline
         indnext <- which(repman$inp$time == max(repman$inp$maninterval))
         val <- get.par(parname, repman, exp=TRUE)[indstart, 2]
         val1 <- get.par(parname, repman, exp=TRUE)[indnext, 2]
-        return(round((val1 - val)/val*100, 1))
+        return(round((val1 - val)/val*100, 3))
     }
 
     scenarios <- names(repman)
