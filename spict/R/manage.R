@@ -318,7 +318,7 @@ sumspict.manage <- function(rep, include.EBinf=FALSE, include.unc=TRUE, timeline
         indnext <- which(repman$inp$time == max(repman$inp$maninterval))
         val <- get.par(parname, repman, exp=TRUE)[indstart, 2]
         val1 <- get.par(parname, repman, exp=TRUE)[indnext, 2]
-        return(round((val1 - val)/val*100, 3))
+        return(round((val1 - val)/val*100, 1))
     }
 
     scenarios <- names(repman)
@@ -664,8 +664,8 @@ check.catchList <- function(catchList, sdfac = 1){
 #' @param maneval Time at which to evaluate model states. Example: \code{maneval
 #'     = 2021.25}. Default: NULL.
 #' @param ffac Factor to multiply current fishing mortality by (default: NULL).
-#' @param cfac Factor to multiply current catch by (default: NULL). Please refer
-#'     to the details for more information.
+#' @param cfac Factor to multiply current catch by (default: NULL). Please refer to
+#'     the details for more information.
 #' @param csdfac Factor for the multiplication of the standard deviation of the
 #'     catch (default: 1). Please refer to the details for more information.
 #' @param fractiles List defining the fractiles of the 3 distributions of
@@ -692,9 +692,6 @@ check.catchList <- function(catchList, sdfac = 1){
 #' @param catchList List obtaining the elements 'obsC', 'timeC', and 'dtc'
 #'     (optional element 'stdevfacC' which is 1 if not provided). Please refer
 #'     to the details for more information.
-#' @param bref.type Is Bref a 'target' or 'limit' reference point, i.e. is F
-#'     increased if B>Bref and decreased if B<Bref ('target') or is F only
-#'     decreased if B<Bref ('limit')?
 #' @param verbose Should detailed outputs be provided (default: TRUE).
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @param mancheck Should the time-dependent objects in \code{inp} be checked
@@ -710,7 +707,6 @@ make.man.inp <- function(rep, scenarioTitle = "",
                          maneval = NULL,
                          ffac = NULL,   ## if NULL default fishing at fmsy
                          cfac = NULL,
-                         bfac = NULL,
                          csdfac = 1,
                          fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
                                           bmsy = 0.5, fmsy = 0.5),
@@ -720,7 +716,6 @@ make.man.inp <- function(rep, scenarioTitle = "",
                          intermediatePeriodCatchSDFac = 1,
                          intermediatePeriodCatchList = NULL,
                          catchList = NULL,
-                         bref.type = "target",
                          verbose = TRUE,
                          dbg = 0,
                          mancheck = TRUE){
@@ -754,9 +749,8 @@ make.man.inp <- function(rep, scenarioTitle = "",
     repout <- reppa <- rep
 
     ## FRACTILES
-    if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', 'ffmsy', 'fmsy' or 'bmsy'!")
-    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
-                                          bmsy = 0.5, fmsy = 0.5)
+    if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', and 'ffmsy'!")
+    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5, bmsy = 0.5, fmsy = 0.5)
     fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
     fList <- c(fList,fractiles)
 
@@ -805,98 +799,76 @@ make.man.inp <- function(rep, scenarioTitle = "",
     ## ---------------
     if(!is.numeric(cfac) || is.na(cfac)){
         if(!is.numeric(ffac) || is.na(ffac)){
-            if(is.numeric(bfac)){
-                ## Quantities
-                logBpBref <- get.par("logBpBref", rep, exp = FALSE)
-                ## Default: Fish at current F
-                ffac <- 1
-                ## Trend in B
-                if(!is.numeric(pList$prob)) pList$prob <- 0.5
-                probi <- 1 - pList$prob
-                bpbref <- exp(qnorm(probi, logBpBref[2], logBpBref[4]))
-                ## Given bfac, find best F if target bref,
-                ## or fish at current F as long as save if limit bref
-                if(bref.type == "target" ||
-                   (bref.type == "limit" && (bpbref - bfac) < -1e-3)){
-                    ffac <- try(get.ffac(rep, ref=bfac,
-                                         problevel=pList$prob,
-                                         var="logBpBref",
-                                         reportmode = 3), silent=TRUE)
-                    if(inherits(ffac,"try-error")){
-                        if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when optimising the risk aversion probability over F. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
-                        ffac <- 1
-                    }
+            ## Quantities
+            fmanstart <- get.par('logFm', rep, exp=TRUE)[2]
+            fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
+            bmsy <- get.par('logBmsy', rep, exp=TRUE)[2]
+            logFmsy <- get.par("logFmsy", rep)
+            logFm <- get.par("logFmnotS", rep)
+            logFmFmsy <- get.par("logFmFmsynotS", rep)
+            logFpFmsy <- get.par("logFpFmsynotS", rep)
+            logBmsy <- get.par("logBmsy", rep)
+            logBp <- get.par("logBp", rep)
+            logBpBmsy <- get.par("logBpBmsy", rep)
+            ## FFmsy component
+            if(fList$ffmsy < 0.5 && fList$fmsy < 0.5){
+                if(verbose) warning("Percentile defined for both F/Fmsy and Fmsy! Only using percentile on Fmsy!")
+                fList$ffmsy <- 0.5
+            }
+            if(fList$ffmsy < 0.5){
+                fi <- 1 - fList$ffmsy
+                fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
+                fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
+                fred <- fmfmsy5 / fmfmsyi
+            }
+            if(fList$fmsy < 0.5){
+                fi <- fList$fmsy
+                fmsyi <- exp(qnorm(fi, logFmsy[2], logFmsy[4]))
+                fm5 <- exp(qnorm(0.5, logFm[2], logFm[4]))
+                fmfmsyi <- fm5/fmsyi
+                fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
+                fred <- fmfmsy5 / fmfmsyi
+            }
+            ## BpBmsy component (hockey stick HCR)
+            if(!is.na(breakpointB) && is.numeric(breakpointB) && breakpointB != 0){
+                if(fList$bbmsy < 0.5 && fList$bmsy < 0.5){
+                    if(verbose) warning("Percentile defined for both B/Bmsy and Bmsy! Only using percentile on Bmsy!")
+                    fList$bbmsy <- 0.5
                 }
-            }else{
-                ## Quantities
-                fmanstart <- get.par('logFm', rep, exp=TRUE)[2]
-                fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
-                bmsy <- get.par('logBmsy', rep, exp=TRUE)[2]
-                logFmsy <- get.par("logFmsy", rep)
-                logFm <- get.par("logFmnotS", rep)
-                logFmFmsy <- get.par("logFmFmsynotS", rep)
-                logFpFmsy <- get.par("logFpFmsynotS", rep)
-                logBmsy <- get.par("logBmsy", rep)
-                logBp <- get.par("logBp", rep)
-                logBpBmsy <- get.par("logBpBmsy", rep)
-                ## FFmsy component
-                if(fList$ffmsy < 0.5 && fList$fmsy < 0.5){
-                    if(verbose) warning("Percentile smaller 50% defined for both F/Fmsy and Fmsy! Only using percentile on F/Fmsy!")
-                    fList$fmsy <- 0.5
+                if(fList$bbmsy < 0.5){
+                    bpbmsyi <- 1/breakpointB * exp(qnorm(fList$bbmsy, logBpBmsy[2], logBpBmsy[4]))
                 }
-                if(fList$fmsy < 0.5 && fList$ffmsy == 0.5){
-                    fi <- fList$fmsy
-                    fmsyi <- exp(qnorm(fi, logFmsy[2], logFmsy[4]))
-                    fm5 <- exp(qnorm(0.5, logFm[2], logFm[4]))
-                    fmfmsyi <- fm5/fmsyi
-                    fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
-                    fred <- fmfmsy5 / fmfmsyi
+                if(fList$bmsy < 0.5){
+                    bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
+                    bp5 <- exp(qnorm(0.5, logBp[2], logBp[4]))
+                    bpbmsyi <- 1/breakpointB * (bp5/bmsyi)
+                }
+                fred <- fred * min(1, bpbmsyi)
+            }
+            ## F reduction factor
+            ffac <- (fred + 1e-8) * fmsy / fmanstart
+            ## PA component
+            if(!is.na(pList$limitB) && is.numeric(pList$limitB) && pList$limitB != 0){
+                inppa <- make.ffacvec(inp, ffac)
+                inppa$reportmode <- 1
+                reppa <- try(retape.spict(reppa, inppa, verbose=verbose, mancheck=FALSE), silent=TRUE)
+                if(inherits(reppa,"try-error")){
+                    if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when retaping the updated spict model. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
+                    ffac <- 1
                 }else{
-                    fi <- 1 - fList$ffmsy
-                    fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
-                    fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
-                    fred <- fmfmsy5 / fmfmsyi
-                }
-                ## BpBmsy component (hockey stick HCR)
-                if(!is.na(breakpointB) && is.numeric(breakpointB) && breakpointB != 0){
-                    if(fList$bbmsy < 0.5 && fList$bmsy < 0.5){
-                        if(verbose) warning("Percentile smaller 50% defined for both B/Bmsy and Bmsy! Only using percentile on B/Bmsy!")
-                        fList$bmsy <- 0.5
-                    }
-                    if(fList$bmsy < 0.5 && fList$bbmsy == 0.5){
-                        bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
-                        bp5 <- exp(qnorm(0.5, logBp[2], logBp[4]))
-                        bpbmsyi <- 1/breakpointB * (bp5/bmsyi)
-                    }else{
-                        bpbmsyi <- 1/breakpointB * exp(qnorm(fList$bbmsy, logBpBmsy[2], logBpBmsy[4]))
-                    }
-                    fred <- fred * min(1, bpbmsyi)
-                }
-                ## F reduction factor
-                ffac <- (fred + 1e-8) * fmsy / fmanstart
-                ## PA component
-                if(!is.na(pList$limitB) && is.numeric(pList$limitB) && pList$limitB != 0){
-                    inppa <- make.ffacvec(inp, ffac)
-                    inppa$reportmode <- 1
-                    reppa <- try(retape.spict(reppa, inppa, verbose=verbose, mancheck=FALSE), silent=TRUE)
-                    if(inherits(reppa,"try-error")){
-                        if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when retaping the updated spict model. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
-                        ffac <- 1
-                    }else{
-                        logBpBmsyPA <- get.par("logBpBmsy", reppa)
-                        probi <- 1 - pList$prob
-                        bpbmsyiPA <- exp(qnorm(probi, logBpBmsyPA[2], logBpBmsyPA[4]))
-                        if((bpbmsyiPA - pList$limitB) < -1e-3){
-                            ffac <- try(get.ffac(reppa, ref=pList$limitB,
-                                                 problevel=pList$prob,
-                                                 var="logBpBmsy",
-                                                 reportmode = 1), silent=TRUE)
-                            if(inherits(ffac,"try-error")){
-                                if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when optimising the risk aversion probability over F. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
-                                ffac <- 1
-                            }
-
+                    logBpBmsyPA <- get.par("logBpBmsy", reppa)
+                    probi <- 1 - pList$prob
+                    bpbmsyiPA <- exp(qnorm(probi, logBpBmsyPA[2], logBpBmsyPA[4]))
+                    if((bpbmsyiPA - pList$limitB) < -1e-3){
+                        ffac <- try(get.ffac(reppa, ref=pList$limitB,
+                                             problevel=pList$prob,
+                                             var="logBpBmsy",
+                                             reportmode = 1), silent=TRUE)
+                        if(inherits(ffac,"try-error")){
+                            if(verbose) cat("The fishing mortality multiplication factor 'ffac' could not be estimated with this management scenario due to an error when optimising the risk aversion probability over F. 'ffac' is set to 1, which assumes no change in the fishing mortality. \n")
+                            ffac <- 1
                         }
+
                     }
                 }
             }
@@ -995,9 +967,6 @@ make.man.inp <- function(rep, scenarioTitle = "",
 #' @param catchList List obtaining the elements 'obsC', 'timeC', and 'dtc'
 #'     (optional element 'stdevfacC' which is 1 if not provided). Please refer
 #'     to the details for more information.
-#' @param bref.type Is Bref a 'target' or 'limit' reference point, i.e. is F
-#'     increased if B>Bref and decreased if B<Bref ('target') or is F only
-#'     decreased if B<Bref ('limit')?
 #' @param verbose Should detailed outputs be provided (default: TRUE).
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @param mancheck Should the time-dependent objects in \code{inp} be checked
@@ -1138,7 +1107,6 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                              maneval = NULL,
                              ffac = NULL,   ## if NULL default fishing at fmsy
                              cfac = NULL,
-                             bfac = NULL,
                              csdfac = 1,
                              fractiles = list(catch = 0.5, bbmsy =  0.5, ffmsy = 0.5,
                                               bmsy = 0.5, fmsy = 0.5),
@@ -1148,7 +1116,6 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                              intermediatePeriodCatchSDFac = 1,
                              intermediatePeriodCatchList = NULL,
                              catchList = NULL,
-                             bref.type = "target",
                              verbose = TRUE,
                              dbg = 0,
                              mancheck = TRUE){
@@ -1201,11 +1168,10 @@ add.man.scenario <- function(rep, scenarioTitle = "",
     rep$inp$fconvec <- make.fconvec(rep$inp, 0.0)$fconvec
 
     ## fractile list
-    if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', 'ffmsy', 'bmsy' or 'fmsy'!")
+    if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', and 'ffmsy'!")
     default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5, bmsy = 0.5, fmsy = 0.5)
     fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
     fList <- c(fList,fractiles)
-
 
     ## get inpt for retape
     ## get updated inp
@@ -1215,7 +1181,6 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                          maneval = maneval,
                          ffac = ffac,
                          cfac = cfac,
-                         bfac = bfac,
                          csdfac = csdfac,
                          fractiles = fList,
                          breakpointB = breakpointB,
@@ -1224,7 +1189,6 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                          intermediatePeriodCatchSDFac = intermediatePeriodCatchSDFac,
                          intermediatePeriodCatchList = intermediatePeriodCatchList,
                          catchList = catchList,
-                         bref.type = bref.type,
                          verbose = verbose,
                          dbg = dbg,
                          mancheck = FALSE)
@@ -1616,9 +1580,6 @@ man.timeline <- function(x, verbose = TRUE, obsonly = FALSE){
 #' @param catchList List obtaining the elements 'obsC', 'timeC', and 'dtc'
 #'     (optional element 'stdevfacC' which is 1 if not provided). Please refer
 #'     to the details for more information.
-#' @param bref.type Is Bref a 'target' or 'limit' reference point, i.e. is F
-#'     increased if B>Bref and decreased if B<Bref ('target') or is F only
-#'     decreased if B<Bref ('limit')?
 #' @param verbose Should detailed outputs be provided (default: TRUE).
 #' @param dbg Debug flag, dbg=1 some output, dbg=2 more output.
 #' @param mancheck Should the time-dependent objects in \code{inp} be checked
@@ -1648,7 +1609,6 @@ get.TAC <- function(rep,
                     maneval = NULL,
                     ffac = NULL,   ## if NULL default fishing at fmsy
                     cfac = NULL,
-                    bfac = NULL,
                     csdfac = 1,
                     fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
                                      bmsy = 0.5, fmsy = 0.5),
@@ -1658,7 +1618,6 @@ get.TAC <- function(rep,
                     intermediatePeriodCatchSDFac = 1,
                     intermediatePeriodCatchList = NULL,
                     catchList = NULL,
-                    bref.type = "target",
                     verbose = TRUE,
                     dbg = 0,
                     mancheck = TRUE){
@@ -1712,11 +1671,9 @@ get.TAC <- function(rep,
 
     ## fractile list
     if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', and 'ffmsy'!")
-    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
-                             bmsy = 0.5, fmsy = 0.5)
+    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5, bmsy = 0.5, fmsy = 0.5)
     fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
     fList <- c(fList,fractiles)
-
 
     ## get updated inp
     inpt <- make.man.inp(rep=rep,
@@ -1725,7 +1682,6 @@ get.TAC <- function(rep,
                          maneval = maneval,
                          ffac = ffac,
                          cfac = cfac,
-                         bfac = bfac,
                          csdfac = csdfac,
                          fractiles = fList,
                          breakpointB = breakpointB,
@@ -1734,7 +1690,6 @@ get.TAC <- function(rep,
                          intermediatePeriodCatchSDFac = intermediatePeriodCatchSDFac,
                          intermediatePeriodCatchList = intermediatePeriodCatchList,
                          catchList = catchList,
-                         bref.type = bref.type,
                          verbose = verbose,
                          dbg = dbg,
                          mancheck = FALSE)
@@ -1872,28 +1827,4 @@ get.manC <- function(rep, inp){
     ## return catch for man interval based on last observations and times
     mantab <- cbind(mant,manc)
     return(mantab)
-}
-
-
-
-
-#' @name set.bref
-#' @title Set Bref
-#'
-#' @param rep A result report as generated by running \code{fit.spict}.
-#' @param indBref Index of time to use for estimation of Bref.
-#'
-#' @details
-#'
-#' @return Refitted spictcls object.
-#'
-#' @export
-#'
-set.bref <- function(rep, indBref = NA){
-
-    inp <- rep$inp
-    inp$indBref <- indBref
-    rep <- spict:::retape.spict(rep, inp)
-
-    return(rep)
 }
