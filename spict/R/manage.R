@@ -643,9 +643,16 @@ check.catchList <- function(catchList, sdfac = 1){
 #' @param fractiles List defining the fractiles of the 3 distributions of
 #'     'catch', 'bbmsy', and 'ffmsy'. By default (0.5) median is used for all 3
 #'     quantities. Please refer to the details for more information.
-#' @param breakpointB Breakpoint in terms of \eqn{B/B_{MSY}} for the
-#'     hockey-stick HCR. By default (0) no breakpoint is assumed. Please refer
-#'     to the details for more information.
+#' @param breakpointB Breakpoints in terms of \eqn{B/B_{MSY}} for the
+#'     hockey-stick HCR. By default (0) no breakpoint is assumed. If one value
+#'     is provided, F is reduced linearly to zero, if \eqn{B/B_{MSY}} is below
+#'     the breakpoint. If two values ara provided, F is reduced linearly to the
+#'     lower of the two provided values, if \eqn{B/B_{MSY}} is below the higher
+#'     and above the lower value, and F is zero if \eqn{B/B_{MSY}} is below the
+#'     lower value. The higher value corresponds to ICES's \eqn{B_{trigger}} and
+#'     the lower to ICES's \eqn{B_{lim}}. Note that the breakpoints are
+#'     evaluated at the start of the management period. Please refer to the
+#'     details for more information.
 #' @param safeguardB List defining an optional precautionary buffer by means of
 #'     a biomass reference level relative to \eqn{B/B_{MSY}} (\code{'limitB'};
 #'     default: 0, i.e. deactivating the PA buffer) and the risk aversion
@@ -713,7 +720,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
     stopifnot(cabs >= 0)
     stopifnot(ffac >= 0)
     stopifnot(fabs >= 0)
-    stopifnot(breakpointB >= 0)
+    stopifnot(all(breakpointB >= 0))
     if(is.numeric(ffac) && is.numeric(cfac))
         stop("Both 'ffac' and 'cfac' provided, please choose either or neither.")
     if(is.numeric(fabs) && is.numeric(cabs))
@@ -722,6 +729,14 @@ make.man.inp <- function(rep, scenarioTitle = "",
         stop("Both 'ffac' and 'fabs' provided, please choose either or neither.")
     if(is.numeric(cfac) && is.numeric(cabs))
         stop("Both 'cfac' and 'cabs' provided, please choose either or neither.")
+    breakpointB <- sort(breakpointB)
+    if(length(breakpointB) > 1){
+        blim <- breakpointB[1]
+        btrigger <- breakpointB[2]
+    }else{
+        blim <- 0
+        btrigger <- breakpointB[1]
+    }
 
     ## copies
     repout <- reppa <- rep
@@ -795,9 +810,11 @@ make.man.inp <- function(rep, scenarioTitle = "",
             fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
             fred <- fmfmsy5 / fmfmsyi
             ## BBmsy component (hockey stick HCR)
-            if(!is.na(breakpointB) && is.numeric(breakpointB) && breakpointB != 0){
-                bmbmsyi <- 1/breakpointB * exp(qnorm(fList$bbmsy, logBmBmsy[2], logBmBmsy[4]))
-                fred <- fred * min(1, bmbmsyi)
+            if(!is.na(btrigger) && is.numeric(btrigger) && btrigger != 0){
+                hsSlope <- 1/(btrigger-blim)
+                hsIntercept <- - hsSlope * blim
+                bmbmsyi <- hsSlope * exp(qnorm(fList$bbmsy, logBmBmsy[2], logBmBmsy[4])) + hsIntercept
+                fred <- fred * min(1, max(0,bmbmsyi))
             }
             ## F reduction factor
             ffac <- (fred + 1e-8) * fmsy / fmanstart
@@ -883,9 +900,16 @@ make.man.inp <- function(rep, scenarioTitle = "",
 #' @param fractiles List defining the fractiles of the 3 distributions of
 #'     'catch', 'bbmsy', and 'ffmsy'. By default (0.5) median is used for all 3
 #'     quantities. Please refer to the details for more information.
-#' @param breakpointB Breakpoint in terms of \eqn{B/B_{MSY}} for the
-#'     hockey-stick HCR. By default (0) no breakpoint is assumed. Please refer
-#'     to the details for more information.
+#' @param breakpointB Breakpoints in terms of \eqn{B/B_{MSY}} for the
+#'     hockey-stick HCR. By default (0) no breakpoint is assumed. If one value
+#'     is provided, F is reduced linearly to zero, if \eqn{B/B_{MSY}} is below
+#'     the breakpoint. If two values ara provided, F is reduced linearly to the
+#'     lower of the two provided values, if \eqn{B/B_{MSY}} is below the higher
+#'     and above the lower value, and F is zero if \eqn{B/B_{MSY}} is below the
+#'     lower value. The higher value corresponds to ICES's \eqn{B_{trigger}} and
+#'     the lower to ICES's \eqn{B_{lim}}. Note that the breakpoints are
+#'     evaluated at the start of the management period. Please refer to the
+#'     details for more information.
 #' @param safeguardB List defining an optional precautionary buffer by means of
 #'     a biomass reference level relative to \eqn{B/B_{MSY}} (\code{'limitB'};
 #'     default: 0, i.e. deactivating the PA buffer) and the risk aversion
@@ -1523,9 +1547,16 @@ man.timeline <- function(x, verbose = TRUE, obsonly = FALSE){
 #' @param fractiles List defining the fractiles of the 3 distributions of
 #'     'catch', 'bbmsy', and 'ffmsy'. By default (0.5) median is used for all 3
 #'     quantities. Please refer to the details for more information.
-#' @param breakpointB Breakpoint in terms of \eqn{B/B_{MSY}} for the
-#'     hockey-stick HCR. By default (0) no breakpoint is assumed. Please refer
-#'     to the details for more information.
+#' @param breakpointB Breakpoints in terms of \eqn{B/B_{MSY}} for the
+#'     hockey-stick HCR. By default (0) no breakpoint is assumed. If one value
+#'     is provided, F is reduced linearly to zero, if \eqn{B/B_{MSY}} is below
+#'     the breakpoint. If two values ara provided, F is reduced linearly to the
+#'     lower of the two provided values, if \eqn{B/B_{MSY}} is below the higher
+#'     and above the lower value, and F is zero if \eqn{B/B_{MSY}} is below the
+#'     lower value. The higher value corresponds to ICES's \eqn{B_{trigger}} and
+#'     the lower to ICES's \eqn{B_{lim}}. Note that the breakpoints are
+#'     evaluated at the start of the management period. Please refer to the
+#'     details for more information.
 #' @param safeguardB List defining an optional precautionary buffer by means of
 #'     a biomass reference level relative to \eqn{B/B_{MSY}} (\code{'limitB'};
 #'     default: 0, i.e. deactivating the PA buffer) and the risk aversion

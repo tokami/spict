@@ -1,3 +1,12 @@
+spict v1.3.5
+============
+
+Minor changes:
+
+* Option to set `Blim` in the hockey-stick HCR to anything else than 0, by
+  specifying two values in `breakpointB`, e.g. `breakpointB = c(0.3,0.5)`.
+
+
 spict v1.3.4
 ============
 

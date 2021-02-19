@@ -1,7 +1,7 @@
 Package: spict
 Type: Package
 Title: Stochastic surplus Production model in Continuous-Time (SPiCT)
-Version: 1.3.4
+Version: 1.3.5
 Date: 2021-02-19 
 Authors@R: c(person(given="Martin Waever",
                     family="Pedersen",
