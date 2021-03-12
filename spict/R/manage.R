@@ -638,7 +638,9 @@ make.man.inp <- function(rep, scenarioTitle = "",
                          fabs = NULL,
                          cfac = NULL,
                          cabs = NULL,
-                         fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5),
+                         csdfac = 1,
+                         fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
+                                          bmsy = 0.5, fmsy = 0.5),
                          breakpointB = 0,
                          safeguardB = list(limitB = 0, prob = 0.95),
                          intermediatePeriodCatch = NULL,
@@ -695,7 +697,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
 
     ## FRACTILES
     if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', and 'ffmsy'!")
-    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5)
+    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5, bmsy = 0.5, fmsy = 0.5)
     fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
     fList <- c(fList,fractiles)
 
@@ -752,22 +754,49 @@ make.man.inp <- function(rep, scenarioTitle = "",
             fmanstart <- get.par('logFm', rep, exp=TRUE)[2]
             fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
             bmsy <- get.par('logBmsy', rep, exp=TRUE)[2]
-            logFpFmsy <- get.par("logFpFmsynotS", rep)
-            logBpBmsy <- get.par("logBpBmsy", rep)
+            logFmsy <- get.par("logFmsy", rep)
+            logFm <- get.par("logFmnotS", rep)
             logFmFmsy <- get.par("logFmFmsynotS", rep)
-            logBmBmsy <- get.par("logBmBmsy", rep)
+            logFpFmsy <- get.par("logFpFmsynotS", rep)
+            logBmsy <- get.par("logBmsy", rep)
+            logBm <- get.par("logBm", rep)
+            logBp <- get.par("logBp", rep)
+            logBpBmsy <- get.par("logBpBmsy", rep)
             ## FFmsy component
-            fi <- 1 - fList$ffmsy
-            fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
-            fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
-            fred <- fmfmsy5 / fmfmsyi
+            if(fList$ffmsy < 0.5 && fList$fmsy < 0.5){
+                if(verbose) warning("Percentile defined for both F/Fmsy and Fmsy! Only using percentile on Fmsy!")
+                fList$ffmsy <- 0.5
+            }
+            if(fList$ffmsy < 0.5){
+                fi <- 1 - fList$ffmsy
+                fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
+                fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
+                fred <- fmfmsy5 / fmfmsyi
+            }
+            if(fList$fmsy < 0.5){
+                fi <- fList$fmsy
+                fmsyi <- exp(qnorm(fi, logFmsy[2], logFmsy[4]))
+                fm5 <- exp(qnorm(0.5, logFm[2], logFm[4]))
+                fmfmsyi <- fm5/fmsyi
+                fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
+                fred <- fmfmsy5 / fmfmsyi
+            }
             ## BBmsy component (hockey stick HCR)
             if(!is.na(btrigger) && is.numeric(btrigger) && btrigger != 0){
+                if(fList$bbmsy < 0.5 && fList$bmsy < 0.5){
+                    if(verbose) warning("Percentile defined for both B/Bmsy and Bmsy! Only using percentile on Bmsy!")
+                    fList$bbmsy <- 0.5
+                }
                 if(evalBreakpointB == 0){
                     ## evaluated at the start of maninterval
                     hsSlope <- 1/(btrigger-blim)
                     hsIntercept <- - hsSlope * blim
                     bmbmsyi <- hsSlope * exp(qnorm(fList$bbmsy, logBmBmsy[2], logBmBmsy[4])) + hsIntercept
+                    if(fList$bmsy < 0.5){
+                        bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
+                        bm5 <- exp(qnorm(0.5, logBm[2], logBm[4]))
+                        bmbmsyi <- hsSlope * (bm5/bmsyi) + hsIntercept
+                    }
                     fred <- fred * min(1, max(0,bmbmsyi))
                 }else{
                     ## evaluated at the end of maninterval
@@ -779,9 +808,15 @@ make.man.inp <- function(rep, scenarioTitle = "",
                         if(verbose) cat("The hockey-stick rule applied at the end of the management interval caused problems: The model could not be retaped. Omitting the hockey-stick component ('breakpointB') from the scenario!\n")
                     }else{
                         logBpBmsy2 <- get.par("logBpBmsy", reppa)
+                        logBp2 <- get.par("logBp", reppa)
                         hsSlope <- 1/(btrigger-blim)
                         hsIntercept <- - hsSlope * blim
                         bpbmsyi <- hsSlope * exp(qnorm(fList$bbmsy, logBpBmsy2[2], logBpBmsy2[4])) + hsIntercept
+                        if(fList$bmsy < 0.5){
+                            bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
+                            bp5 <- exp(qnorm(0.5, logBp2[2], logBp2[4]))
+                            bmbmsyi <- hsSlope * (bp5/bmsyi) + hsIntercept
+                        }
                         fred <- fred * min(1, max(0,bpbmsyi))
                     }
                 }
@@ -1084,7 +1119,9 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                              fabs = NULL,
                              cfac = NULL,
                              cabs = NULL,
-                             fractiles = list(catch = 0.5, bbmsy =  0.5, ffmsy = 0.5),
+                             csdfac = 1,
+                             fractiles = list(catch = 0.5, bbmsy =  0.5, ffmsy = 0.5,
+                                              bmsy = 0.5, fmsy = 0.5),
                              breakpointB = 0,
                              safeguardB = list(limitB = 0, prob = 0.95),
                              intermediatePeriodCatch = NULL,
@@ -1149,7 +1186,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
 
     ## fractile list
     if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', and 'ffmsy'!")
-    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5)
+    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5, bmsy = 0.5, fmsy = 0.5)
     fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
     fList <- c(fList,fractiles)
 
@@ -1169,6 +1206,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                          fabs = fabs,
                          cfac = cfac,
                          cabs = cabs,
+                         csdfac = csdfac,
                          fractiles = fList,
                          breakpointB = breakpointB,
                          safeguardB = pList,
@@ -1561,7 +1599,9 @@ get.TAC <- function(rep,
                     fabs = NULL,
                     cfac = NULL,
                     cabs = NULL,
-                    fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5),
+                    csdfac = 1,
+                    fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5,
+                                     bmsy = 0.5, fmsy = 0.5),
                     breakpointB = 0,
                     safeguardB = list(limitB = 0, prob = 0.95),
                     intermediatePeriodCatch = NULL,
@@ -1619,7 +1659,7 @@ get.TAC <- function(rep,
 
     ## fractile list
     if(!is.list(fractiles)) stop("Please provide 'fractiles' with the arguments: 'catch', 'bbmsy', and 'ffmsy'!")
-    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5)
+    default_fractiles = list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5, bmsy = 0.5, fmsy = 0.5)
     fList <- default_fractiles[which(!names(default_fractiles) %in% names(fractiles))]
     fList <- c(fList,fractiles)
 
@@ -1783,4 +1823,26 @@ get.manC <- function(rep, inp){
     ## return catch for man interval based on last observations and times
     mantab <- cbind(mant,manc)
     return(mantab)
+}
+
+
+#' @name set.bref
+#' @title Set Bref
+#'
+#' @param rep A result report as generated by running \code{fit.spict}.
+#' @param indBref Index of time to use for estimation of Bref.
+#'
+#' @details
+#'
+#' @return Refitted spictcls object.
+#'
+#' @export
+#'
+set.bref <- function(rep, indBref = NA){
+
+    inp <- rep$inp
+    inp$indBref <- indBref
+    rep <- spict:::retape.spict(rep, inp)
+
+    return(rep)
 }

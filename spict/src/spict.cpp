@@ -112,22 +112,23 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(seasonindex);    // A vector of length ns giving the number stepped within the current year
   DATA_INTEGER(nseasons);      // Number of seasons pr year
   DATA_VECTOR(seasonindex2)    // A vector of length ns mapping states to seasonal AR component (for seasontype=3)
-    DATA_MATRIX(splinemat);      // Design matrix for the seasonal spline
+  DATA_MATRIX(splinemat);      // Design matrix for the seasonal spline
   DATA_MATRIX(splinematfine);  // Design matrix for the seasonal spline on a fine time scale to get spline uncertainty
   DATA_SCALAR(omega);          // Period time of seasonal SDEs (2*pi = 1 year period)
-  DATA_INTEGER(seasontype);     // Variable indicating whether to use 1=spline, 2=coupled SDEs
-  DATA_INTEGER(efforttype);     // Variable indicating whether to use 1=spline, 2=coupled SDEs
+  DATA_INTEGER(seasontype);    // Variable indicating whether to use 1=spline, 2=coupled SDEs
+  DATA_INTEGER(efforttype);    // Variable indicating whether to use 1=spline, 2=coupled SDEs
   DATA_INTEGER(timevaryinggrowth); //  Flag indicating whether REs are used for growth
   DATA_INTEGER(logmcovflag);   // Flag indicating whether covariate information is available
   DATA_VECTOR(ffacvec);        // Management factor each year multiply the predicted F with ffac
   DATA_VECTOR(fconvec);        // Management factor each year add this constant to the predicted F
-  DATA_INTEGER(robflagc);       // If 1 use robust observation error for catches
-  DATA_IVECTOR(robflagi);       // If 1 use robust observation error for index
-  DATA_INTEGER(robflage);       // If 1 use robust observation error for effort
+  DATA_INTEGER(robflagc);      // If 1 use robust observation error for catches
+  DATA_IVECTOR(robflagi);      // If 1 use robust observation error for index
+  DATA_INTEGER(robflage);      // If 1 use robust observation error for effort
   DATA_INTEGER(stochmsy);      // Use stochastic msy?
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
-  //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
+  //DATA_SCALAR(effortflag);   // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  DATA_VECTOR(indBref);        // time index for Bref
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -154,8 +155,8 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(priorBBmsy);     // Prior vector for B/Bmsy, [log(mean), stdev in log, useflag, year, ib]
   DATA_VECTOR(priorFFmsy);     // Prior vector for F/Fmsy, [log(mean), stdev in log, useflag, year, if]
   DATA_VECTOR(priorBmsyB0)     // Prior vector for Bmsy/B_0, [mean, stdev, useflag]
-    // Options
-    DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
+  // Options
+  DATA_SCALAR(simple);         // If simple=1 then use simple model (catch assumed known, no F process)
   DATA_SCALAR(dbg);            // Debug flag, if == 1 then print stuff.
   DATA_INTEGER(reportmode);    // If 1-5 only specific quantities are ADreported (increases speed, relevant for fitting within MSE)
 
@@ -1013,6 +1014,28 @@ Type objective_function<Type>::operator() ()
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
 
+  // Btrigger and Blim
+  // vector<Type> logBBtrigger = log(Type(1.0)/Type(0.5)) + logBBmsy;
+  // vector<Type> logBBlim = log(Type(1.0)/Type(0.3)) + logBBmsy;
+  Type logBpBtrigger = log(Type(1.0)/Type(0.5)) + logBpBmsy;
+  Type logBpBlim = log(Type(1.0)/Type(0.3)) + logBpBmsy;
+
+  // B/Bm
+  vector<Type> logBBm = logB - logBm;
+  Type logBpBm = logBp - logBm;
+
+  // B/Bref where Bref either current, lowest, or average biomass
+  Type Bref = 0;
+  // average if several indBrefs
+  for(int i=0; i<indBref.size(); i++){
+    ind = CppAD::Integer(indBref(i)-1);
+    Bref += B(ind);
+  }
+  Bref = Bref / indBref.size();
+  Type logBref = log(Bref);
+  vector<Type> logBBref = logB - logBref;
+  Type logBpBref = logBp - logBref;
+
   // ADREPORTS
   if(reportmode == 0){
     ADREPORT(Bmsy);
@@ -1119,18 +1142,40 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFlFmsynotS);
     ADREPORT(logFmFmsynotS);
     ADREPORT(logFpFmsynotS);
+    ADREPORT(logBBref);
+    ADREPORT(logBpBref);
 
   }else if(reportmode == 1){
     ADREPORT(logFm);
+    ADREPORT(logFmnotS);
     ADREPORT(logFmsy);
+    ADREPORT(logBp);
+    ADREPORT(logBm);
     ADREPORT(logBmsy);
+    ADREPORT(logFnotS);
+    ADREPORT(logB);
+    ADREPORT(logBBmsy);
+    ADREPORT(logFFmsynotS);
     ADREPORT(logFpFmsynotS);
     ADREPORT(logBpBmsy);
     ADREPORT(logFmFmsynotS);
     ADREPORT(logBmBmsy);
     ADREPORT(logCp);
+    ADREPORT(logFnotS);
+    ADREPORT(logB);
+    ADREPORT(logBBmsy);
+    ADREPORT(logFFmsynotS);
   }else if(reportmode == 2){
     ADREPORT(logCp);
+  }else if(reportmode == 3){
+    ADREPORT(logCpred);
+    ADREPORT(logCp);
+    ADREPORT(logBref);
+    ADREPORT(logBBref);
+    ADREPORT(logBpBref);
+    ADREPORT(logBpBmsy);
+    ADREPORT(logBpBtrigger);
+    ADREPORT(logFmFmsynotS);
   }
 
   // REPORTS (these don't require sdreport to be output)

@@ -1180,6 +1180,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if(!"lastCatchObs" %in% names(inp)) inp$lastCatchObs <- max(inp$timeC + inp$dtc)
     if(!"timerangeObs" %in% names(inp)) inp$timerangeObs <- inp$timerange
 
+
     ## fractiles used for management
     checkandadd("manFractiles", list(catch = 0.5, bbmsy = 0.5, ffmsy = 0.5), "list")
 
@@ -1191,6 +1192,10 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
 
     ## cfac, ffac, bfac
     checkandadd("manfacs", list(cfac = NULL, ffac = NULL, bfac = NULL), "list")
+
+    ## index of reference biomass for relative biomass trend rule (Bref)
+    checkandadd("indBref", match.times(inp$manstart, inp$time), "numeric")
+
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
