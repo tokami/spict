@@ -1194,8 +1194,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     checkandadd("manfacs", list(cfac = NULL, ffac = NULL, bfac = NULL), "list")
 
     ## index of reference biomass for relative biomass trend rule (Bref)
-    checkandadd("indBref", match.times(inp$manstart, inp$time), "numeric")
-
+    if(!"indBref" %in% names(inp)) inp$indBref <- match.times(inp$manstart, inp$time)
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
