@@ -674,7 +674,6 @@ make.man.inp <- function(rep, scenarioTitle = "",
     stopifnot(cabs >= 0)
     stopifnot(ffac >= 0)
     stopifnot(fabs >= 0)
-    stopifnot(all(breakpointB >= 0))
     if(is.numeric(ffac) && is.numeric(cfac))
         stop("Both 'ffac' and 'cfac' provided, please choose either or neither.")
     if(is.numeric(fabs) && is.numeric(cabs))
@@ -761,18 +760,17 @@ make.man.inp <- function(rep, scenarioTitle = "",
             logBmsy <- get.par("logBmsy", rep)
             logBm <- get.par("logBm", rep)
             logBp <- get.par("logBp", rep)
+            logBmBmsy <- get.par("logBmBmsy", rep)
             logBpBmsy <- get.par("logBpBmsy", rep)
             ## FFmsy component
             if(fList$ffmsy < 0.5 && fList$fmsy < 0.5){
                 if(verbose) warning("Percentile defined for both F/Fmsy and Fmsy! Only using percentile on Fmsy!")
                 fList$ffmsy <- 0.5
             }
-            if(fList$ffmsy < 0.5){
-                fi <- 1 - fList$ffmsy
-                fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
-                fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
-                fred <- fmfmsy5 / fmfmsyi
-            }
+            fi <- 1 - fList$ffmsy
+            fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
+            fmfmsy5 <- exp(qnorm(0.5, logFmFmsy[2], logFmFmsy[4]))
+            fred <- fmfmsy5 / fmfmsyi
             if(fList$fmsy < 0.5){
                 fi <- fList$fmsy
                 fmsyi <- exp(qnorm(fi, logFmsy[2], logFmsy[4]))
@@ -1612,6 +1610,7 @@ get.TAC <- function(rep,
                     verbose = TRUE,
                     dbg = 0,
                     mancheck = TRUE) {
+
     ## checks
     check.rep(rep, reportmode0 = FALSE)
 
