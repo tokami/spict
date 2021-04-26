@@ -690,6 +690,8 @@ make.man.inp <- function(rep, scenarioTitle = "",
         blim <- 0
         btrigger <- breakpointB[1]
     }
+    ## Knife-edge hockey-stick
+    flagKE <- ifelse(blim == btrigger, TRUE, FALSE)
 
     ## copies
     repout <- reppa <- rep
@@ -787,15 +789,25 @@ make.man.inp <- function(rep, scenarioTitle = "",
                 }
                 if(evalBreakpointB == 0){
                     ## evaluated at the start of maninterval
-                    hsSlope <- 1/(btrigger-blim)
-                    hsIntercept <- - hsSlope * blim
-                    bmbmsyi <- hsSlope * exp(qnorm(fList$bbmsy, logBmBmsy[2], logBmBmsy[4])) + hsIntercept
-                    if(fList$bmsy < 0.5){
-                        bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
-                        bm5 <- exp(qnorm(0.5, logBm[2], logBm[4]))
-                        bmbmsyi <- hsSlope * (bm5/bmsyi) + hsIntercept
+                    if(!flagKE){
+                        hsSlope <- 1/(btrigger-blim)
+                        hsIntercept <- - hsSlope * blim
+                        bmbmsyi <- hsSlope * exp(qnorm(fList$bbmsy, logBmBmsy[2], logBmBmsy[4])) + hsIntercept
+                        if(fList$bmsy < 0.5){
+                            bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
+                            bm5 <- exp(qnorm(0.5, logBm[2], logBm[4]))
+                            bmbmsyi <- hsSlope * (bm5/bmsyi) + hsIntercept
+                        }
+                        fred <- fred * min(1, max(0,bmbmsyi))
+                    }else{
+                        bmbmsyi <- 1/blim * exp(qnorm(fList$bbmsy, logBmBmsy[2], logBmBmsy[4]))
+                        if(fList$bmsy < 0.5){
+                            bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
+                            bm5 <- exp(qnorm(0.5, logBm[2], logBm[4]))
+                            bmbmsyi <- 1/blim * (bm5/bmsyi)
+                        }
+                        fred <- fred * ifelse(bbmsyi < 1, 0, 1)
                     }
-                    fred <- fred * min(1, max(0,bmbmsyi))
                 }else{
                     ## evaluated at the end of maninterval
                     ffac <- (fred + 1e-8) * fmsy / fmanstart
@@ -807,15 +819,25 @@ make.man.inp <- function(rep, scenarioTitle = "",
                     }else{
                         logBpBmsy2 <- get.par("logBpBmsy", reppa)
                         logBp2 <- get.par("logBp", reppa)
-                        hsSlope <- 1/(btrigger-blim)
-                        hsIntercept <- - hsSlope * blim
-                        bpbmsyi <- hsSlope * exp(qnorm(fList$bbmsy, logBpBmsy2[2], logBpBmsy2[4])) + hsIntercept
-                        if(fList$bmsy < 0.5){
-                            bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
-                            bp5 <- exp(qnorm(0.5, logBp2[2], logBp2[4]))
-                            bmbmsyi <- hsSlope * (bp5/bmsyi) + hsIntercept
+                        if(!flagKE){
+                            hsSlope <- 1/(btrigger-blim)
+                            hsIntercept <- - hsSlope * blim
+                            bpbmsyi <- hsSlope * exp(qnorm(fList$bbmsy, logBpBmsy2[2], logBpBmsy2[4])) + hsIntercept
+                            if(fList$bmsy < 0.5){
+                                bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
+                                bp5 <- exp(qnorm(0.5, logBp2[2], logBp2[4]))
+                                bmbmsyi <- hsSlope * (bp5/bmsyi) + hsIntercept
+                            }
+                            fred <- fred * min(1, max(0,bpbmsyi))
+                        }else{
+                            bpbmsyi <- 1/blim * exp(qnorm(fList$bbmsy, logBpBmsy2[2], logBpBmsy2[4]))
+                            if(fList$bmsy < 0.5){
+                                bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
+                                bp5 <- exp(qnorm(0.5, logBp2[2], logBp2[4]))
+                                bmbmsyi <- 1/blim * (bp5/bmsyi)
+                            }
+                            fred <- fred * ifelse(bmbmsyi < 1, 0, 1)
                         }
-                        fred <- fred * min(1, max(0,bpbmsyi))
                     }
                 }
             }
