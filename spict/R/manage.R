@@ -806,7 +806,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
                             bm5 <- exp(qnorm(0.5, logBm[2], logBm[4]))
                             bmbmsyi <- 1/blim * (bm5/bmsyi)
                         }
-                        fred <- fred * ifelse(bbmsyi < 1, 0, 1)
+                        fred <- fred * ifelse(bmbmsyi < 1, 0, 1)
                     }
                 }else{
                     ## evaluated at the end of maninterval
@@ -826,7 +826,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
                             if(fList$bmsy < 0.5){
                                 bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
                                 bp5 <- exp(qnorm(0.5, logBp2[2], logBp2[4]))
-                                bmbmsyi <- hsSlope * (bp5/bmsyi) + hsIntercept
+                                bpbmsyi <- hsSlope * (bp5/bmsyi) + hsIntercept
                             }
                             fred <- fred * min(1, max(0,bpbmsyi))
                         }else{
@@ -834,9 +834,9 @@ make.man.inp <- function(rep, scenarioTitle = "",
                             if(fList$bmsy < 0.5){
                                 bmsyi <- exp(qnorm(fList$bmsy, logBmsy[2], logBmsy[4]))
                                 bp5 <- exp(qnorm(0.5, logBp2[2], logBp2[4]))
-                                bmbmsyi <- 1/blim * (bp5/bmsyi)
+                                bpbmsyi <- 1/blim * (bp5/bmsyi)
                             }
-                            fred <- fred * ifelse(bmbmsyi < 1, 0, 1)
+                            fred <- fred * ifelse(bpbmsyi < 1, 0, 1)
                         }
                     }
                 }
