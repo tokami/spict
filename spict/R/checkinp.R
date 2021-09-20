@@ -895,7 +895,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
 
     # -- COVARIATES --
     inp$logmcovflag <- FALSE
-    inp <- set.default(inp, 'logmcovspar', 0.5)
+    if(!'logmcovspar' %in% names(inp)){
+        inp <- set.default(inp, 'logmcovspar', 0.5)
+    }
     if ('logmcovariate' %in% names(inp)){
         if (!'logmcovariatetime' %in% names(inp)){
             stop('inp$logmcovariatetime unspecified but required!')
@@ -914,8 +916,8 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         dat <- data.frame(x=inp$logmcovariatetime, y=inp$logmcovariate)
         smoocov <- smooth.spline(dat$x, dat$y, spar=inp$logmcovspar)
         covpred <- predict(smoocov, x=inp$time)
-        #plot(covpred$x, covpred$y, typ='l')
-        #points(inp$logmcovariatetime, inp$logmcovariate)
+        plot(covpred$x, covpred$y, typ='l',ylim=range(inp$logmcovariate, covpred$y))
+        points(inp$logmcovariatetime, inp$logmcovariate,ty='b')
         inp$logmcovariatein <- covpred$y
         inp$logmcovflag <- TRUE
     }
@@ -977,8 +979,6 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if (!'logitSARphi' %in% names(inp$ini)) inp$ini$logitSARphi <- 0
     if (!'logSdSAR' %in% names(inp$ini)) inp$ini$logSdSAR <- -2
 
-
-    ## NEW:
     ## Time-variant parameters
     inp <- set.default(inp, 'timevaryingK', FALSE)
 
@@ -1000,7 +1000,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
 
     ## to covariates
     inp$logKcovflag <- FALSE
-    inp <- set.default(inp, 'logKcovspar', 0.5)
+    if(!'logKcovspar' %in% names(inp)){
+        inp <- set.default(inp, 'logKcovspar', 0.5)
+    }
     if ('logKcovariate' %in% names(inp)){
         if (!'logKcovariatetime' %in% names(inp)){
             stop('inp$logKcovariatetime unspecified but required!')
@@ -1017,10 +1019,10 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
             inp$logKcovariatetime <- inp$logKcovariatetime[-nainds]
         }
         dat <- data.frame(x=inp$logKcovariatetime, y=inp$logKcovariate)
-        smoocov <- smooth.spline(dat$x, dat$y, spar=inp$logKcovspar)
+        smoocov <- smooth.spline(dat$x, dat$y, spar = inp$logKcovspar)
         covpred <- predict(smoocov, x=inp$time)
-        #plot(covpred$x, covpred$y, typ='l')
-        #points(inp$logKcovariatetime, inp$logKcovariate)
+        plot(covpred$x, covpred$y, typ='l',ylim=range(inp$logKcovariate, covpred$y))
+        points(inp$logKcovariatetime, inp$logKcovariate,ty='b')
         inp$logKcovariatein <- covpred$y
         inp$logKcovflag <- TRUE
     }
