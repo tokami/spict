@@ -565,12 +565,21 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
             indxmax <- which(inp$time ==  max(inp$time))
         }
 
+        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag
+        if (tvKflag){
+            Bmsy <- get.par('logBmsyvec', repmax, exp=TRUE, CI = CI)
+            Bmsyvec <- as.data.frame(Bmsy)
+            Bmsyvec$Bmsy <- Bmsyvec$est
+        } else {
+            Bmsy <- get.par('logBmsy', repmax, exp=TRUE, CI = CI)
+            Bmsyvec <- get.msyvec(repmax$inp, Bmsy)[(1:indxmax)]
+        }
+        ## TODO: add the same for BBmsy
+
         # Biomass plot
         Best <- get.par('logB', rep, exp=TRUE, CI = CI)[(1:indxmax),]
         ns <- dim(Best)[1]
         Kest <- get.par('logK', rep, exp=TRUE, CI = CI)
-        Bmsy <- get.par('logBmsy', repmax, exp=TRUE, CI = CI)
-        Bmsyvec <- get.msyvec(repmax$inp, Bmsy)[(1:indxmax)]
         qest <- get.par('logq', rep, exp=TRUE, CI = CI)
         BB <- get.par('logBBmsy', rep, exp=TRUE, CI = CI)[(1:indxmax),]
         Bp <- get.par('logBp', rep, exp=TRUE, CI = CI)
@@ -595,6 +604,7 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
                 ylim <- range(BB[BBfininds, 1:3]/scal*Bmsy[2], Best[fininds, 1:3], Bp[2],
                               unlist(obsI), 0.95*Bmsy[1], 1.05*Bmsy[3], na.rm=TRUE)/scal
             }
+            if('true' %in% names(inp)) ylim <- range(ylim, inp$true$Bmsyvec, na.rm = TRUE)
             ylim[2] <- min(c(ylim[2], 3*max(Best[fininds, 2], unlist(obsI)))) # Limit upper limit
         }
         xlim <- range(c(inp$time, tail(inp$time, 1) + 0.5))
@@ -647,8 +657,8 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
         }
         if ('true' %in% names(inp)){
             lines(inp$true$time, inp$true$B/scal, col=true.col()) # Plot true
-            abline(h=inp$true$Bmsy, col=true.col(), lty=1)
-            abline(h=inp$true$Bmsy, col='black', lty=3)
+            lines(inp$true$time,inp$true$Bmsyvec, col=true.col(), lty=1)
+            lines(inp$true$time,inp$true$Bmsyvec, col='black', lty=3)
         }
         lines(inp$time[inp$indest], Best[inp$indest,2]/scal, col='blue', lwd=1.5)
         if (manflag){
@@ -659,7 +669,7 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
         }else{
             lines(inp$time[inp$indpred], Best[inp$indpred,2]/scal, col='blue', lty=3)
         }
-        lines(repmax$inp$time, Bmsyvec$msy, col='black')
+        lines(repmax$inp$time, Bmsyvec$Bmsy, col='black')
         # B CI
         #if (inp$phases$logq>0){
         lines(inp$time[inp$indest], Best[inp$indest,1]/scal, col=4, lty=2, lwd=1.5)
@@ -799,7 +809,8 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
                 }
             }
             if ('true' %in% names(inp)){
-                lines(inp$true$time, inp$true$B/inp$true$Bmsy, col=true.col()) # Plot true
+                ## lines(inp$true$time, inp$true$B/inp$true$Bmsy, col=true.col()) # Plot true
+                lines(inp$true$time, inp$true$BBmsy, col=true.col()) # Plot true
             }
             lines(inp$time[inp$indest], BB[inp$indest,2], col='blue', lwd=1.5)
             if(manflag){
@@ -1122,7 +1133,7 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
         log <- ifelse(logax, 'y', '')
         inp <- rep$inp
         cicol <- 'lightgray'
-        tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
+        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag
         qf <- get.par('logqf', rep, exp=TRUE, CI = CI)
         Fest <- get.par('logFnotS', rep, exp=TRUE, CI = CI)
         logFest <- get.par('logFnotS', rep, CI = CI)
@@ -1197,6 +1208,9 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
                 ylim <- range(c(ylim, clf[relfininds], cuf[relfininds], na.rm=TRUE))
             }
         }
+        if ('true' %in% names(inp)){
+            ylim <- range(ylim, inp$true$Fs, inp$true$Fmsyvec, na.rm=TRUE)
+        }
         if (!ylimflag){
             ylim[2] <- min(c(ylim[2], 3*max(Ff[fininds]))) # Limit upper limit
         }
@@ -1232,8 +1246,8 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
         }
         if ('true' %in% names(inp)){
             lines(inp$true$time, inp$true$Fs, col=true.col()) # Plot true
-            abline(h=inp$true$Fmsy, col=true.col(), lty=1)
-            abline(h=inp$true$Fmsy, col='black', lty=3)
+            lines(inp$true$time, inp$true$Fmsyvec, col=true.col(), lty=1)
+            lines(inp$true$time, inp$true$Fmsyvec, col='black', lty=3)
         }
         maincol <- 'blue'
         if (!absflag) lines(time, cl, col=maincol, lwd=1.5, lty=2)
@@ -1368,7 +1382,7 @@ plotspict.ffmsy <- function(rep, logax=FALSE, main='Relative fishing mortality',
         if (plot.obs){
             Fmsyvec <- get.par('logFmsyvec', rep, exp=TRUE, CI = CI)
             ie <- cut(inp$timeE, inp$time, right=FALSE, labels=FALSE)
-            if (rep$inp$timevaryinggrowth || rep$inp$logmcovflag){
+            if (rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag){
                 Fmsy <- Fmsyvec[ie, 2]
             } else {
                 Fmsy <- get.par('logFmsy', rep, exp=TRUE, CI = CI)[2]
@@ -1377,7 +1391,7 @@ plotspict.ffmsy <- function(rep, logax=FALSE, main='Relative fishing mortality',
                      add=TRUE, add.legend=qlegend)
         }
         if ('true' %in% names(inp)){
-            lines(inp$true$time, inp$true$Fs/inp$true$Fmsy, col=true.col()) # Plot true
+           lines(inp$true$time, inp$true$FFmsy, col=true.col()) # Plot true
         }
         maincol <- 'blue'
         lines(time, F, col=maincol, lwd=1.5)
@@ -1457,7 +1471,7 @@ plotspict.fb <- function(rep, logax=FALSE, plot.legend=TRUE, man.legend=TRUE, ex
         }
         log <- ifelse(logax, 'xy', '')
         inp <- rep$inp
-        tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
+        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag || rep$inp$timevaryingK || rep$inp$logKcovflag
         if (tvgflag){
             rel.axes <- TRUE
         }
@@ -1816,6 +1830,7 @@ plotspict.catch <- function(rep, main='Catch', ylim=NULL, qlegend=TRUE, lcol='bl
                 }
             }
             if(manflag) ylim <- range(ylim,get.manlimits(rep,"logCpred"))
+            if('true' %in% names(inp)) ylim <- range(ylim,inp$true$MSYvec, na.rm=TRUE)
             ylim[2] <- min(c(ylim[2], 3*max(obs))) # Limit upper limit
         }
         xlim <- range(c(inp$time, tail(inp$time,1)))
@@ -1843,8 +1858,8 @@ plotspict.catch <- function(rep, main='Catch', ylim=NULL, qlegend=TRUE, lcol='bl
             points(inp$timeC[inds], inp$obsC[inds]/Cscal, pch=21, cex=0.9, bg=cols[inds])
         }
         if ('true' %in% names(inp)){
-            abline(h=inp$true$MSY, col=true.col(), lty=1)
-            abline(h=inp$true$MSY, col='black', lty=3)
+            lines(inp$true$time,inp$true$MSYvec, col=true.col(), lty=1)
+            lines(inp$true$time,inp$true$MSYvec, col='black', lty=3)
         }
         lines(repmax$inp$time, MSYvec$msy)
         lines(time, c, col=lcol, lwd=1.5)
@@ -1915,9 +1930,22 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve',
     if (!'sderr' %in% names(rep)){
         inp <- rep$inp
         tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
+        tvKflag <- rep$inp$timevaryingK | rep$inp$logKcovflag
         Kest <- get.par('logK', rep, exp=TRUE, CI = CI)
         mest <- get.par('logm', rep, exp=TRUE, CI = CI)
         nr <- dim(mest)[1]
+        nK <- dim(Kest)[1]
+        ntv <- max(nr,nK)
+        if(nr > 1){
+            im <- 1:nr
+        }else im <- rep(1,ntv)
+        if(nK > 1){
+            iK <- 1:nK
+            Kmax <- max(Kest[,2])
+        }else{
+            iK <- rep(1,ntv)
+            Kmax <- Kest[2]
+        }
         gamma <- get.par('gamma', rep, CI = CI)
         n <- get.par('logn', rep, exp=TRUE, CI = CI)
         Pest <- get.par('P', rep, CI = CI)
@@ -1930,27 +1958,27 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve',
             yscal <- rep(1, length(binds))
         }
         nBplot <- 200
-        Bplot <- seq(0.5*1e-8, Kest[2], length=nBplot)
+        Bplot <- seq(0.5*1e-8, Kmax, length=nBplot)
         # Calculate production curve (Pst)
         pfun <- function(gamma, m, K, n, B) gamma*m/K*B*(1 - (B/K)^(n-1))
         Pst <- list()
-        for (i in 1:nr){
-            Pst[[i]] <- pfun(gamma[2], mest[i,2], Kest[2], n[2], Bplot)
+        for (i in 1:ntv){
+            Pst[[i]] <- pfun(gamma[2], mest[im[i],2], Kest[iK[i],2], n[2], Bplot)
         }
         Pstscal <- ifelse(tvgflag, max(unlist(Pst)), 1)
         ylim <- c(0, max(unlist(Pst)/Pstscal, na.rm=TRUE))
         if (inp$reportall){
             Best <- get.par('logB', rep, exp=TRUE, CI = CI)
             Bplot <- seq(0.5*min(c(1e-8, Best[, 2])), 1*max(c(Kest[2], Best[, 2])), length=nBplot)
-            for (i in 1:nr){
-                Pst[[i]] <- pfun(gamma[2], mest[i,2], Kest[2], n[2], Bplot)
+            for (i in 1:ntv){
+                Pst[[i]] <- pfun(gamma[2], mest[im[i],2], Kest[iK[i],2], n[2], Bplot)
             }
 
             Bvec <- Best[binds, 2]
-            xlim <- range(Bvec/Kest[2], 0, 1)
+            xlim <- range(Bvec/Kmax, 0, 1)
             ylim <- c(min(0, Pest[,2]/yscal), max(Pest[,2]/yscal, unlist(Pst)/Pstscal, na.rm=TRUE))
         } else {
-            xlim <- range(Bplot/Kest[2], na.rm=TRUE)
+            xlim <- range(Bplot/Kmax, na.rm=TRUE)
         }
         dt <- inp$dt[-1]
         inde <- inp$indest[-length(inp$indest)]
@@ -1961,21 +1989,21 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve',
         } else {
             ylab <- add.catchunit(ylab, inp$catchunit)
         }
-        plot(Bplot/Kest[2], Pst[[nr]]/Pstscal, typ='l', ylim=ylim, xlim=xlim,
+        plot(Bplot/Kmax, Pst[[nr]]/Pstscal, typ='l', ylim=ylim, xlim=xlim,
              xlab='B/K', ylab=ylab, col=1, main=main)
-        if (nr > 1){
-            for (i in 1:(nr-1)){
-                lines(Bplot/Kest[2], Pst[[i]]/Pstscal, col='gray')
+        if (ntv > 1){
+            for (i in 1:(ntv-1)){
+                lines(Bplot/Kmax, Pst[[i]]/Pstscal, col='gray')
             }
         }
         if (inp$reportall){
-            lines(Bvec/Kest[2], Pest[, 2]/yscal, col=4, lwd=1.5)
-            points(Bvec/Kest[2], Pest[, 2]/yscal, col=4, pch=20, cex=0.7)
+            lines(Bvec/Kmax, Pest[, 2]/yscal, col=4, lwd=1.5)
+            points(Bvec/Kmax, Pest[, 2]/yscal, col=4, pch=20, cex=0.7)
             par(xpd=TRUE)
             if (length(inp$ic) < n.plotyears){
                 inds <- c(1, length(Bvec), seq(1, length(Bvec), by=2))
                 labs <- round(inp$time[inp$ic], 2)
-                text(Bvec[inds]/Kest[2], Pest[inds, 2]/yscal[inds], labels=labs[inds],
+                text(Bvec[inds]/Kmax, Pest[inds, 2]/yscal[inds], labels=labs[inds],
                      cex=0.75, pos=4, offset=0.25)
             }
             par(xpd=FALSE)
@@ -2939,8 +2967,13 @@ plotspict.data <- function(inpin, MSY=NULL, one.index=NULL, qlegend=TRUE, stamp=
     # Plot simulated biomass and fishing mortality
     if ('true' %in% names(inp)){
         if (inp$timevaryinggrowth){
-            plot(inp$time, inp$true$mre, typ='l', xlim=xlim, xlab='Time', ylab='m',
+            plot(inp$time, inp$true$mvec, typ='l', xlim=xlim, xlab='Time', ylab='m',
                  lwd=1.5, col=true.col(), main='True MSY')
+            box(lwd=1.5)
+        }
+        if (inp$timevaryingK){
+            plot(inp$time, inp$true$Kvec, typ='l', xlim=xlim, xlab='Time', ylab='m',
+                 lwd=1.5, col=true.col(), main='True K')
             box(lwd=1.5)
         }
         plot(inp$time, inp$true$F, typ='l', col=true.col(), xlim=xlim, xlab='Time',

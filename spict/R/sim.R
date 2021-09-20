@@ -225,6 +225,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
         }
         return(inp)
     }
+
     if ('par.fixed' %in% names(input)){
         #cat('Detected input as a SPiCT result, proceeding...\n')
         rep <- input
@@ -316,20 +317,68 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
             }
             ## Make parameter lists and check input
             plin <- inp$ini
+
+            ## CHECK: logmre, logKre
+
+            if(!any(names(inp) == "dteuler")) inp$dteuler <- 1/16
+
+            if(any(names(inp) == "MSYregime")){
+                if(length(inp$MSYregime) == length(inp$timeC[which(inp$timeC %% 1 == 0)])){
+                    tmp <- rle(as.numeric(inp$MSYregime))
+                    MSYregime <- NULL
+                    for(i in 1:length(tmp$values)){
+                        MSYregime <- c(MSYregime,rep(tmp$values[i], tmp$lengths[i] * 1/inp$dteuler))
+                    }
+                    inp$MSYregime <- MSYregime
+                }else{
+                    stop("Do not know how to use the provided MSYregime.")
+                    ## TODO: add message that so far only implemented to provide
+                    ## timing vector (MSYregime) with the same number of years
+                    ## as specified in obsC (and obsI) IDEA: use check.inp and
+                    ## get time. and then print time?
+                }
+            }
+
+            if(any(names(inp) == "Kregime")){
+                if(length(inp$Kregime) == length(inp$timeC[which(inp$timeC %% 1 == 0)])){
+                    tmp <- rle(as.numeric(inp$Kregime))
+                    Kregime <- NULL
+                    for(i in 1:length(tmp$values)){
+                        Kregime <- c(Kregime,rep(tmp$values[i], tmp$lengths[i] * 1/inp$dteuler))
+                    }
+                    inp$Kregime <- Kregime
+                }else{
+                    stop("Do not know how to use the provided Kregime.")
+                }
+            }
+
             ## Check inp
             inp <- check.inp(inp)
             ## Parameters
             pl <- inp$parlist
             if(inp$sim.random.effects){
                 if ('logbkfrac' %in% names(inp$ini)){
-                    pl$logB[1] <- log(exp(inp$ini$logbkfrac)*exp(pl$logK))
+                    pl$logB[1] <- log(exp(inp$ini$logbkfrac)*exp(pl$logK[1]))
                 } else {
-                    pl$logB[1] <- log(0.5*exp(pl$logK))
+                    pl$logB[1] <- log(0.5*exp(pl$logK[1]))
                 }
                 if ('logF0' %in% names(inp$ini)){
                     pl$logF[1] <- inp$ini$logF0
                 } else {
                     pl$logF[1] <- log(0.2*exp(inp$ini$logr))
+                }
+                if ('logmre0' %in% names(inp$ini)){
+                    pl$logmre[1] <- inp$ini$logmre0
+                } else {
+                    ## r <- exp(inp$ini$logr)
+                    ## K <- exp(inp$ini$logK)
+                    ## n <- exp(inp$ini$logn)
+                    pl$logmre[1] <- log(1) ## log(r * K / (n^(n/(n-1))))
+                }
+                if ('logKre0' %in% names(inp$ini)){
+                    pl$logKre[1] <- inp$ini$logKre0
+                } else {
+                    pl$logKre[1] <- log(1)
                 }
             }
             obj <- make.obj(datin = make.datin(inp), pl = pl, inp = inp)
@@ -473,19 +522,27 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
         sign <- 1
         K <- exp(pl$logK)
         m <- exp(pl$logm)
-        R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
+        R <- (n-1)/n * gamma * m / K
         p <- n-1
         inp$true$R <- R
-        inp$true$logrold <- log(abs(gamma * mean(m[inp$ir]) / K))
-        inp$true$logr <- log(mean(m[inp$ir]) / K * n^(n/(n-1.0)))
+        inp$true$logrold <- log(abs(gamma * m / K))
+        inp$true$logr <- log(m / K * n^(n/(n-1.0)))
         inp$true$logrc <- log(2 * R)
-                                        # Deterministic reference points
-        inp$true$Bmsyd <- K/(n^(1/(n-1)))
-        inp$true$MSYd <- mean(m[inp$ir])
+        ## Deterministic reference points
+        if(length(inp$ini$logm) > 1 && length(inp$ini$logK) == 1){
+            inp$true$Bmsyd <- rep(K/(n^(1/(n-1))), length(inp$ini$logm))
+        }else{
+            inp$true$Bmsyd <- K/(n^(1/(n-1)))
+        }
+        if(length(inp$ini$logK) > 1 && length(inp$ini$logm) == 1){
+            inp$true$MSYd <- rep(m, length(inp$ini$logK))
+        }else{
+            inp$true$MSYd <- m
+        }
         inp$true$Fmsyd <- inp$true$MSYd/inp$true$Bmsyd
-                                        # Stochastic reference points from Bordet & Rivest (2014)
+        ## Stochastic reference points from Bordet & Rivest (2014)
         sdb <- exp(pl$logsdb)
-        inp$true$Bmsys <- K/(p+1)^(1/p) * (1- (1+R*(p-1)/2)/(R*(2-R)^2)*sdb^2)
+        inp$true$Bmsys <- K/(p+1)^(1/p) * (1 - (1+R*(p-1)/2)/(R*(2-R)^2)*sdb^2)
         inp$true$Fmsys <- R - p*(1-R)*sdb^2/((2-R)^2)
         inp$true$MSYs <- K*R/((p+1)^(1/p)) * (1 - (p+1)/2*sdb^2/(1-(1-R)^2))
         if (inp$msytype == 's'){
@@ -497,10 +554,16 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
             inp$true$Fmsy <- inp$true$Fmsyd
             inp$true$MSY <- inp$true$MSYd
         }
-                                        # Calculate relative B and F
-        inp$true$BBmsy <- inp$true$B/inp$true$Bmsy
-        inp$true$FFmsy <- inp$true$F/inp$true$Fmsy
-                                        # include the log of some quantities
+        inp$true$Fmsyvec <- exp(simdat$logFmsyvec)
+        inp$true$Bmsyvec <- exp(simdat$logBmsyvec)
+        inp$true$MSYvec <- exp(simdat$logMSYvec)
+        ## Calculate relative B and F
+        inp$true$BBmsy <- inp$true$B/inp$true$Bmsyvec
+        inp$true$FFmsy <- inp$true$F/inp$true$Fmsyvec
+        ## CHECK: if this is needed (for regimes):
+        ## inp$true$BBmsy <- inp$true$B/inp$true$Bmsy[inp$iK]
+        ## inp$true$FFmsy <- inp$true$F/inp$true$Fmsy[inp$ir]
+        ## include the log of some quantities
         lognames <- c('B', 'F', 'Bmsy', 'Fmsy', 'MSY', 'FFmsy', 'BBmsy')
         for (pn in lognames){
             inp$true[[paste0('log', pn)]] <- log(inp$true[[pn]])
@@ -508,6 +571,12 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
         inp$true$errI <- errI
         inp$true$logB <- NULL
         inp$true$logF <- NULL
+
+        inp$true$mvec <- simdat$mvec
+        inp$true$Kvec <- simdat$Kvec
+
+        ## TODO: include all these new variables in the R simulation code!
+
 
         sim <- inp
 

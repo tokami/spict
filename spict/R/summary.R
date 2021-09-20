@@ -290,14 +290,14 @@ sumspict.drefpoints <- function(rep, ndigits=8){
     colnames(derout) <- colnms
     nr <- length(rep$inp$ini$logr)
     if(nr > 1){
-        rownames(derout) <- c(t(outer(c('Bmsyd', 'Fmsyd', 'MSYd'), 1:2, paste0)))
+        rownames(derout) <- c(t(outer(c('Bmsyd', 'Fmsyd', 'MSYd'), 1:2, paste0)))  ## CHECK: does this work for 3 regimes?
     } else {
         rownames(derout) <- c('Bmsyd', 'Fmsyd', 'MSYd')
     }
     if('true' %in% names(rep$inp)){
         trueder <- c(rep$inp$true$Bmsyd, rep$inp$true$Fmsyd, rep$inp$true$MSYd)
-        cider <- numeric(3)
-        for(i in 1:3) cider[i] <- as.numeric(trueder[i] > derout[i, 2] & trueder[i] < derout[i, 3])
+        cider <- numeric(length(trueder))
+        for(i in 1:length(trueder)) cider[i] <- as.numeric(trueder[i] > derout[i, 2] & trueder[i] < derout[i, 3])
         derout <- cbind(derout[, 1], round(trueder,ndigits), derout[, 2:3], cider, derout[, 4])
         colnames(derout) <- c(colnms[1], 'true', colnms[2:3], 'true.in.ci', colnms[4])
     }
@@ -328,8 +328,8 @@ sumspict.srefpoints <- function(rep, ndigits=8){
     }
     if('true' %in% names(rep$inp)){
         trueder <- c(rep$inp$true$Bmsy, rep$inp$true$Fmsy, rep$inp$true$MSY)
-        cider <- rep(0, 3)
-        for(i in 1:3) cider[i] <- as.numeric(trueder[i] > derout[i, 2] & trueder[i] < derout[i, 3])
+        cider <- rep(0, length(trueder))
+        for(i in 1:length(trueder)) cider[i] <- as.numeric(trueder[i] > derout[i, 2] & trueder[i] < derout[i, 3])
         derout <- cbind(derout[, 1], round(trueder,ndigits), derout[, 2:3], cider, derout[, 4])
         colnames(derout) <- c(colnms[1], 'true', colnms[2:3], 'true.in.ci', colnms[4])
     }
@@ -364,8 +364,8 @@ sumspict.states <- function(rep, ndigits=8){
     et <- fd(rep$inp$time[indl])
     rownames(stateout) <- c(paste0('B_',et), paste0('F_',et), paste0('B_',et,'/Bmsy'), paste0('F_',et,'/Fmsy'))
     if('true' %in% names(rep$inp)){
-        truest <- c(rep$inp$true$B[indl], rep$inp$true$F[indl], rep$inp$true$B[indl]/rep$inp$true$Bmsy,
-                    rep$inp$true$F[indl]/rep$inp$true$Fmsy)
+        truest <- c(rep$inp$true$B[indl], rep$inp$true$F[indl], rep$inp$true$BBmsy[indl],
+                    rep$inp$true$FFmsy[indl])
         nst <- length(truest)
         cist <- numeric(nst)
         for (i in 1:nst){
@@ -477,9 +477,17 @@ sumspict.fixedpars <- function(rep, ndigits=8){
     if (!rep$inp$logmcovflag){
         nms <- nms[-match('mu', nms)]
     }
+    # Is covariate information used for logK?
+    if (!rep$inp$logKcovflag){
+        nms <- nms[-match('muK', nms)]
+    }
     # Is growth time varying
     if (!rep$inp$timevaryinggrowth){
         nms <- nms[-match(c('logsdm', 'logpsi'),  nms)]
+    }
+    # Is K time varying
+    if (!rep$inp$timevaryingK){
+        nms <- nms[-match(c('logsdK', 'logpsiK'),  nms)]
     }
     nnms <- length(nms)
     if(nnms > 0){
