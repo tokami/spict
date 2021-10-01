@@ -128,6 +128,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stabilise);     // If 1 stabilise optimisation using uninformative priors
   //DATA_SCALAR(effortflag);     // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
+  DATA_INTEGER(resFlag);
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -752,6 +753,11 @@ Type objective_function<Type>::operator() ()
     REPORT(logFs);
   }
 
+  vector<Type> resF(ns-1);
+  for(int i=1; i<ns; i++){
+    resF(i-1) = logFs(i) - logFs(i-1);
+  }
+
 
   // GROWTH RATE (modelled as time-varying m)
   if (timevaryinggrowth == 1){
@@ -822,6 +828,12 @@ Type objective_function<Type>::operator() ()
     REPORT(trueB);
   }
   if(simple==1){ logFs(ns-1) = logFs(ns-2);}
+
+  vector<Type> resB(ns-1);
+  for(int i=1; i<ns; i++){
+    resB(i-1) = logB(i) - logB(i-1);
+  }
+
 
   // CATCH PREDICTIONS
   vector<Type> Cpredsub(ns);
@@ -1273,6 +1285,14 @@ Type objective_function<Type>::operator() ()
   // REPORT(logFFmsy);
   // REPORT(logB);
   // REPORT(logF);
+
+  REPORT(P);
+  REPORT(Cpredsub);
+
+  if(resFlag){
+    ADREPORT(resB);
+    ADREPORT(resF);
+  }
 
   return ans;
 }
