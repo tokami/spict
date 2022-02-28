@@ -1200,8 +1200,8 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## Simulate using fitted object (env$last.par)?
     if(!"sim.fit" %in% names(inp)) inp$sim.fit <- TRUE
 
-    ## ADreport of resB and resF
-    if(!"resFlag" %in% names(inp)) inp$resFlag <- FALSE
+    ## ADreport of residB and residF
+    if(!"residFlag" %in% names(inp)) inp$residFlag <- FALSE
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,

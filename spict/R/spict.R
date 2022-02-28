@@ -265,8 +265,7 @@ make.datin <- function(inp, dbg=0){
                   stochmsy=ifelse(inp$msytype=='s', 1, 0),
                   stabilise=inp$stabilise,
                   MSYregime=inp$MSYregime,
-                  resFlag=as.numeric(inp$resFlag),
-
+                  residFlag=as.numeric(inp$residFlag),
                   priorn=inp$priors$logn,
                   priorngamma=inp$priors$logngamma,
                   priorr=inp$priors$logr,

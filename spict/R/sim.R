@@ -290,7 +290,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
                                 " index/indices. Recycling/Subsetting the coefficients to match the ",
                                 "number of indices indicating by the index time vector."))
                     if(length(inp2$ini[['logq']]) > 1){
-                        inp$ini$logq <- rep(inp$ini[['logq']], 100)[1:length(inp2$timeI)]
+                        inp$ini$logq <- rep(inp$ini[['logq']], 100)[1:length(inp2$timeI)]   ## HERE: POT: BUG: Casper's code
                     }
                 }
             }
@@ -841,7 +841,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
         sim$true$e.f <- e.f
 
         sign <- 1
-        R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
+        R <- (n-1)/n * gamma * mean(m[inp$ir]) / K   ## FIX: this averages over different seasons!
         p <- n-1
         sim$true$R <- R
         sim$true$logrold <- log(abs(gamma * mean(m[inp$ir]) / K))
