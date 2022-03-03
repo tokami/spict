@@ -771,7 +771,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     inp$splinematfine <- make.splinemat(inp$nseasons, inp$splineorder, dtfine=1/100)
     inp$seasonindex <- 1/inp$dteuler*(inp$time %% 1)
     inp$seasons <- rep(0, inp$ns)
-    inp$seasonindex2 <- rep(1:inp$ns,each=inp$nseasons,length.out=inp$ns)
+    inp$seasonindex2 <- rep(1:inp$ns,each=1/inp$dteuler/inp$nseasons,length.out=inp$ns)
     for (i in 1:inp$nseasons){
         frac <- 1/inp$nseasons
         modtime <- inp$time %% 1
@@ -1173,7 +1173,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     #if ("logmre" %in% names(inp$ini)){
     #    inp$ini$logmre <- check.mat(inp$ini$logmre, c(inp$nstocks, inp$ns), 'inp$ini$logmre')
     #}
-    inp$ini$SARvec <- rep(0, max(inp$seasonindex2))
+    inp$ini$SARvec <- rep(0, max(inp$seasonindex2) + inp$nseasons)
 
     ## reporting
     if(!"reportmode" %in% names(inp)) inp$reportmode <- 0

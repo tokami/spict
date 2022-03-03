@@ -634,25 +634,18 @@ Type objective_function<Type>::operator() ()
   SARphivec.setZero();
   SARphivec(nseasons-1) = SARphi;
 
-  // HERE: How to predict SARvec?
   using namespace density;
   ARk_t<Type> nldens(SARphivec);
-  vector<Type> SARvecpred(SARvec.size());
+  vector<Type> SARvecpred(SARvec.size() - nseasons);
   if(seasontype==3){
     ans += SCALE(nldens, sdSAR)(vector<Type>(SARvec));
     SIMULATE{
       if(simRandomEffects == 1) nldens.simulate(SARvec);
       REPORT(SARvec);
     }
-    // need initial values?
-    for(int i=0;i<nseasons;i++){
-      SARvecpred(i) = SARvec(i);
-    }
-    // predict based on phis? (prediction of white noise = 0)
-    for(int i=nseasons;i<SARvecpred.size();i++){
-      for(int j=0;j<nseasons;j++){
-        SARvecpred(i) += SARphivec(j) * SARvecpred(i-j-1);
-      }
+    // predicted SAR
+    for(int i=0;i<SARvecpred.size();i++){
+      SARvecpred(i) = SARphi * SARvec(i);
     }
   }
   // std::cout << "-- sdf2: " << sdf2 << std::endl;
@@ -699,6 +692,7 @@ Type objective_function<Type>::operator() ()
     // Seasonal component
     if(dbg>0){ std::cout << "-- seasontype: " << seasontype << std::endl; }
     for(int i=0; i<ns; i++) logS(i) = 0.0; // Initialise
+    for(int i=0; i<ns; i++) logSpred(i) = 0.0; // Initialise
     if(seasontype == 1 || seasontype == 3 ){
       // Spline
       int ind2, ind3;
@@ -710,7 +704,7 @@ Type objective_function<Type>::operator() ()
         logSpred(i) += seasonspline(ind2);
 
         if(seasontype == 3){
-          logS(i) += SARvec(ind3-1);
+          logS(i) += SARvec(ind3-1+nseasons);
           logSpred(i) += SARvecpred(ind3-1);
         }
         // DEBUGGING
@@ -763,7 +757,6 @@ Type objective_function<Type>::operator() ()
         //for(int i=0; i<ns; i++) logFs(i) += logu(2*j, i); // Sum diffusion and seasonal component
         for(int i=0; i<ns; i++){
           logS(i) += logu(2*j, i); // Sum diffusion and seasonal component
-          // CHECK: logupred(0) correct?
           logSpred(i) += logupred(0);
         }
       }
@@ -782,7 +775,6 @@ Type objective_function<Type>::operator() ()
   vector<Type> logFs = log(F);
 
 
-  // HERE: Standardisation correct?
   // Calculate F residuals (incl. seasonality)
   vector<Type> residF(ns-1);
   for(int i=1; i<ns; i++){
@@ -790,11 +782,11 @@ Type objective_function<Type>::operator() ()
     iisdf = CppAD::Integer(isdf(i)) - 1;
     if(seasontype == 0 || seasontype == 1){
       residF(i-1) = residF(i-1) / (sqrt(dt(i-1)) * sdf(iisdf));
-    }else if(seasontype == 2){  // CHECK: sdu(0) correct?
-      residF(i-1) = residF(i-1) / (sqrt(dt(i-1)) * sdf(iisdf) +
-                                   (sdu(0) * sqrt(1.0/(2.0*lambda) * (1.0 - exp(-2.0*lambda*dt(i-1))))));
+    }else if(seasontype == 2){
+      residF(i-1) = residF(i-1) / sqrt(pow(sqrt(dt(i-1)) * sdf(iisdf),2) +
+                                       pow(sdu(0) * sqrt(1.0/(2.0*lambda) * (1.0 - exp(-2.0*lambda*dt(i-1)))),2));
     }else if(seasontype == 3){
-      residF(i-1) = residF(i-1) / (sqrt(dt(i-1)) * sdf(iisdf) + sdSAR);
+      residF(i-1) = residF(i-1) / sqrt(pow(sqrt(dt(i-1)) * sdf(iisdf),2) + pow(sdSAR,2));
     }
   }
 
@@ -1338,7 +1330,6 @@ Type objective_function<Type>::operator() ()
 
   REPORT(P);
   REPORT(Cpredsub);
-  REPORT(SARvecpred);
 
   if(residFlag){
     ADREPORT(residB);

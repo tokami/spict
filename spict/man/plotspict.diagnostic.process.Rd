@@ -10,6 +10,7 @@ plotspict.diagnostic.process(
   qlegend = TRUE,
   plot.data = TRUE,
   mfcol = FALSE,
+  add.loess = FALSE,
   stamp = get.version()
 )
 }
@@ -25,6 +26,8 @@ that contains process residuals calculated by the function
 \item{plot.data}{If TRUE plot data in the top row (this option is only applied if osa residuals have been calculated).}
 
 \item{mfcol}{If TRUE plot plots columnwise (FALSE => rowwise).}
+
+\item{add.loess}{Add FALSE}
 
 \item{stamp}{Stamp plot with this character string.}
 }

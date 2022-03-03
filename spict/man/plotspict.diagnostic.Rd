@@ -10,7 +10,8 @@ plotspict.diagnostic(
   qlegend = TRUE,
   plot.data = TRUE,
   mfcol = FALSE,
-  stamp = get.version()
+  stamp = get.version(),
+  add.loess = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ plotspict.diagnostic(
 \item{mfcol}{If TRUE plot plots columnwise (FALSE => rowwise).}
 
 \item{stamp}{Stamp plot with this character string.}
+
+\item{add.loess}{Add Loess line to residuals}
 }
 \value{
 Nothing.
