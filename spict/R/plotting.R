@@ -749,9 +749,30 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
         ylimflag <- !is.null(ylim)
         # Biomass plot
         Kest <- get.par('logK', rep, exp=TRUE, fixed=TRUE, CI = CI)
-        Bmsy <- get.par('logBmsy', rep, exp=TRUE, CI = CI)
-        Bmsyvec <- get.msyvec(inp, Bmsy)
-        if (!all(is.na(Bmsyvec$msy))){ # Don't plot if all are NA
+
+        ## CHECK: this
+        indest <- inp$indest
+        if(manflag){
+            repmax <- get.manmax(rep)
+            indest <- indest[-length(indest)]
+            indxmax <- which(inp$time == inp$timerange[2])
+        }else{
+            repmax <- rep
+            indxmax <- which(inp$time ==  max(inp$time))
+        }
+
+        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag
+        if (tvKflag){
+            Bmsy <- get.par('logBmsyvec', repmax, exp=TRUE, CI = CI)
+            Bmsyvec <- as.data.frame(Bmsy)
+            Bmsyvec$Bmsy <- Bmsyvec$est
+        } else {
+            Bmsy <- get.par('logBmsy', repmax, exp=TRUE, CI = CI)
+            Bmsyvec <- get.msyvec(repmax$inp, Bmsy)[(1:indxmax)]  ## Bmsyvec <- get.msyvec(inp, Bmsy)
+        }
+
+
+        if (!all(is.na(Bmsyvec$Bmsy))){ # Don't plot if all are NA
             qest <- get.par('logq', rep, fixed=TRUE, exp=TRUE, CI = CI)
             BB <- get.par('logBBmsy', rep, exp=TRUE, CI = CI)[1:indxmax,]
             ns <- dim(BB)[1]
@@ -763,7 +784,11 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
                 nindexseq <- 1:inp$nindex
                 obsI <- list()
                 for (i in nindexseq){
-                    obsI[[i]] <- inp$obsI[[i]]/qest[inp$mapq[i], 2]/Bmsy[1,2]
+                    if (tvKflag){
+                        obsI[[i]] <- inp$obsI[[i]]/qest[inp$mapq[i], 2]/Bmsy[inp$ii[[i]],2]
+                    }else{
+                        obsI[[i]] <- inp$obsI[[i]]/qest[inp$mapq[i], 2]/Bmsy[1,2]  ## HERE: why Bmsy[1, ?
+                    }
                 }
             }
             fininds <- which(apply(BB, 1, function(x) all(is.finite(x))))
