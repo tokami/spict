@@ -291,7 +291,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
                                 " index/indices. Recycling/Subsetting the coefficients to match the ",
                                 "number of indices indicating by the index time vector."))
                     if(length(inp2$ini[['logq']]) > 1){
-                        inp$ini$logq <- rep(inp$ini[['logq']], 100)[1:length(inp2$timeI)]
+                        inp$ini$logq <- rep(inp$ini[['logq']], 100)[1:length(inp2$timeI)]   ## HERE: POT: BUG: Casper's code
                     }
                 }
             }
@@ -910,7 +910,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
         sim$true$e.f <- e.f
 
         sign <- 1
-        R <- (n-1)/n * gamma * mean(m[inp$ir]) / K
+        R <- (n-1)/n * gamma * mean(m[inp$ir]) / K   ## FIX: this averages over different seasons!
         p <- n-1
         sim$true$R <- R
         sim$true$logrold <- log(abs(gamma * mean(m[inp$ir]) / K))
@@ -979,8 +979,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
 #' @param parnames Vector of parameter names to extract stats for.
 #' @param exp Should exp be taken of parameters?
 #' @param mc.cores Number of cores for \code{parallel::mclapply} function. By
-#'     default \code{parallel::detectCores() - 1} is used as the number of
-#'     cores.
+#'     default 1.
 #' @param model If 'spict' estimate using SPiCT. If 'meyermillar' estimate using
 #'     the model of Meyer & Millar (1999), this requires rjags and coda
 #'     packages.
@@ -990,7 +989,6 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
 #'     the true value of B/Fmsy was inside the 95\% confidence interval for the
 #'     estimate, otherwise FALSE} \item{"*msyciw"}{ Width of the 95\% confidence
 #'     interval of the estimate of Bmsy/Fmsy.} }
-#' @importFrom parallel mclapply detectCores
 #' @examples
 #' data(pol)
 #' rep0 <- fit.spict(pol$albacore)
@@ -1001,7 +999,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
 #' @export
 validate.spict <- function(inp, nsim=50, invec=c(15, 60, 240), estinp=NULL, backup=NULL,
                            df.out=FALSE, summ.ex.file=NULL, type='nobs', parnames=NULL, exp=NULL,
-                           mc.cores=parallel::detectCores()-1, model='spict'){
+                           mc.cores=1, model='spict'){
     if (is.null(parnames)){
         parnames <- c('logFmsy', 'logBmsy', 'MSY', 'logBl', 'logBlBmsy',
                       'logFlFmsy', 'logsdb', 'logsdi')

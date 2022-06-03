@@ -269,6 +269,7 @@ make.datin <- function(inp, dbg=0){
                   stabilise=inp$stabilise,
                   MSYregime=inp$MSYregime,
                   Kregime=inp$Kregime,
+                  residFlag=as.numeric(inp$residFlag),
                   priorn=inp$priors$logn,
                   priorngamma=inp$priors$logngamma,
                   priorr=inp$priors$logr,
