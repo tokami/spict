@@ -565,12 +565,22 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
             indxmax <- which(inp$time ==  max(inp$time))
         }
 
+        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag
+        if (tvKflag){
+            Bmsy <- get.par('logBmsyvec', repmax, exp=TRUE, CI = CI)
+            Bmsyvec <- as.data.frame(Bmsy)
+            Bmsyvec$Bmsy <- Bmsyvec$est
+        } else {
+            Bmsy <- get.par('logBmsy', repmax, exp=TRUE, CI = CI)
+            Bmsyvec <- get.msyvec(repmax$inp, Bmsy)
+            Bmsyvec$Bmsy <- Bmsyvec$msy[(1:indxmax)]
+        }
+        ## TODO: add the same for BBmsy
+
         # Biomass plot
         Best <- get.par('logB', rep, exp=TRUE, CI = CI)[(1:indxmax),]
         ns <- dim(Best)[1]
         Kest <- get.par('logK', rep, exp=TRUE, CI = CI)
-        Bmsy <- get.par('logBmsy', repmax, exp=TRUE, CI = CI)
-        Bmsyvec <- get.msyvec(repmax$inp, Bmsy)[(1:indxmax)]
         qest <- get.par('logq', rep, exp=TRUE, CI = CI)
         BB <- get.par('logBBmsy', rep, exp=TRUE, CI = CI)[(1:indxmax),]
         Bp <- get.par('logBp', rep, exp=TRUE, CI = CI)
@@ -595,6 +605,7 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
                 ylim <- range(BB[BBfininds, 1:3]/scal*Bmsy[2], Best[fininds, 1:3], Bp[2],
                               unlist(obsI), 0.95*Bmsy[1], 1.05*Bmsy[3], na.rm=TRUE)/scal
             }
+            if('true' %in% names(inp)) ylim <- range(ylim, inp$true$Bmsyvec, na.rm = TRUE)
             ylim[2] <- min(c(ylim[2], 3*max(Best[fininds, 2], unlist(obsI)))) # Limit upper limit
         }
         xlim <- range(c(inp$time, tail(inp$time, 1) + 0.5))
@@ -647,8 +658,8 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
         }
         if ('true' %in% names(inp)){
             lines(inp$true$time, inp$true$B/scal, col=true.col()) # Plot true
-            abline(h=inp$true$Bmsy, col=true.col(), lty=1)
-            abline(h=inp$true$Bmsy, col='black', lty=3)
+            lines(inp$true$time,inp$true$Bmsyvec, col=true.col(), lty=1)
+            lines(inp$true$time,inp$true$Bmsyvec, col='black', lty=3)
         }
         lines(inp$time[inp$indest], Best[inp$indest,2]/scal, col='blue', lwd=1.5)
         if (manflag){
@@ -659,7 +670,7 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
         }else{
             lines(inp$time[inp$indpred], Best[inp$indpred,2]/scal, col='blue', lty=3)
         }
-        lines(repmax$inp$time, Bmsyvec$msy, col='black')
+        lines(repmax$inp$time, Bmsyvec$Bmsy, col='black')
         # B CI
         #if (inp$phases$logq>0){
         lines(inp$time[inp$indest], Best[inp$indest,1]/scal, col=4, lty=2, lwd=1.5)
@@ -739,9 +750,31 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
         ylimflag <- !is.null(ylim)
         # Biomass plot
         Kest <- get.par('logK', rep, exp=TRUE, fixed=TRUE, CI = CI)
-        Bmsy <- get.par('logBmsy', rep, exp=TRUE, CI = CI)
-        Bmsyvec <- get.msyvec(inp, Bmsy)
-        if (!all(is.na(Bmsyvec$msy))){ # Don't plot if all are NA
+
+        ## CHECK: this
+        indest <- inp$indest
+        if(manflag){
+            repmax <- get.manmax(rep)
+            indest <- indest[-length(indest)]
+            indxmax <- which(inp$time == inp$timerange[2])
+        }else{
+            repmax <- rep
+            indxmax <- which(inp$time ==  max(inp$time))
+        }
+
+        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag
+        if (tvKflag){
+            Bmsy <- get.par('logBmsyvec', repmax, exp=TRUE, CI = CI)
+            Bmsyvec <- as.data.frame(Bmsy)
+            Bmsyvec$Bmsy <- Bmsyvec$est
+        } else {
+            Bmsy <- get.par('logBmsy', repmax, exp=TRUE, CI = CI)
+            Bmsyvec <- get.msyvec(repmax$inp, Bmsy)
+            Bmsyvec$Bmsy <- Bmsyvec$msy[(1:indxmax)]  ## Bmsyvec <- get.msyvec(inp, Bmsy)
+        }
+
+
+        if (!all(is.na(Bmsyvec$Bmsy))){ # Don't plot if all are NA
             qest <- get.par('logq', rep, fixed=TRUE, exp=TRUE, CI = CI)
             BB <- get.par('logBBmsy', rep, exp=TRUE, CI = CI)[1:indxmax,]
             ns <- dim(BB)[1]
@@ -753,7 +786,11 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
                 nindexseq <- 1:inp$nindex
                 obsI <- list()
                 for (i in nindexseq){
-                    obsI[[i]] <- inp$obsI[[i]]/qest[inp$mapq[i], 2]/Bmsy[1,2]
+                    if (tvKflag){
+                        obsI[[i]] <- inp$obsI[[i]]/qest[inp$mapq[i], 2]/Bmsy[inp$ii[[i]],2]
+                    }else{
+                        obsI[[i]] <- inp$obsI[[i]]/qest[inp$mapq[i], 2]/Bmsy[1,2]  ## HERE: why Bmsy[1, ?
+                    }
                 }
             }
             fininds <- which(apply(BB, 1, function(x) all(is.finite(x))))
@@ -799,7 +836,8 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
                 }
             }
             if ('true' %in% names(inp)){
-                lines(inp$true$time, inp$true$B/inp$true$Bmsy, col=true.col()) # Plot true
+                ## lines(inp$true$time, inp$true$B/inp$true$Bmsy, col=true.col()) # Plot true
+                lines(inp$true$time, inp$true$BBmsy, col=true.col()) # Plot true
             }
             lines(inp$time[inp$indest], BB[inp$indest,2], col='blue', lwd=1.5)
             if(manflag){
@@ -836,6 +874,8 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
 #' @param rep A result report as generated by running fit.spict.
 #' @param collapse.I Collapse index residuals into one plot. Default: TRUE.
 #' @param qlegend Plot legend for quarters.
+#' @param add.loess Add smooth line (using \code{loess}) to residuals (Default: FALSE).
+#' @param span Parameter that controls the degree of smoothing (only used if \code{add.loess=TRUE}, Default: 0.75).
 #' @return Nothing.
 #' @examples
 #' data(pol)
@@ -843,7 +883,7 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
 #' rep <- calc.osa.resid(rep)
 #' plotspict.osar(rep)
 #' @export
-plotspict.osar <- function(rep, collapse.I=TRUE, qlegend=TRUE){
+plotspict.osar <- function(rep, collapse.I=TRUE, qlegend=TRUE, add.loess = FALSE, span = 0.75){
     check.rep(rep)
     if ('osar' %in% names(rep)){
         inp <- rep$inp
@@ -869,6 +909,12 @@ plotspict.osar <- function(rep, collapse.I=TRUE, qlegend=TRUE){
             main=paste0('Bias p-val: ', pval), col.main=colmain, xlim=range(rep$inp$timeC),
             add.vline.at=rep$osar$timeC[1])
         abline(h=0, lty=3)
+        if(add.loess){
+            df <- data.frame(val = rep$osar$logCpres, time = rep$osar$timeC)
+            mod <- loess(val ~ time, data=df, span = span)
+            j <- order(df$time)
+            lines(df$time[j], mod$fitted[j], lwd=1.5)
+        }
         # Effort
         if (inp$nobsE > 0){
             pval <- round(as.list(rep$diagn)$biasE.p, 4)
@@ -877,6 +923,12 @@ plotspict.osar <- function(rep, collapse.I=TRUE, qlegend=TRUE){
                 main=paste0('Bias p-val: ', pval), col.main=colmain, xlim=range(rep$inp$timeE),
                 add.vline.at=rep$osar$timeE[1])
             abline(h=0, lty=3)
+            if(add.loess){
+                df <- data.frame(val = rep$osar$logEpres, time = rep$osar$timeE)
+                mod <- loess(val ~ time, data=df, span = span)
+                j <- order(df$time)
+                lines(df$time[j], mod$fitted[j], lwd=1.5)
+            }
         }
         # Indices
         if (inp$nindex > 0){
@@ -896,6 +948,12 @@ plotspict.osar <- function(rep, collapse.I=TRUE, qlegend=TRUE){
                 col=1, xlim=xlim, ylim=ylim, main=main, col.main=colmain,
                 add.vline.at=rep$osar$timeI[[1]][1])
             abline(h=0, lty=3)
+            if(add.loess){
+                df <- data.frame(val = rep$osar$logIpres[[1]], time = rep$osar$timeI[[1]])
+                mod <- loess(val ~ time, data=df, span = span)
+                j <- order(df$time)
+                lines(df$time[j], mod$fitted[j], lwd=1.5)
+            }
             if (rep$inp$nindex > 1){
                 for (i in 2:rep$inp$nindex){
                     ylim <- range(rep$osar$logIpres[[i]], na.rm=TRUE)
@@ -918,6 +976,12 @@ plotspict.osar <- function(rep, collapse.I=TRUE, qlegend=TRUE){
                     if (!collapse.I){
                         abline(h=0, lty=3)
                     }
+                    if(add.loess){
+                        df <- data.frame(val = rep$osar$logIpres[[i]], time = rep$osar$timeI[[i]])
+                        mod <- loess(val ~ time, data=df, span = span)
+                        j <- order(df$time)
+                        lines(df$time[j], mod$fitted[j], lwd=1.5)
+                    }
                 }
             }
         }
@@ -927,6 +991,40 @@ plotspict.osar <- function(rep, collapse.I=TRUE, qlegend=TRUE){
 }
 
 
+#' @name osar.acf.plot
+#' @title Plot osar acf
+#' @param res Residuals
+#' @param lag.max Maximum lag to use in acf calculations.
+#' @param pval P value
+#' @param ylab Y-axis label
+#' @return Nothing.
+osar.acf.plot <- function(res, lag.max, pval, ylab){
+    inds <- which(acf.signf(res, lag.max=lag.max))
+    if (length(inds) > 0){
+        txt <- paste0('lag.signf: ', paste0(inds, collapse=','))
+    } else {
+        txt <- ''
+    }
+    colmain <- ifelse(pval < 0.05, 'red', 'forestgreen')
+    acf(res, main='', lag.max=lag.max, ylab=ylab)
+    title(main=paste0('LBox p-val: ', pval), col.main=colmain)
+    legend('topright', legend=NA, title=txt, col=2, bty='n', pt.cex=0, text.col=2)
+    box(lwd=1.5)
+}
+
+
+#' @name osar.qq.plot
+#' @title Plot osar qq
+#' @param res Residuals
+#' @param pval P value
+#' @return Nothing.
+osar.qq.plot <- function(res, pval){
+    colmain <- ifelse(pval < 0.05, 'red', 'forestgreen')
+    qqnorm(res, main=paste0('Shapiro p-val: ', pval), col.main=colmain)
+    qqline(res)
+    box(lwd=1.5)
+}
+
 #' @name plotspict.diagnostic
 #' @title Plot model diagnostic (data, residuals, and more)
 #' @param rep A result report as generated by running fit.spict.
@@ -935,6 +1033,8 @@ plotspict.osar <- function(rep, collapse.I=TRUE, qlegend=TRUE){
 #' @param plot.data If TRUE plot data in the top row (this option is only applied if osa residuals have been calculated).
 #' @param mfcol If TRUE plot plots columnwise (FALSE => rowwise).
 #' @param stamp Stamp plot with this character string.
+#' @param add.loess Add smooth line (using \code{loess}) to residuals (Default: FALSE).
+#' @param span Parameter that controls the degree of smoothing (only used if \code{add.loess=TRUE}, Default: 0.75).
 #' @return Nothing.
 #' @examples
 #' data(pol)
@@ -943,7 +1043,7 @@ plotspict.osar <- function(rep, collapse.I=TRUE, qlegend=TRUE){
 #' plotspict.diagnostic(rep)
 #' @export
 plotspict.diagnostic <- function(rep, lag.max=4, qlegend=TRUE, plot.data=TRUE, mfcol=FALSE,
-                                 stamp=get.version()){
+                                 stamp=get.version(), add.loess=FALSE, span = 0.75){
     repflag <- FALSE
     mar <- c(4.7, 4.1, 2.5, 2)
     #op <- par()
@@ -991,27 +1091,8 @@ plotspict.diagnostic <- function(rep, lag.max=4, qlegend=TRUE, plot.data=TRUE, m
         }
     }
     # OSAR plots
-    osar.acf.plot <- function(res, lag.max, pval, ylab){
-        inds <- which(acf.signf(res, lag.max=lag.max))
-        if (length(inds) > 0){
-            txt <- paste0('lag.signf: ', paste0(inds, collapse=','))
-        } else {
-            txt <- ''
-        }
-        colmain <- ifelse(pval < 0.05, 'red', 'forestgreen')
-        acf(res, main='', lag.max=lag.max, ylab=ylab)
-        title(main=paste0('LBox p-val: ', pval), col.main=colmain)
-        legend('topright', legend=NA, title=txt, col=2, bty='n', pt.cex=0, text.col=2)
-        box(lwd=1.5)
-    }
-    osar.qq.plot <- function(res, pval){
-        colmain <- ifelse(pval < 0.05, 'red', 'forestgreen')
-        qqnorm(res, main=paste0('Shapiro p-val: ', pval), col.main=colmain)
-        qqline(res)
-        box(lwd=1.5)
-    }
     if ('osar' %in% names(rep)){
-        plotspict.osar(rep, collapse.I=FALSE, qlegend=qlegend)
+        plotspict.osar(rep, collapse.I=FALSE, qlegend=qlegend, add.loess=add.loess, span=span)
         # Catch ACF
         pvalacfC <- round(as.list(rep$diagn)$LBoxC.p, 4)
         resC <- rep$osar$logCpres[!is.na(rep$osar$logCpres)]
@@ -1122,7 +1203,7 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
         log <- ifelse(logax, 'y', '')
         inp <- rep$inp
         cicol <- 'lightgray'
-        tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
+        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag
         qf <- get.par('logqf', rep, exp=TRUE, CI = CI)
         Fest <- get.par('logFnotS', rep, exp=TRUE, CI = CI)
         logFest <- get.par('logFnotS', rep, CI = CI)
@@ -1197,6 +1278,9 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
                 ylim <- range(c(ylim, clf[relfininds], cuf[relfininds], na.rm=TRUE))
             }
         }
+        if ('true' %in% names(inp)){
+            ylim <- range(ylim, inp$true$Fs, inp$true$Fmsyvec, na.rm=TRUE)
+        }
         if (!ylimflag){
             ylim[2] <- min(c(ylim[2], 3*max(Ff[fininds]))) # Limit upper limit
         }
@@ -1232,8 +1316,8 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
         }
         if ('true' %in% names(inp)){
             lines(inp$true$time, inp$true$Fs, col=true.col()) # Plot true
-            abline(h=inp$true$Fmsy, col=true.col(), lty=1)
-            abline(h=inp$true$Fmsy, col='black', lty=3)
+            lines(inp$true$time, inp$true$Fmsyvec, col=true.col(), lty=1)
+            lines(inp$true$time, inp$true$Fmsyvec, col='black', lty=3)
         }
         maincol <- 'blue'
         if (!absflag) lines(time, cl, col=maincol, lwd=1.5, lty=2)
@@ -1368,7 +1452,7 @@ plotspict.ffmsy <- function(rep, logax=FALSE, main='Relative fishing mortality',
         if (plot.obs){
             Fmsyvec <- get.par('logFmsyvec', rep, exp=TRUE, CI = CI)
             ie <- cut(inp$timeE, inp$time, right=FALSE, labels=FALSE)
-            if (rep$inp$timevaryinggrowth || rep$inp$logmcovflag){
+            if (rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag){
                 Fmsy <- Fmsyvec[ie, 2]
             } else {
                 Fmsy <- get.par('logFmsy', rep, exp=TRUE, CI = CI)[2]
@@ -1377,7 +1461,7 @@ plotspict.ffmsy <- function(rep, logax=FALSE, main='Relative fishing mortality',
                      add=TRUE, add.legend=qlegend)
         }
         if ('true' %in% names(inp)){
-            lines(inp$true$time, inp$true$Fs/inp$true$Fmsy, col=true.col()) # Plot true
+           lines(inp$true$time, inp$true$FFmsy, col=true.col()) # Plot true
         }
         maincol <- 'blue'
         lines(time, F, col=maincol, lwd=1.5)
@@ -1457,7 +1541,7 @@ plotspict.fb <- function(rep, logax=FALSE, plot.legend=TRUE, man.legend=TRUE, ex
         }
         log <- ifelse(logax, 'xy', '')
         inp <- rep$inp
-        tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
+        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag || rep$inp$timevaryingK || rep$inp$logKcovflag
         if (tvgflag){
             rel.axes <- TRUE
         }
@@ -1816,6 +1900,7 @@ plotspict.catch <- function(rep, main='Catch', ylim=NULL, qlegend=TRUE, lcol='bl
                 }
             }
             if(manflag) ylim <- range(ylim,get.manlimits(rep,"logCpred"))
+            if('true' %in% names(inp)) ylim <- range(ylim,inp$true$MSYvec, na.rm=TRUE)
             ylim[2] <- min(c(ylim[2], 3*max(obs))) # Limit upper limit
         }
         xlim <- range(c(inp$time, tail(inp$time,1)))
@@ -1843,8 +1928,8 @@ plotspict.catch <- function(rep, main='Catch', ylim=NULL, qlegend=TRUE, lcol='bl
             points(inp$timeC[inds], inp$obsC[inds]/Cscal, pch=21, cex=0.9, bg=cols[inds])
         }
         if ('true' %in% names(inp)){
-            abline(h=inp$true$MSY, col=true.col(), lty=1)
-            abline(h=inp$true$MSY, col='black', lty=3)
+            lines(inp$true$time,inp$true$MSYvec, col=true.col(), lty=1)
+            lines(inp$true$time,inp$true$MSYvec, col='black', lty=3)
         }
         lines(repmax$inp$time, MSYvec$msy)
         lines(time, c, col=lcol, lwd=1.5)
@@ -1915,9 +2000,22 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve',
     if (!'sderr' %in% names(rep)){
         inp <- rep$inp
         tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
+        tvKflag <- rep$inp$timevaryingK | rep$inp$logKcovflag
         Kest <- get.par('logK', rep, exp=TRUE, CI = CI)
         mest <- get.par('logm', rep, exp=TRUE, CI = CI)
         nr <- dim(mest)[1]
+        nK <- dim(Kest)[1]
+        ntv <- max(nr,nK)
+        if(nr > 1){
+            im <- 1:nr
+        }else im <- rep(1,ntv)
+        if(nK > 1){
+            iK <- 1:nK
+            Kmax <- max(Kest[,2])
+        }else{
+            iK <- rep(1,ntv)
+            Kmax <- Kest[2]
+        }
         gamma <- get.par('gamma', rep, CI = CI)
         n <- get.par('logn', rep, exp=TRUE, CI = CI)
         Pest <- get.par('P', rep, CI = CI)
@@ -1930,27 +2028,27 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve',
             yscal <- rep(1, length(binds))
         }
         nBplot <- 200
-        Bplot <- seq(0.5*1e-8, Kest[2], length=nBplot)
+        Bplot <- seq(0.5*1e-8, Kmax, length=nBplot)
         # Calculate production curve (Pst)
         pfun <- function(gamma, m, K, n, B) gamma*m/K*B*(1 - (B/K)^(n-1))
         Pst <- list()
-        for (i in 1:nr){
-            Pst[[i]] <- pfun(gamma[2], mest[i,2], Kest[2], n[2], Bplot)
+        for (i in 1:ntv){
+            Pst[[i]] <- pfun(gamma[2], mest[im[i],2], Kest[iK[i],2], n[2], Bplot)
         }
         Pstscal <- ifelse(tvgflag, max(unlist(Pst)), 1)
         ylim <- c(0, max(unlist(Pst)/Pstscal, na.rm=TRUE))
         if (inp$reportall){
             Best <- get.par('logB', rep, exp=TRUE, CI = CI)
             Bplot <- seq(0.5*min(c(1e-8, Best[, 2])), 1*max(c(Kest[2], Best[, 2])), length=nBplot)
-            for (i in 1:nr){
-                Pst[[i]] <- pfun(gamma[2], mest[i,2], Kest[2], n[2], Bplot)
+            for (i in 1:ntv){
+                Pst[[i]] <- pfun(gamma[2], mest[im[i],2], Kest[iK[i],2], n[2], Bplot)
             }
 
             Bvec <- Best[binds, 2]
-            xlim <- range(Bvec/Kest[2], 0, 1)
+            xlim <- range(Bvec/Kmax, 0, 1)
             ylim <- c(min(0, Pest[,2]/yscal), max(Pest[,2]/yscal, unlist(Pst)/Pstscal, na.rm=TRUE))
         } else {
-            xlim <- range(Bplot/Kest[2], na.rm=TRUE)
+            xlim <- range(Bplot/Kmax, na.rm=TRUE)
         }
         dt <- inp$dt[-1]
         inde <- inp$indest[-length(inp$indest)]
@@ -1961,21 +2059,21 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve',
         } else {
             ylab <- add.catchunit(ylab, inp$catchunit)
         }
-        plot(Bplot/Kest[2], Pst[[nr]]/Pstscal, typ='l', ylim=ylim, xlim=xlim,
+        plot(Bplot/Kmax, Pst[[nr]]/Pstscal, typ='l', ylim=ylim, xlim=xlim,
              xlab='B/K', ylab=ylab, col=1, main=main)
-        if (nr > 1){
-            for (i in 1:(nr-1)){
-                lines(Bplot/Kest[2], Pst[[i]]/Pstscal, col='gray')
+        if (ntv > 1){
+            for (i in 1:(ntv-1)){
+                lines(Bplot/Kmax, Pst[[i]]/Pstscal, col='gray')
             }
         }
         if (inp$reportall){
-            lines(Bvec/Kest[2], Pest[, 2]/yscal, col=4, lwd=1.5)
-            points(Bvec/Kest[2], Pest[, 2]/yscal, col=4, pch=20, cex=0.7)
+            lines(Bvec/Kmax, Pest[, 2]/yscal, col=4, lwd=1.5)
+            points(Bvec/Kmax, Pest[, 2]/yscal, col=4, pch=20, cex=0.7)
             par(xpd=TRUE)
             if (length(inp$ic) < n.plotyears){
                 inds <- c(1, length(Bvec), seq(1, length(Bvec), by=2))
                 labs <- round(inp$time[inp$ic], 2)
-                text(Bvec[inds]/Kest[2], Pest[inds, 2]/yscal[inds], labels=labs[inds],
+                text(Bvec[inds]/Kmax, Pest[inds, 2]/yscal[inds], labels=labs[inds],
                      cex=0.75, pos=4, offset=0.25)
             }
             par(xpd=FALSE)
@@ -2225,6 +2323,8 @@ plotspict.btrend <- function(rep, CI = 0.95){
 #' @param CI Confidence intervals to be calculated, e.g. 0.9 for the 90%
 #'     confidence intervals. By default (CI = 0.95), the 95% confidence
 #'     intervals are estimated.
+#' @param add.loess Add smooth line (using \code{loess}) to residuals (Default: FALSE).
+#' @param span Parameter that controls the degree of smoothing (only used if \code{add.loess=TRUE}, Default: 0.75).
 #' @param ... additional arguments affecting the summary produced.
 #'
 #' @details Create a plot containing the following:
@@ -2274,7 +2374,7 @@ plotspict.btrend <- function(rep, CI = 0.95){
 #' plot(rep)
 #'
 #' @export
-plot.spictcls <- function(x, stamp=get.version(), verbose=TRUE, CI = 0.95, ...){
+plot.spictcls <- function(x, stamp=get.version(), verbose=TRUE, CI = 0.95, add.loess=FALSE, span = 0.75, ...){
     check.rep(x)
     rep <- x
     logax <- FALSE # Take log of relevant axes? default: FALSE
@@ -2327,7 +2427,7 @@ plot.spictcls <- function(x, stamp=get.version(), verbose=TRUE, CI = 0.95, ...){
             plotspict.priors(rep, do.plot=1, stamp='', CI = CI)
         }
         if ('osar' %in% names(rep)){
-            plotspict.osar(rep, qlegend=FALSE)
+            plotspict.osar(rep, qlegend=FALSE, add.loess=add.loess, span=span)
         }
         if (inp$reportall){
             if ('infl' %in% names(rep)){
@@ -2947,12 +3047,25 @@ plotspict.data <- function(inpin, MSY=NULL, one.index=NULL, qlegend=TRUE, stamp=
     # Plot simulated biomass and fishing mortality
     if ('true' %in% names(inp)){
         if (inp$timevaryinggrowth){
-            plot(inp$true$time, inp$true$mre, typ='l', xlim=xlim, xlab='Time', ylab='m',
+## <<<<<<< HEAD
+##             plot(inp$true$time, inp$true$mre, typ='l', xlim=xlim, xlab='Time', ylab='m',
+##                  lwd=1.5, col=true.col(), main='True MSY')
+##             box(lwd=1.5)
+##         }
+##       plot(inp$true$time, inp$true$F, typ='l', col=true.col(), xlim=xlim, xlab='Time',
+##            ylab=expression(F[t]), lwd=1.5, main='True F')
+## =======
+            plot(inp$time, inp$true$mvec, typ='l', xlim=xlim, xlab='Time', ylab='m',
                  lwd=1.5, col=true.col(), main='True MSY')
             box(lwd=1.5)
         }
-      plot(inp$true$time, inp$true$F, typ='l', col=true.col(), xlim=xlim, xlab='Time',
-           ylab=expression(F[t]), lwd=1.5, main='True F')
+        if (inp$timevaryingK){
+            plot(inp$time, inp$true$Kvec, typ='l', xlim=xlim, xlab='Time', ylab='m',
+                 lwd=1.5, col=true.col(), main='True K')
+            box(lwd=1.5)
+        }
+        plot(inp$time, inp$true$F, typ='l', col=true.col(), xlim=xlim, xlab='Time',
+             ylab=expression(F[t]), lwd=1.5, main='True F')
         box(lwd=1.5)
         ylab <- add.catchunit(expression(B[t]), inp$catchunit)
         plot(inp$true$time, inp$true$B, typ='l', xlim=xlim, xlab='Time', ylab=ylab,
@@ -3209,8 +3322,6 @@ plotspict.hcr <- function(rep, xlim = c(0, 3), CI = 0.95) {
 
 
 
-
-
 #' @name plotspict.hindcast
 #' @title Hindcasting plot for indices
 #' @details This function plots the results of the hindcasting cross validation
@@ -3243,6 +3354,7 @@ plotspict.hcr <- function(rep, xlim = c(0, 3), CI = 0.95) {
 #' @seealso \code{\link{hindcast}}
 #'
 #' @return MASE or Invisible \code{NULL}
+#'
 #'
 #' @examples
 #' data(pol)
@@ -3432,6 +3544,141 @@ plotspict.hindcast <- function(rep, add.mase = TRUE, CI = 0.95, verbose = TRUE,
         if(add.mase) mtext(paste0("Index ", i, ": MASE = ", signif(hcInfo$mase[i,2],3)), 3, 0.3, font = 2)
         box(lwd=1.5)
     }
+    txt.stamp(stamp, do.flag=TRUE)
+
+    invisible(NULL)
+}
+
+
+
+
+#' @name plotspict.diagnostic.process
+#' @title Plot model diagnostics regarding processes and process residuals
+#' @param rep A result report as generated by running \code{\link{fit.spict}}
+#'     that contains process residuals calculated by the function
+#'     \code{\link{process.resid}}.
+#' @param lag.max Maximum lag to use in acf calculations.
+#' @param qlegend If TRUE plot a legend showing quarter of year information.
+#' @param plot.data If TRUE plot data in the top row (this option is only applied if osa residuals have been calculated).
+#' @param mfcol If TRUE plot plots columnwise (FALSE => rowwise).
+#' @param add.loess Add smooth line (using \code{loess}) to residuals (Default: FALSE).
+#' @param span Parameter that controls the degree of smoothing (only used if \code{add.loess=TRUE}, Default: 0.75).
+#' @param stamp Stamp plot with this character string.
+#'
+#' @seealso \code{\link{process.resid}}
+#' @return Invisible \code{NULL}
+#'
+#' @export
+#'
+#'
+#' @examples
+#' data(pol)
+#' inp <- pol$albacore
+#' rep <- fit.spict(inp)
+#' rep <- calc.process.resid(rep)
+#' plotspict.diagnostic.process(rep)
+#'
+#'
+plotspict.diagnostic.process <- function(rep, lag.max=4, qlegend=TRUE, plot.data=TRUE, mfcol=FALSE,
+                                         add.loess = FALSE, span = 0.75, stamp=get.version()){
+
+    check.rep(rep)
+    inp <- rep$inp
+
+    ## Check that process residuals calculated
+    if(!any(names(rep) == "process.resid")){
+        stop("No process residuals found. Please run the function 'process.resid' on your fitted spict object.")
+    }
+
+    testsB <- res.diagn(rep$process.resid$B, "B", "B")
+    testsF <- res.diagn(rep$process.resid$F, "F", "F")
+
+
+    fun <- function(time, res, add=FALSE, add.legend=FALSE, col=1, pch=1,
+                    add.vline.at=NULL, ...){
+        nrem <- length(time) - length(res)
+        if (nrem > 0){
+            time <- time[-nrem]
+            warning('length of residual vector and length of corresponding time vector are not equal!')
+        }
+        plot.col(time, res, pch=pch, add=add, add.legend=add.legend, typ='p', xlab='Time',
+                 add.vline.at=add.vline.at, ...)
+        dum <- rep(NA, length(res))
+        dum[is.na(res)] <- 0
+        text(time, dum, labels='NA', cex=0.8, col=col)
+    }
+
+    time.full <- inp$time
+    dt <- diff(rep$process.resid$time)[1]
+    time.agg <- time.full[which(time.full %% (dt) == 0)]
+    time.rep <- rep(time.agg, each = 1/(inp$dteuler/dt))
+    nta <- length(time.agg)
+    logB <- get.par("logB",rep)[,2]
+    logF <- get.par("logF",rep)[,2]
+    logFs <- get.par("logFs",rep)[,2]
+    P <- rep$obj$report()$P
+    logB.agg <- logF.agg <- rep(0, nta)
+    P.agg <- logFs.agg <- rep(0, nta)
+    for (i in 1:nta){
+        inds <- which(time.agg[i]==time.rep)
+        logB.agg[i] <- mean(logB[inds])
+        logF.agg[i] <- mean(logF[inds])
+        logFs.agg[i] <- mean(logFs[inds])
+        P.agg[i] <- sum(P[inds])
+    }
+
+    mar <- c(4.7, 4.1, 2.5, 2)
+    mfrow <- c(3 + as.numeric(plot.data), 2)
+    if (mfcol){
+        opar <- par(mfcol=rev(mfrow), mar=mar)
+    } else {
+        opar <- par(mfrow=mfrow, mar=mar)
+    }
+    on.exit(par(opar))
+
+    ## Plot data
+    if(plot.data){
+        plot.col(time.agg, logB.agg, ylab='logB',
+                 main='Biomass', xlab='Time')
+        plot.col(time.agg, logF.agg, ylab='logF',
+                 main='Fishing mortality', xlab='Time')
+    }
+
+    pval <- round(testsB$biasB.p, 4)
+    colmain <- ifelse(pval < 0.05, 'red', 'forestgreen')
+    fun(rep$process.resid$time, rep$process.resid$B,
+        add.legend=qlegend, ylab='B residuals',
+        main=paste0('Bias p-val: ', pval),
+        col.main=colmain)
+    abline(h=0, lty=3)
+    if(add.loess){
+        mod <- loess(B ~ time, data=rep$process.resid, span = span)
+        j <- order(rep$process.resid$time)
+        lines(rep$process.resid$time[j],mod$fitted[j], lwd=1.5)
+    }
+    pval <- round(testsF$biasF.p, 4)
+    colmain <- ifelse(pval < 0.05, 'red', 'forestgreen')
+    fun(rep$process.resid$time, rep$process.resid$F,
+        add.legend=FALSE, ylab='F residuals',
+        main=paste0('Bias p-val: ', pval),
+        col.main=colmain)
+    abline(h=0, lty=3)
+    if(add.loess){
+        mod <- loess(F ~ time, data=rep$process.resid, span = span)
+        j <- order(rep$process.resid$time)
+        lines(rep$process.resid$time[j], mod$fitted[j], lwd=1.5)
+    }
+
+    pvalacfB <- round(testsB$LBoxB.p, 4)
+    osar.acf.plot(rep$process.resid$B, lag.max, pvalacfB, ylab='B ACF')
+    pvalacfF <- round(testsF$LBoxF.p, 4)
+    osar.acf.plot(rep$process.resid$F, lag.max, pvalacfF, ylab='F ACF')
+
+    pvalB <- round(testsB$shapiroB.p, 4)
+    osar.qq.plot(rep$process.resid$B, pvalB)
+    pvalF <- round(testsF$shapiroF.p, 4)
+    osar.qq.plot(rep$process.resid$F, pvalF)
+
     txt.stamp(stamp, do.flag=TRUE)
 
     invisible(NULL)

@@ -363,7 +363,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     inp$nseries <- 1 + inp$nindex + as.numeric(inp$nobsE > 0)
 
     # -- MODEL OPTIONS --
-    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB', 'logmre','SARvec')
+    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB','logmre','logKre','SARvec')
     if (!"scriptname" %in% names(inp)) inp$scriptname <- 'spict'
     # Index related
     if (!"onealpha" %in% names(inp)){
@@ -771,7 +771,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     inp$splinematfine <- make.splinemat(inp$nseasons, inp$splineorder, dtfine=1/100)
     inp$seasonindex <- 1/inp$dteuler*(inp$time %% 1)
     inp$seasons <- rep(0, inp$ns)
-    inp$seasonindex2 <- rep(1:inp$ns,each=inp$nseasons,length.out=inp$ns)
+    inp$seasonindex2 <- rep(1:inp$ns,each=1/inp$dteuler/inp$nseasons,length.out=inp$ns)
     for (i in 1:inp$nseasons){
         frac <- 1/inp$nseasons
         modtime <- inp$time %% 1
@@ -895,7 +895,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
 
     # -- COVARIATES --
     inp$logmcovflag <- FALSE
-    inp <- set.default(inp, 'logmcovspar', 0.5)
+    if(!'logmcovspar' %in% names(inp)){
+        inp <- set.default(inp, 'logmcovspar', 0.5)
+    }
     if ('logmcovariate' %in% names(inp)){
         if (!'logmcovariatetime' %in% names(inp)){
             stop('inp$logmcovariatetime unspecified but required!')
@@ -914,8 +916,8 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         dat <- data.frame(x=inp$logmcovariatetime, y=inp$logmcovariate)
         smoocov <- smooth.spline(dat$x, dat$y, spar=inp$logmcovspar)
         covpred <- predict(smoocov, x=inp$time)
-        #plot(covpred$x, covpred$y, typ='l')
-        #points(inp$logmcovariatetime, inp$logmcovariate)
+        plot(covpred$x, covpred$y, typ='l',ylim=range(inp$logmcovariate, covpred$y))
+        points(inp$logmcovariatetime, inp$logmcovariate,ty='b')
         inp$logmcovariatein <- covpred$y
         inp$logmcovflag <- TRUE
     }
@@ -977,10 +979,99 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if (!'logitSARphi' %in% names(inp$ini)) inp$ini$logitSARphi <- 0
     if (!'logSdSAR' %in% names(inp$ini)) inp$ini$logSdSAR <- -2
 
+    ## Time-variant parameters
+    inp <- set.default(inp, 'timevaryingK', FALSE)
+
+    # find number of regimes for 'K'
+    if(!'Kregime' %in% names(inp)){
+        inp$Kregime <- factor(rep(1,length(inp$time)))
+    } else if(length(inp$Kregime) < length(inp$time)){ # manage changes number of time steps!
+        if(verbose) warning('Wrong length of inp$Kregime: ', length(inp$Kregime),
+                            '. Should be equal to inp$ns: ', inp$ns,
+                            '. Resetting Kregime.')
+        inp$Kregime <- factor(c(inp$Kregime,
+                                  rep( tail(inp$Kregime,1), length(inp$time)-length(inp$Kregime))))
+    }
+    if(inp$timevaryingK && nlevels(inp$Kregime)>1)
+        stop("'timevaryingK' and multiple Kregimes cannot be used at the same time")
+    inp$noKs <- nlevels(inp$Kregime)
+    inp$iK <- as.numeric(inp$Kregime)
+    if(length(inp$ini$logK)!=inp$noKs) inp$ini$logK <- rep(inp$ini$logK,inp$noKs)
+
+    ## to covariates
+    inp$logKcovflag <- FALSE
+    if(!'logKcovspar' %in% names(inp)){
+        inp <- set.default(inp, 'logKcovspar', 0.5)
+    }
+    if ('logKcovariate' %in% names(inp)){
+        if (!'logKcovariatetime' %in% names(inp)){
+            stop('inp$logKcovariatetime unspecified but required!')
+        }
+        if ('logKcovariatetime' %in% names(inp)){
+            if (length(inp$logKcovariatetime) != length(inp$logKcovariate)){
+                stop('length(inp$logKcovariatetime) != length(inp$logKcovariate), cannot continue!')
+            }
+        }
+        # Check for NAs and remove
+        nainds <- which(is.na(inp$logKcovariate))
+        if (length(nainds) > 0){
+            inp$logKcovariate <- inp$logKcovariate[-nainds]
+            inp$logKcovariatetime <- inp$logKcovariatetime[-nainds]
+        }
+        dat <- data.frame(x=inp$logKcovariatetime, y=inp$logKcovariate)
+        smoocov <- smooth.spline(dat$x, dat$y, spar = inp$logKcovspar)
+        covpred <- predict(smoocov, x=inp$time)
+        plot(covpred$x, covpred$y, typ='l',ylim=range(inp$logKcovariate, covpred$y))
+        points(inp$logKcovariatetime, inp$logKcovariate,ty='b')
+        inp$logKcovariatein <- covpred$y
+        inp$logKcovflag <- TRUE
+    }
+    # Fill in dummy defaults if unspecified
+    #inp <- set.default(inp,'logKcovariate', rep(0, inp$nobsC))
+    #inp <- set.default(inp, 'logKcovariatetime', 1:inp$nobsC)
+    inp <- set.default(inp, 'logKcovariatein', rep(0, inp$ns))
+    if(length(inp$logKcovariatein) != inp$ns){
+        if(verbose) warning('Wrong length of inp$logKcovariatein: ', length(inp$logKcovariatein),
+                            '. Should be equal to inp$ns: ', inp$ns,
+                            '. Resetting logKcovariatein.')
+        inp$logKcovariatein <- NULL
+        inp <- set.default(inp, 'logKcovariatein', rep(0, inp$ns))
+    }
+
+
+    # Fill in unspecified (more rarely user defined) model parameter values
+    inp$ini <- set.default(inp$ini, 'logpsiK', log(1e-8))
+    inp$ini <- set.default(inp$ini, 'muK', 0)
+
+    if (!"logKre" %in% names(inp$ini)){
+        inp$ini$logKre <- rep(log(1), inp$ns)
+    } else if (length(inp$ini$logKre) > inp$ns){
+        if(verbose) warning('Wrong length of inp$ini$logKre: ', length(inp$ini$logKre),
+                            '. Should be equal to inp$ns: ', inp$ns,
+                            '. Setting length of logKre equal to inp$ns (removing beyond inp$ns).')
+        inp$ini$logKre <- inp$ini$logKre[1:inp$ns]
+    } else if (length(inp$ini$logKre) < inp$ns){
+        if(verbose) warning('Wrong length of inp$ini$logKre: ', length(inp$ini$logKre),
+                            '. Should be equal to inp$ns: ', inp$ns,
+                            '. Resetting logKre.')
+        inp$ini$logKre <- rep(log(1), inp$ns)
+    }
+
+    ## either only MSYregimes or only Kregimes or same regime breaks for both, check:
+    if(inp$noms > 1 && inp$noKs > 1 && any(inp$ir != inp$iK)){
+        stop("You set regimes for both m and K, and the regimes do not overlap. This is not yet implemented. Please contact the package maintainer.")
+    }
+    if(inp$noms == 1 && inp$noKs > 1){
+        inp$ir <- inp$iK
+    }
+
 
     if (!'logr' %in% names(inp$ini)){
         if (!'logm' %in% names(inp$ini) | length(inp$ini$logm)!=inp$noms){
             inp$ini$logm <- rep(unname(log(guess.m(inp))), inp$noms)
+        }
+        if (!'logK' %in% names(inp$ini) || length(inp$ini$logK)!=inp$noKs){ ## NEW:
+            inp$ini$logK <- rep(log(4*max(inp$obsC)), inp$noKs)
         }
         r <- exp(inp$ini$logm)/exp(inp$ini$logK) * n^(n/(n-1))
         inp$ini$logr <- log(r)
@@ -992,6 +1083,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         #}
     }
     if(length(inp$ini$logm)!=inp$noms) inp$ini$logm <- rep(inp$ini$logm,noms)
+    if(length(inp$ini$logK)!=inp$noKs) inp$ini$logK <- rep(inp$ini$logK,noKs)
 
 
     if ('logr' %in% names(inp$ini)){
@@ -1066,7 +1158,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         logmaxE <- 0
     }
     #logmaxE <- ifelse(length(inp$obsE)==0, 0, log(max(inp$obsE[[1]])))
-    if (!'logqf' %in% names(inp$ini)) inp$ini$logqf <- inp$ini$logr - logmaxE
+    if (!'logqf' %in% names(inp$ini)) inp$ini$logqf <- inp$ini$logr[1] - logmaxE
     #if (sum(inp$nobsE)>0) inp <- check.mapped.ini(inp, 'logqf', 'nqf')
     inp$isdf <- rep(1, inp$ns)
     if (!is.null(inp$sdfsplityear)){
@@ -1083,6 +1175,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if (!'logsdu' %in% names(inp$ini)) inp$ini$logsdu <- log(0.1)
     if (!'logsdb' %in% names(inp$ini)) inp$ini$logsdb <- log(0.2)
     inp$ini <- set.default(inp$ini, 'logsdm', log(1e-8))
+    inp$ini <- set.default(inp$ini, 'logsdK', log(1e-8))
     if (!'logsdc' %in% names(inp$ini)) inp$ini$logsdc <- log(0.2)
     if (!'logsdi' %in% names(inp$ini)) inp$ini$logsdi <- log(0.2)
     if (sum(inp$nobsI)>0) inp <- check.mapped.ini(inp, 'logsdi', 'nsdi')
@@ -1098,10 +1191,6 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         K <- exp(inp$ini$logK)
         n <- exp(inp$ini$logn)
         m <- rep( r * K / (n^(n/(n-1))), inp$noms)
-    }
-    logm <- inp$ini$logm # Store this to be able to set logmre later
-    if (inp$timevaryinggrowth){
-        inp$ini$logm <- log(1)
     }
     # Fill in unspecified (more rarely user defined) model parameter values
     inp$ini <- set.default(inp$ini, 'logpsi', log(1e-8))
@@ -1144,7 +1233,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         inp$ini$logu <- matrix(log(1)+1e-3, 2*length(inp$ini$logsdu), inp$ns)
     }
     if (!"logB" %in% names(inp$ini)){
-        inp$ini$logB <- rep(inp$ini$logK + log(0.5), inp$ns)
+        inp$ini$logB <- inp$ini$logK[inp$iK] + rep(log(0.5), inp$ns)
     } else if (length(inp$ini$logB) > inp$ns){
         if(verbose) warning('Wrong length of inp$ini$logB: ', length(inp$ini$logB),
                             '. Should be equal to inp$ns: ', inp$ns,
@@ -1154,7 +1243,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         if(verbose) warning('Wrong length of inp$ini$logB: ', length(inp$ini$logB),
                             '. Should be equal to inp$ns: ', inp$ns,
                             '. Resetting logB.')
-        inp$ini$logB <- rep(inp$ini$logK + log(0.5), inp$ns)
+        inp$ini$logB <- inp$ini$logK[inp$iK] + rep(log(0.5), inp$ns)
     }
     if (!"logmre" %in% names(inp$ini)){
         inp$ini$logmre <- rep(log(1), inp$ns)
@@ -1173,7 +1262,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     #if ("logmre" %in% names(inp$ini)){
     #    inp$ini$logmre <- check.mat(inp$ini$logmre, c(inp$nstocks, inp$ns), 'inp$ini$logmre')
     #}
-    inp$ini$SARvec <- rep(0, max(inp$seasonindex2))
+    inp$ini$SARvec <- rep(0, max(inp$seasonindex2) + inp$nseasons)
 
     ## reporting
     if(!"reportmode" %in% names(inp)) inp$reportmode <- 0
@@ -1200,15 +1289,17 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## Simulate using fitted object (env$last.par)?
     if(!"sim.fit" %in% names(inp)) inp$sim.fit <- TRUE
 
-    ##
+    ## for hindcast
     if(!"iuse" %in% names(inp) || length(inp$iuse) != length(unlist(inp$obsI)))
         inp$iuse <- rep(TRUE, length(unlist(inp$obsI)))
 
-
+    ## ADreport of residB and residF
+    if(!"residFlag" %in% names(inp)) inp$residFlag <- FALSE
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
                         mu=inp$ini$mu,
+                        muK=inp$ini$muK,
                         logK=inp$ini$logK,
                         logq=inp$ini$logq,
                         logqf=inp$ini$logqf,
@@ -1220,7 +1311,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
                         logsde=inp$ini$logsde,
                         logsdc=inp$ini$logsdc,
                         logsdm=inp$ini$logsdm,
+                        logsdK=inp$ini$logsdK,
                         logpsi=inp$ini$logpsi,
+                        logpsiK=inp$ini$logpsiK,
                         logphi=inp$ini$logphi,
                         loglambda=inp$ini$loglambda,
                         logdelta=inp$ini$logdelta,
@@ -1231,6 +1324,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
                         logu=inp$ini$logu,
                         logB=inp$ini$logB,
                         logmre=inp$ini$logmre,
+                        logKre=inp$ini$logKre,
                         SARvec=inp$ini$SARvec,
                         logitSARphi=inp$ini$logitSARphi,
                         logSdSAR=inp$ini$logSdSAR)
@@ -1288,7 +1382,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
                         'logqf', 'logbkfrac', 'logB', 'logF', 'logBBmsy',
                         'logFFmsy', 'logsdb', 'logsdf',
                         'logsdi', 'logsde','logsdc',
-                        'logsdm', 'logpsi', 'mu', 'BmsyB0','logngamma')
+                        'logsdm', 'logpsi', 'mu',
+                        'logsdK', 'logpsiK', 'muK',
+                        'BmsyB0','logngamma')
     repriors <- c('logB', 'logF', 'logBBmsy', 'logFFmsy')
     matrixpriors <- c('logsdi','logq')
     npossiblepriors <- length(possiblepriors)
@@ -1314,6 +1410,10 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if (inp$timevaryinggrowth){
         inp$priors <- set.default(inp$priors, 'logsdm', c(log(0.2), wide))
         inp$priors <- set.default(inp$priors, 'logpsi', c(log(0.01), wide))
+    }
+    if (inp$timevaryingK){
+        inp$priors <- set.default(inp$priors, 'logsdK', c(log(0.2), wide))
+        inp$priors <- set.default(inp$priors, 'logpsiK', c(log(0.01), wide))
     }
     # Remaining priors, set to something, but will not be used
     if ("priors" %in% names(inp)){
@@ -1417,8 +1517,14 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if (!inp$logmcovflag){
         forcefixpars <- c('mu', forcefixpars)
     }
+    if (!inp$logKcovflag){
+        forcefixpars <- c('muK', forcefixpars)
+    }
     if (!inp$timevaryinggrowth){
         forcefixpars <- c('logmre', 'logsdm', 'logpsi', forcefixpars)
+    }
+    if (!inp$timevaryingK){
+        forcefixpars <- c('logKre', 'logsdK', 'logpsiK', forcefixpars)
     }
 
     # Determine phases
