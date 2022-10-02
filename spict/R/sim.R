@@ -332,6 +332,10 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
                     pl$logF[1] <- log(0.2*exp(inp$ini$logr))
                 }
             }
+            ## HERE: needed to get qf in right length but why two lengths with two regimes?
+            ## inp$ini$logqf <- 0.47
+            ## pl$logqf <- 0.47
+            ## inp$map[[1]]$logqf <- factor(NA)
             obj <- make.obj(datin = make.datin(inp), pl = pl, inp = inp)
             sim.pars <- obj$env$par
         } else {
