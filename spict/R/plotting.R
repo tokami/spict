@@ -773,7 +773,6 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
             Bmsyvec$Bmsy <- Bmsyvec$msy[(1:indxmax)]  ## Bmsyvec <- get.msyvec(inp, Bmsy)
         }
 
-
         if (!all(is.na(Bmsyvec$Bmsy))){ # Don't plot if all are NA
             qest <- get.par('logq', rep, fixed=TRUE, exp=TRUE, CI = CI)
             BB <- get.par('logBBmsy', rep, exp=TRUE, CI = CI)[1:indxmax,]
@@ -797,9 +796,9 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
             BBfininds <- which(is.finite(BB[, 1]) & is.finite(BB[, 3]))
             if (!ylimflag){
                 if (length(ylim) != 2){
-                    ylim <- range(c(lineat, BB[fininds, 1:3], unlist(obsI), 1), na.rm=TRUE)
+                    ylim <- range(c(lineat, BB[fininds, 1:3], unlist(obsI)[is.finite(unlist(obsI))], 1), na.rm=TRUE)
                 }
-                ylim[2] <- min(c(ylim[2], 3*max(BB[fininds, 2], unlist(obsI)))) # Limit upper limit
+                ylim[2] <- min(c(ylim[2], 3*max(BB[fininds, 2], unlist(obsI)[is.finite(unlist(obsI))]))) # Limit upper limit
             }
             xlim <- range(c(inp$time, tail(inp$time, 1) + 0.5))
             if(manflag) xlim <- get.manlimits(rep,"time")
