@@ -1296,6 +1296,16 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## ADreport of residB and residF
     if(!"residFlag" %in% names(inp)) inp$residFlag <- FALSE
 
+    ## Time varying m and K
+    if(!"tvmPlusK" %in% names(inp)) inp$tvmPlusK <- FALSE
+    if(inp$tvmPlusK) inp$timevaryinggrowth <- TRUE
+    if(!"tvKPlusm" %in% names(inp)) inp$tvKPlusm <- FALSE
+    if(inp$tvKPlusm) inp$timevaryingK <- TRUE
+    if(!"mkScale" %in% names(inp)) inp$mkScale <- 1
+    ## if(!"logitmk" %in% names(inp$ini)) inp$ini$logitmk <- 0
+    if(!"mk" %in% names(inp$ini)) inp$ini$mk <- 0
+
+
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
                         mu=inp$ini$mu,
@@ -1327,7 +1337,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
                         logKre=inp$ini$logKre,
                         SARvec=inp$ini$SARvec,
                         logitSARphi=inp$ini$logitSARphi,
-                        logSdSAR=inp$ini$logSdSAR)
+                        logSdSAR=inp$ini$logSdSAR,
+                        ## logitmk=inp$ini$logitmk)
+                        mk=inp$ini$mk)
 
 
     # -- PRIORS --
@@ -1526,6 +1538,11 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if (!inp$timevaryingK){
         forcefixpars <- c('logKre', 'logsdK', 'logpsiK', forcefixpars)
     }
+    if (!inp$tvmPlusK && !inp$tvKPlusm){
+        ## forcefixpars <- c('logitmk', forcefixpars)
+        forcefixpars <- c('mk', forcefixpars)
+    }
+
 
     # Determine phases
     if (!"phases" %in% names(inp)){

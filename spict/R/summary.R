@@ -163,6 +163,17 @@ sumspict.parest <- function(rep, ndigits=8, CI = 0.95){
         ciupp[loginds] <- exp(ciupp[loginds])
         ciupp[logitinds] <- invlogit(ciupp[logitinds])
         ciupp[logp1inds] <- invlogp1(ciupp[logp1inds])
+        if(any(nms == "mk")){
+            if(rep$inp$mkScale == 2){
+                est[nms == "mk"] <- exp(est[nms == "mk"])
+                cilow[nms == "mk"] <- exp(cilow[nms == "mk"])
+                ciupp[nms == "mk"] <- exp(ciupp[nms == "mk"])
+            }else if(rep$inp$mkScale == 3){
+                est[nms == "mk"] <- invlogit((est[nms == "mk"] + 1)/2)
+                cilow[nms == "mk"] <- invlogit((cilow[nms == "mk"] + 1)/2)
+                ciupp[nms == "mk"] <- invlogit((ciupp[nms == "mk"] + 1)/2)
+            }
+        }
         if('true' %in% names(rep$inp)){
             npar <- length(nms)
             unms <- unique(nms)

@@ -149,6 +149,9 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(logKcov);        // A vector containing covariate information for logK
   DATA_INTEGER(logKcovflag);   // Flag indicating whether covariate information is available
   DATA_INTEGER(residFlag);
+  DATA_INTEGER(tvmPlusK);
+  DATA_INTEGER(tvKPlusm);
+  DATA_INTEGER(mkScale);
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -218,6 +221,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(SARvec);    // Autoregressive deviations to seasonal spline
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
+  PARAMETER(mk);          //
 
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
@@ -307,6 +311,14 @@ Type objective_function<Type>::operator() ()
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
 
+  Type mkNat = 0.0;
+  if(mkScale == 1){
+    mkNat = mk;
+  }else if(mkScale == 2){
+    mkNat = log(mk);
+  }else if(mkScale == 3){
+    mkNat = 1.0/(1.0 + exp(-mk)) * 2.0 - 1.0;
+  }
 
   // Initialise vectors
   vector<Type> P(ns-1);
@@ -402,6 +414,7 @@ Type objective_function<Type>::operator() ()
     }
   }
 
+
   // CARRYING CAPACITY (modelled as time-varying K)
   vector<Type> logKrepred(ns);
   if (timevaryingK == 1){
@@ -435,7 +448,27 @@ Type objective_function<Type>::operator() ()
       vector<Type> trueKre = exp(logKrepred);
       REPORT(trueKre);
     }
+
+  }else if(tvmPlusK == 1){
+
+    for (int i=0; i<ns; i++){
+      logKre(i) = mkNat + logmre(i);
+    }
+    SIMULATE{
+      REPORT(logKre);
+    }
+
   }
+
+  if(tvKPlusm == 1){
+    for (int i=0; i<ns; i++){
+      logmre(i) = mkNat + logKre(i);
+    }
+    SIMULATE{
+      REPORT(logmre);
+    }
+  }
+
 
 
   // Reference points
@@ -1404,7 +1437,7 @@ Type objective_function<Type>::operator() ()
       // E
       ADREPORT(logEpred);
       // Time varying growth and carrying capacity
-      if (((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))){
+      if ((((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))) || (tvmPlusK == 1)){
         ADREPORT(logKre);
         ADREPORT(logrre);
         ADREPORT(logFmsyvec);
@@ -1417,7 +1450,7 @@ Type objective_function<Type>::operator() ()
         ADREPORT(logFmsyvec);
         ADREPORT(logMSYvec);
         ADREPORT(logmvec);
-      }else if ((timevaryingK == 1) || (logKcovflag == 1)){
+      }else if ((timevaryingK == 1) || (logKcovflag == 1) || (tvmPlusK == 1)){
         ADREPORT(logKre); // K random effect
         ADREPORT(logFmsyvec);
         ADREPORT(logBmsyvec);

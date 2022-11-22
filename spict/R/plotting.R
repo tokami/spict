@@ -565,7 +565,7 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
             indxmax <- which(inp$time ==  max(inp$time))
         }
 
-        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag
+        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK
         if (tvKflag){
             Bmsy <- get.par('logBmsyvec', repmax, exp=TRUE, CI = CI)
             Bmsyvec <- as.data.frame(Bmsy)
@@ -628,7 +628,7 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
         cicol2 <- rgb(0, 0, 1, 0.1)
         if (!'yearsepgrowth' %in% names(inp) && rel.ci){
             polygon(c(inp$time[BBfininds], rev(inp$time[BBfininds])),
-                    c(BB[BBfininds, 1], rev(BB[BBfininds, 3]))/scal*Bmsy[2],
+                    c(BB[BBfininds, 1], rev(BB[BBfininds, 3]))/scal*Bmsyvec$Bmsy,
                     col=cicol2, border=cicol2)
         }
         if(!manflag) abline(v=inp$time[inp$indlastobs], col='gray')
@@ -683,11 +683,11 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
         # B/Bmsy CI
         cicol3 <- rgb(0, 0, 1, 0.2)
         if (!'yearsepgrowth' %in% names(inp)){
-            lines(inp$time[inp$indest], BB[inp$indest,1]/scal*Bmsy[2], col=cicol3, lty=1, lwd=1)
-            lines(inp$time[inp$indest], BB[inp$indest,3]/scal*Bmsy[2], col=cicol3, lty=1, lwd=1)
+            lines(inp$time[inp$indest], BB[inp$indest,1]/scal*Bmsyvec$Bmsy[inp$indest], col=cicol3, lty=1, lwd=1)
+            lines(inp$time[inp$indest], BB[inp$indest,3]/scal*Bmsyvec$Bmsy[inp$indest], col=cicol3, lty=1, lwd=1)
             if(!manflag){
-                lines(inp$time[inp$indpred], BB[inp$indpred,1]/scal*Bmsy[2], col=cicol3, lty=1, lwd=1)
-                lines(inp$time[inp$indpred], BB[inp$indpred,3]/scal*Bmsy[2], col=cicol3, lty=1, lwd=1)
+                lines(inp$time[inp$indpred], BB[inp$indpred,1]/scal*Bmsyvec$Bmsy[inp$indpred], col=cicol3, lty=1, lwd=1)
+                lines(inp$time[inp$indpred], BB[inp$indpred,3]/scal*Bmsyvec$Bmsy[inp$indpred], col=cicol3, lty=1, lwd=1)
             }
         }
         if ('yearsepgrowth' %in% names(inp)){
@@ -762,7 +762,7 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
             indxmax <- which(inp$time ==  max(inp$time))
         }
 
-        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag
+        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK
         if (tvKflag){
             Bmsy <- get.par('logBmsyvec', repmax, exp=TRUE, CI = CI)
             Bmsyvec <- as.data.frame(Bmsy)
@@ -1202,7 +1202,7 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
         log <- ifelse(logax, 'y', '')
         inp <- rep$inp
         cicol <- 'lightgray'
-        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag
+        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK
         qf <- get.par('logqf', rep, exp=TRUE, CI = CI)
         Fest <- get.par('logFnotS', rep, exp=TRUE, CI = CI)
         logFest <- get.par('logFnotS', rep, CI = CI)
@@ -1451,7 +1451,7 @@ plotspict.ffmsy <- function(rep, logax=FALSE, main='Relative fishing mortality',
         if (plot.obs){
             Fmsyvec <- get.par('logFmsyvec', rep, exp=TRUE, CI = CI)
             ie <- cut(inp$timeE, inp$time, right=FALSE, labels=FALSE)
-            if (rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag){
+            if (rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK){
                 Fmsy <- Fmsyvec[ie, 2]
             } else {
                 Fmsy <- get.par('logFmsy', rep, exp=TRUE, CI = CI)[2]
@@ -1540,7 +1540,7 @@ plotspict.fb <- function(rep, logax=FALSE, plot.legend=TRUE, man.legend=TRUE, ex
         }
         log <- ifelse(logax, 'xy', '')
         inp <- rep$inp
-        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag || rep$inp$timevaryingK || rep$inp$logKcovflag
+        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag || rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK
         if (tvgflag){
             rel.axes <- TRUE
         }
@@ -1999,7 +1999,7 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve',
     if (!'sderr' %in% names(rep)){
         inp <- rep$inp
         tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
-        tvKflag <- rep$inp$timevaryingK | rep$inp$logKcovflag
+        tvKflag <- rep$inp$timevaryingK | rep$inp$logKcovflag || rep$inp$tvmPlusK
         Kest <- get.par('logK', rep, exp=TRUE, CI = CI)
         mest <- get.par('logm', rep, exp=TRUE, CI = CI)
         nr <- dim(mest)[1]
