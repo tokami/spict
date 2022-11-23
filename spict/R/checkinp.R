@@ -363,7 +363,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     inp$nseries <- 1 + inp$nindex + as.numeric(inp$nobsE > 0)
 
     # -- MODEL OPTIONS --
-    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB','logmre','logKre','SARvec')
+    if (!"RE" %in% names(inp)) inp$RE <- c('logF', 'logu', 'logB','logmre','logKre','SARvec','logqre')
     if (!"scriptname" %in% names(inp)) inp$scriptname <- 'spict'
     # Index related
     if (!"onealpha" %in% names(inp)){
@@ -1305,6 +1305,24 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## if(!"logitmk" %in% names(inp$ini)) inp$ini$logitmk <- 0
     if(!"mk" %in% names(inp$ini)) inp$ini$mk <- 0
 
+    ## Time varying q
+    if(!"timevaryingq" %in% names(inp)) inp$timevaryingq <- rep(FALSE, inp$nq)
+    inp$ini <- set.default(inp$ini, 'logsdq', log(1e-8))
+    inp$ini <- set.default(inp$ini, 'logpsiq', log(1e-8))
+    if (!"logqre" %in% names(inp$ini)){
+        inp$ini$logqre <- rep(log(1), inp$ns)
+    } else if (length(inp$ini$logqre) > inp$ns){
+        if(verbose) warning('Wrong length of inp$ini$logqre: ', length(inp$ini$logqre),
+                            '. Should be equal to inp$ns: ', inp$ns,
+                            '. Setting length of logqre equal to inp$ns (removing beyond inp$nq).')
+        inp$ini$logqre <- inp$ini$logqre[1:inp$ns]
+    } else if (length(inp$ini$logqre) < inp$ns){
+        if(verbose) warning('Wrong length of inp$ini$logqre: ', length(inp$ini$logqre),
+                            '. Should be equal to inp$ns: ', inp$ns,
+                            '. Resetting logqre.')
+        inp$ini$logqre <- rep(log(1), inp$ns)
+    }
+
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
@@ -1339,7 +1357,11 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
                         logitSARphi=inp$ini$logitSARphi,
                         logSdSAR=inp$ini$logSdSAR,
                         ## logitmk=inp$ini$logitmk)
-                        mk=inp$ini$mk)
+                        mk=inp$ini$mk,
+                        logsdq=inp$ini$logsdq,
+                        logpsiq=inp$ini$logpsiq,
+                        logqre=inp$ini$logqre
+                        )
 
 
     # -- PRIORS --
@@ -1542,7 +1564,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         ## forcefixpars <- c('logitmk', forcefixpars)
         forcefixpars <- c('mk', forcefixpars)
     }
-
+    if (all(!inp$timevaryingq)){
+        forcefixpars <- c('logqre', 'logsdq', 'logpsiq', forcefixpars)
+    }
 
     # Determine phases
     if (!"phases" %in% names(inp)){

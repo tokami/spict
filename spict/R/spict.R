@@ -260,6 +260,7 @@ make.datin <- function(inp, dbg=0){
                   tvmPlusK=as.numeric(inp$tvmPlusK),
                   tvKPlusm=as.numeric(inp$tvKPlusm),
                   mkScale=as.numeric(inp$mkScale),
+                  timevaryingq=as.numeric(inp$timevaryingq),
                   logmcovflag=as.numeric(inp$logmcovflag),
                   logKcovflag=as.numeric(inp$logKcovflag),
                   ffacvec=inp$ffacvec,

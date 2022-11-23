@@ -500,6 +500,12 @@ sumspict.fixedpars <- function(rep, ndigits=8){
     if (!rep$inp$timevaryingK){
         nms <- nms[-match(c('logsdK', 'logpsiK'),  nms)]
     }
+    if (!rep$inp$tvmPlusK && !rep$inp$tvKPlusm){
+        nms <- nms[-match(c('mk'),  nms)]
+    }
+    if (!rep$inp$timevaryingq){
+        nms <- nms[-match(c('logsdq', 'logpsiq'),  nms)]
+    }
     nnms <- length(nms)
     if(nnms > 0){
         vals <- numeric(0)

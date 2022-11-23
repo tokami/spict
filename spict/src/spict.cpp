@@ -50,6 +50,13 @@ Type predictK(const Type &logK0, const Type &dt, const Type &sdK2, const Type &p
   return logK0 - psiK*logK0*dt;
 }
 
+/* Predict q */
+template<class Type>
+Type predictq(const Type &logq0, const Type &dt, const Type &sdq2, const Type &psiq)
+{
+  return logq0 - psiq*logq0*dt;
+}
+
 /* Predict F1 */
 template<class Type>
 Type predictF1(const Type &logF0, const Type &dt, const Type &sdf2, const Type &delta, const Type &logeta)
@@ -153,6 +160,10 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(tvKPlusm);
   DATA_INTEGER(mkScale);
 
+  DATA_INTEGER(timevaryingq);
+
+
+
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priorngamma);    // Prior vector for logn, gamma distribution [shape, rate, useflag ]
@@ -223,6 +234,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
   PARAMETER(mk);          //
 
+  PARAMETER(logsdq);           //
+  PARAMETER(logpsiq);           // Mean reversion in OU for logq
+  PARAMETER_VECTOR(logqre);    // Random effect on q
+
 
   //std::cout << "expmosc: " << expmosc(lambda, omega, 0.1) << std::endl;
   if(dbg > 0){
@@ -264,6 +279,7 @@ Type objective_function<Type>::operator() ()
   // Transform parameters
   Type psi = exp(logpsi);
   Type psiK = exp(logpsiK);
+  Type psiq = exp(logpsiq);
   vector<Type> logphipar(logphi.size()+1);
   logphipar(0) = 0.0; // The first logphi is set to 0, the rest are estimated relative to this.
   for(int i=1; i<logphipar.size(); i++){ logphipar(i) = logphi(i-1); }
@@ -305,6 +321,8 @@ Type objective_function<Type>::operator() ()
   //Type isdm2 = 1.0/sdm2;
   Type sdK = exp(logsdK);
   Type sdK2 = sdK*sdK;
+  Type sdq = exp(logsdq);
+  Type sdq2 = sdq*sdq;
   Type sde = exp(logsde);
   Type sde2 = sde*sde;
   Type isde2 = 1.0/sde2;
@@ -1154,6 +1172,34 @@ Type objective_function<Type>::operator() ()
     }
   }
 
+  // Catchability // TODO: assumes same catchability changes for every index! implement for multiple indices
+  vector<Type> logqrepred(ns);
+  if (timevaryingq == 1){
+    // Compare initial value with stationary distribution of OU
+    likval = dnorm(logqre(0), Type(0.0), sdq/sqrt(2.0*psiq), 1);
+    SIMULATE{
+      if(simRandomEffects == 1){
+        logqre(0) = rnorm(Type(0.0), sdq / sqrt(2.0 * psiq));
+      }
+    }
+    ans -= likval;
+    for (int i=1; i < ns; i++){
+      logqrepred(i) = predictq(logmre(i-1), dt(i-1), sdq2, psiq);
+      likval = dnorm(logqre(i), logqrepred(i), sqrt(dt(i-1))*sdq, 1);
+      SIMULATE{
+        if(simRandomEffects == 1){
+          logqre(i) = rnorm(logqrepred(i), sqrt(dt(i-1)) * sdq);
+        }
+      }
+      ans -= likval;
+    }
+    SIMULATE{
+      REPORT(logqre);
+      vector<Type> trueqre = exp(logqrepred);
+      REPORT(trueqre);
+    }
+  }
+
   // BIOMASS INDEX
   if(dbg>0){
     std::cout << "--- DEBUG: Ipred loop start --- ans: " << ans << std::endl;
@@ -1166,7 +1212,7 @@ Type objective_function<Type>::operator() ()
     indq = CppAD::Integer(iq(i)-1);
     indsdi = CppAD::Integer(isdi(i)-1);
     inds = CppAD::Integer(isi(i)-1);
-    logIpred(i) = logq(indq) + log(B(ind));
+    logIpred(i) = logq(indq) + logqre(ind) + log(B(ind));
     if(robflagi(indsdi)==1){
       likval = log(pp*dnorm(logobsI(i), logIpred(i), stdevfaci(i)*sdi(indsdi), 0) + (1.0-pp)*dnorm(logobsI(i), logIpred(i), robfac*stdevfaci(i)*sdi(indsdi), 0));
       SIMULATE{
@@ -1269,7 +1315,7 @@ Type objective_function<Type>::operator() ()
 
   vector<Type> logIp(nq);
   for(int i=0; i<nq; i++){
-    logIp(i) = logq(i) + log(Bp);
+    logIp(i) = logq(i) + logqre(pind) + log(Bp);
   }
 
   if(dbg > 0){
@@ -1349,6 +1395,7 @@ Type objective_function<Type>::operator() ()
   //
   vector<Type> logmvec = log(mvec);
   vector<Type> logKvec = log(Kvec);
+  vector<Type> logqvec = logq(0) + logqre;  // HERE: only works for 1 index
 
   // ADREPORTS
   if(reportmode == 0){
@@ -1437,7 +1484,7 @@ Type objective_function<Type>::operator() ()
       // E
       ADREPORT(logEpred);
       // Time varying growth and carrying capacity
-      if ((((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))) || (tvmPlusK == 1)){
+      if ((((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))) || (tvmPlusK == 1) || (tvKPlusm == 1)){
         ADREPORT(logKre);
         ADREPORT(logrre);
         ADREPORT(logFmsyvec);
@@ -1450,11 +1497,14 @@ Type objective_function<Type>::operator() ()
         ADREPORT(logFmsyvec);
         ADREPORT(logMSYvec);
         ADREPORT(logmvec);
-      }else if ((timevaryingK == 1) || (logKcovflag == 1) || (tvmPlusK == 1)){
+      }else if ((timevaryingK == 1) || (logKcovflag == 1)){
         ADREPORT(logKre); // K random effect
         ADREPORT(logFmsyvec);
         ADREPORT(logBmsyvec);
         ADREPORT(logKvec);
+      }
+      if(timevaryingq == 1){
+        ADREPORT(logqvec);
       }
       ADREPORT(logFnotS);
       ADREPORT(logFFmsynotS);
