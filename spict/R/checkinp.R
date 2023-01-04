@@ -933,6 +933,17 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
         inp <- set.default(inp, 'logmcovariatein', rep(0, inp$ns))
     }
 
+    ## NEW:
+    ## Time varying m and K
+    if(!"tvKConsR" %in% names(inp)) inp$tvKConsR <- FALSE
+    if(inp$tvKConsR) inp$timevaryingK <- TRUE
+
+    if(!"tvPropChange" %in% names(inp)) inp$tvPropChange <- FALSE
+    if(inp$tvPropChange) inp$timevaryinggrowth <- TRUE
+
+    if(!"tvNonPropChange" %in% names(inp)) inp$tvNonPropChange <- FALSE
+    if(inp$tvNonPropChange) inp$timevaryinggrowth <- TRUE
+
 
     # -- MODEL PARAMETERS --
     # Default values
@@ -1296,14 +1307,17 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## ADreport of residB and residF
     if(!"residFlag" %in% names(inp)) inp$residFlag <- FALSE
 
-    ## Time varying m and K
-    if(!"tvmPlusK" %in% names(inp)) inp$tvmPlusK <- FALSE
-    if(inp$tvmPlusK) inp$timevaryinggrowth <- TRUE
-    if(!"tvKPlusm" %in% names(inp)) inp$tvKPlusm <- FALSE
-    if(inp$tvKPlusm) inp$timevaryingK <- TRUE
-    if(!"mkScale" %in% names(inp)) inp$mkScale <- 1
-    ## if(!"logitmk" %in% names(inp$ini)) inp$ini$logitmk <- 0
-    if(!"mk" %in% names(inp$ini)) inp$ini$mk <- 0
+
+    ## NEW:
+    ## Inital values
+    if(!"mkb" %in% names(inp$ini)) inp$ini$mkb <- 1
+    if(inp$tvKConsR){
+        inp$ini$mkb <- 1
+    }
+    if(inp$tvPropChange){
+        inp$ini$mkb <- 1
+    }
+
 
     ## Time varying q
     if(!"timevaryingq" %in% names(inp)) inp$timevaryingq <- rep(FALSE, inp$nq)
@@ -1357,7 +1371,8 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
                         logitSARphi=inp$ini$logitSARphi,
                         logSdSAR=inp$ini$logSdSAR,
                         ## logitmk=inp$ini$logitmk)
-                        mk=inp$ini$mk,
+                        ## mka=inp$ini$mka,
+                        mkb=inp$ini$mkb,
                         logsdq=inp$ini$logsdq,
                         logpsiq=inp$ini$logpsiq,
                         logqre=inp$ini$logqre
@@ -1560,9 +1575,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if (!inp$timevaryingK){
         forcefixpars <- c('logKre', 'logsdK', 'logpsiK', forcefixpars)
     }
-    if (!inp$tvmPlusK && !inp$tvKPlusm){
+    if (!inp$tvNonPropChange || inp$tvKConsR || inp$tvPropChange){
         ## forcefixpars <- c('logitmk', forcefixpars)
-        forcefixpars <- c('mk', forcefixpars)
+        forcefixpars <- c('mkb', forcefixpars)
     }
     if (all(!inp$timevaryingq)){
         forcefixpars <- c('logqre', 'logsdq', 'logpsiq', forcefixpars)

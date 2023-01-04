@@ -565,7 +565,7 @@ plotspict.biomass <- function(rep, logax=FALSE, main='Absolute biomass', ylim=NU
             indxmax <- which(inp$time ==  max(inp$time))
         }
 
-        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK
+        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvKConsR || rep$inp$tvPropChange || rep$inp$tvNonPropChange
         if (tvKflag){
             Bmsy <- get.par('logBmsyvec', repmax, exp=TRUE, CI = CI)
             Bmsyvec <- as.data.frame(Bmsy)
@@ -762,7 +762,7 @@ plotspict.bbmsy <- function(rep, logax=FALSE, main='Relative biomass', ylim=NULL
             indxmax <- which(inp$time ==  max(inp$time))
         }
 
-        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK
+        tvKflag <- rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvKConsR || rep$inp$tvPropChange || rep$inp$tvNonPropChange
         if (tvKflag){
             Bmsy <- get.par('logBmsyvec', repmax, exp=TRUE, CI = CI)
             Bmsyvec <- as.data.frame(Bmsy)
@@ -1202,7 +1202,7 @@ plotspict.f <- function(rep, logax=FALSE, main='Absolute fishing mortality', yli
         log <- ifelse(logax, 'y', '')
         inp <- rep$inp
         cicol <- 'lightgray'
-        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK
+        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvKConsR || rep$inp$tvPropChange || rep$inp$tvNonPropChange
         qf <- get.par('logqf', rep, exp=TRUE, CI = CI)
         Fest <- get.par('logFnotS', rep, exp=TRUE, CI = CI)
         logFest <- get.par('logFnotS', rep, CI = CI)
@@ -1451,7 +1451,7 @@ plotspict.ffmsy <- function(rep, logax=FALSE, main='Relative fishing mortality',
         if (plot.obs){
             Fmsyvec <- get.par('logFmsyvec', rep, exp=TRUE, CI = CI)
             ie <- cut(inp$timeE, inp$time, right=FALSE, labels=FALSE)
-            if (rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK){
+            if (rep$inp$timevaryinggrowth || rep$inp$logmcovflag  || rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvKConsR || rep$inp$tvPropChange || rep$inp$tvNonPropChange){
                 Fmsy <- Fmsyvec[ie, 2]
             } else {
                 Fmsy <- get.par('logFmsy', rep, exp=TRUE, CI = CI)[2]
@@ -1540,7 +1540,7 @@ plotspict.fb <- function(rep, logax=FALSE, plot.legend=TRUE, man.legend=TRUE, ex
         }
         log <- ifelse(logax, 'xy', '')
         inp <- rep$inp
-        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag || rep$inp$timevaryingK || rep$inp$logKcovflag || rep$inp$tvmPlusK
+        tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag || rep$inp$tvPropChange || rep$inp$tvNonPropChange
         if (tvgflag){
             rel.axes <- TRUE
         }
@@ -1998,8 +1998,8 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve',
     check.rep(rep)
     if (!'sderr' %in% names(rep)){
         inp <- rep$inp
-        tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag
-        tvKflag <- rep$inp$timevaryingK | rep$inp$logKcovflag || rep$inp$tvmPlusK
+        tvgflag <- rep$inp$timevaryinggrowth | rep$inp$logmcovflag || rep$inp$tvKConsR || rep$inp$tvPropChange || rep$inp$tvNonPropChange
+        tvKflag <- rep$inp$timevaryingK | rep$inp$logKcovflag || rep$inp$tvKConsR || rep$inp$tvPropChange || rep$inp$tvNonPropChange
         Kest <- get.par('logK', rep, exp=TRUE, CI = CI)
         mest <- get.par('logm', rep, exp=TRUE, CI = CI)
         nr <- dim(mest)[1]
@@ -2022,64 +2022,135 @@ plotspict.production <- function(rep, n.plotyears=40, main='Production curve',
         Bmsy <- get.par('logBmsy', rep, exp=TRUE, CI = CI)
         Bmsy <- c(1,1)
         if (tvgflag){
-            yscal <- get.par('logMSYvec', rep, exp=TRUE, CI = CI)[binds, 2]
+            yscal <- get.par('logmvec', rep, exp=TRUE, CI = CI)[binds, 2]
         } else {
             yscal <- rep(1, length(binds))
         }
         nBplot <- 200
-        Bplot <- seq(0.5*1e-8, Kmax, length=nBplot)
         # Calculate production curve (Pst)
         pfun <- function(gamma, m, K, n, B) gamma*m/K*B*(1 - (B/K)^(n-1))
         Pst <- list()
-        for (i in 1:ntv){
-            Pst[[i]] <- pfun(gamma[2], mest[im[i],2], Kest[iK[i],2], n[2], Bplot)
-        }
-        Pstscal <- ifelse(tvgflag, max(unlist(Pst)), 1)
-        ylim <- c(0, max(unlist(Pst)/Pstscal, na.rm=TRUE))
-        if (inp$reportall){
-            Best <- get.par('logB', rep, exp=TRUE, CI = CI)
-            Bplot <- seq(0.5*min(c(1e-8, Best[, 2])), 1*max(c(Kest[2], Best[, 2])), length=nBplot)
+        if (!tvKflag){
+            Bplot <- seq(0.5*1e-8, Kmax, length=nBplot)
             for (i in 1:ntv){
                 Pst[[i]] <- pfun(gamma[2], mest[im[i],2], Kest[iK[i],2], n[2], Bplot)
             }
+        }else{
+            Kest <- get.par('logKvec', rep, exp=TRUE, CI = CI)[binds,]
+            for (i in 1:length(binds)){
+                Kmax <- max(Kest[i,2])
+                Bplot <- seq(0.5*1e-8, Kmax, length=nBplot)
+                Pst[[i]] <- pfun(gamma[2], mest[,2], Kest[i,2], n[2], Bplot)
+            }
+        }
+        Pstscal <- ifelse(tvgflag, max(unlist(Pst)), 1)
+        ylim <- c(0, max(unlist(Pst)/Pstscal, na.rm=TRUE))
+        if (!tvKflag){
+            if (inp$reportall){
+                Best <- get.par('logB', rep, exp=TRUE, CI = CI)
+                Bplot <- seq(0.5*min(c(1e-8, Best[, 2])), 1*max(c(Kest[2], Best[, 2])), length=nBplot)
+                for (i in 1:ntv){
+                    Pst[[i]] <- pfun(gamma[2], mest[im[i],2], Kest[iK[i],2], n[2], Bplot)
+                }
+
+                Bvec <- Best[binds, 2]
+                xlim <- range(Bvec/Kmax, 0, 1)
+                ylim <- c(min(0, Pest[,2]/yscal), max(Pest[,2]/yscal, unlist(Pst)/Pstscal, na.rm=TRUE))
+            } else {
+                xlim <- range(Bplot/Kmax, na.rm=TRUE)
+            }
+            dt <- inp$dt[-1]
+            inde <- inp$indest[-length(inp$indest)]
+            indp <- inp$indpred[-1]-1
+            ylab <- 'Production'
+            if (tvgflag){
+                ylab <- paste(ylab, '(normalised)')
+            } else {
+                ylab <- add.catchunit(ylab, inp$catchunit)
+            }
+            xlab <- 'B/K'
+            if (tvKflag){
+                xlab <- paste(xlab, '(normalised)')
+            } else {
+                xlab <- xlab
+            }
+            plot(Bplot/Kmax, Pst[[nr]]/Pstscal, typ='l', ylim=ylim, xlim=xlim,
+                 xlab=xlab, ylab=ylab, col=1, main=main)
+            if (ntv > 1){
+                for (i in 1:(ntv-1)){
+                    lines(Bplot/Kmax, Pst[[i]]/Pstscal, col='gray')
+                }
+            }
+            if (inp$reportall){
+                lines(Bvec/Kmax, Pest[, 2]/yscal, col=4, lwd=1.5)
+                points(Bvec/Kmax, Pest[, 2]/yscal, col=4, pch=20, cex=0.7)
+                par(xpd=TRUE)
+                if (length(inp$ic) < n.plotyears){
+                    inds <- c(1, length(Bvec), seq(1, length(Bvec), by=2))
+                    labs <- round(inp$time[inp$ic], 2)
+                    text(Bvec[inds]/Kmax, Pest[inds, 2]/yscal[inds], labels=labs[inds],
+                         cex=0.75, pos=4, offset=0.25)
+                }
+                par(xpd=FALSE)
+            }
+            mx <- (1/n[2])^(1/(n[2]-1))
+            abline(v=mx, lty=3)
+            abline(h=0, lty=3)
+        }else{
+
+            Best <- get.par('logB', rep, exp=TRUE, CI = CI)[binds,]
+
+            xlim <- range(0, 1)
+            Kmax <- list()
+            Bplot <- list()
+            for (i in 1:length(binds)){
+                Kmax[[i]] <- max(Kest[i,2])
+                Bplot[[i]] <- seq(0.5*min(c(1e-8, Best[, 2])), 1*max(c(Kmax[[i]], Best[i, 2])), length=nBplot)
+                Pst[[i]] <- pfun(gamma[2], mest[,2], Kest[i,2], n[2], Bplot[[i]])
+            }
+
+            Best <- get.par('logB', rep, exp=TRUE, CI = CI)
+            for (i in 1:ntv){
+                Bplot[[i]] <- seq(0.5*min(c(1e-8, Best[, 2])), 1*max(c(Kest[i,2], Best[, 2])), length=nBplot)
+                Pst[[i]] <- pfun(gamma[2], mest[im[i],2], Kest[iK[i],2], n[2], Bplot[[i]])
+            }
+            Pstscal <- ifelse(tvgflag, max(unlist(Pst)), 1)
 
             Bvec <- Best[binds, 2]
-            xlim <- range(Bvec/Kmax, 0, 1)
+            xlim <- range(Bvec/unlist(Kmax), 0, 1)
             ylim <- c(min(0, Pest[,2]/yscal), max(Pest[,2]/yscal, unlist(Pst)/Pstscal, na.rm=TRUE))
-        } else {
-            xlim <- range(Bplot/Kmax, na.rm=TRUE)
-        }
-        dt <- inp$dt[-1]
-        inde <- inp$indest[-length(inp$indest)]
-        indp <- inp$indpred[-1]-1
-        ylab <- 'Production'
-        if (tvgflag){
-            ylab <- paste(ylab, '(normalised)')
-        } else {
-            ylab <- add.catchunit(ylab, inp$catchunit)
-        }
-        plot(Bplot/Kmax, Pst[[nr]]/Pstscal, typ='l', ylim=ylim, xlim=xlim,
-             xlab='B/K', ylab=ylab, col=1, main=main)
-        if (ntv > 1){
-            for (i in 1:(ntv-1)){
-                lines(Bplot/Kmax, Pst[[i]]/Pstscal, col='gray')
+
+            dt <- inp$dt[-1]
+            inde <- inp$indest[-length(inp$indest)]
+            indp <- inp$indpred[-1]-1
+            ylab <- 'Production'
+            if (tvgflag){
+                ylab <- paste(ylab, '(normalised)')
+            } else {
+                ylab <- add.catchunit(ylab, inp$catchunit)
             }
-        }
-        if (inp$reportall){
-            lines(Bvec/Kmax, Pest[, 2]/yscal, col=4, lwd=1.5)
-            points(Bvec/Kmax, Pest[, 2]/yscal, col=4, pch=20, cex=0.7)
-            par(xpd=TRUE)
-            if (length(inp$ic) < n.plotyears){
-                inds <- c(1, length(Bvec), seq(1, length(Bvec), by=2))
-                labs <- round(inp$time[inp$ic], 2)
-                text(Bvec[inds]/Kmax, Pest[inds, 2]/yscal[inds], labels=labs[inds],
-                     cex=0.75, pos=4, offset=0.25)
+            xlab <- paste('B/K', '(normalised)')
+            plot(Bplot[[1]]/Kmax[[1]], Pst[[1]]/Pstscal, typ='l', ylim=ylim, xlim=xlim,
+                 xlab=xlab, ylab=ylab, col=1, main=main)
+            for (i in 2:length(binds)){
+                lines(Bplot[[i]]/Kmax[[i]], Pst[[i]]/Pstscal, col='gray')
             }
-            par(xpd=FALSE)
+            if (inp$reportall){
+                lines(Bvec/unlist(Kmax), Pest[, 2]/yscal, col=4, lwd=1.5)
+                points(Bvec/unlist(Kmax), Pest[, 2]/yscal, col=4, pch=20, cex=0.7)
+                par(xpd=TRUE)
+                if (length(inp$ic) < n.plotyears){
+                    inds <- c(1, length(Bvec), seq(1, length(Bvec), by=2))
+                    labs <- round(inp$time[inp$ic], 2)
+                    text(Bvec[inds]/Kmax, Pest[inds, 2]/yscal[inds], labels=labs[inds],
+                         cex=0.75, pos=4, offset=0.25)
+                }
+                par(xpd=FALSE)
+            }
+            mx <- (1/n[2])^(1/(n[2]-1))
+            abline(v=mx, lty=3)
+            abline(h=0, lty=3)
         }
-        mx <- (1/n[2])^(1/(n[2]-1))
-        abline(v=mx, lty=3)
-        abline(h=0, lty=3)
         box(lwd=1.5)
         if (rep$opt$convergence != 0){
             warning.stamp()

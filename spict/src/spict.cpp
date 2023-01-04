@@ -156,12 +156,12 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(logKcov);        // A vector containing covariate information for logK
   DATA_INTEGER(logKcovflag);   // Flag indicating whether covariate information is available
   DATA_INTEGER(residFlag);
-  DATA_INTEGER(tvmPlusK);
-  DATA_INTEGER(tvKPlusm);
-  DATA_INTEGER(mkScale);
+
+  DATA_INTEGER(tvKConsR);
+  DATA_INTEGER(tvPropChange);
+  DATA_INTEGER(tvNonPropChange);
 
   DATA_INTEGER(timevaryingq);
-
 
 
   // Priors
@@ -232,7 +232,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(SARvec);    // Autoregressive deviations to seasonal spline
   PARAMETER(logitSARphi);      // AR coefficient for seasonal spline dev
   PARAMETER(logSdSAR);         // Standard deviation seasonal spline deviations
-  PARAMETER(mk);          //
+  // PARAMETER(mka);          //
+  PARAMETER(mkb);          //
 
   PARAMETER(logsdq);           //
   PARAMETER(logpsiq);           // Mean reversion in OU for logq
@@ -328,15 +329,14 @@ Type objective_function<Type>::operator() ()
   Type isde2 = 1.0/sde2;
   Type SARphi = ilogit(logitSARphi);
   Type sdSAR = exp(logSdSAR);
-
-  Type mkNat = 0.0;
-  if(mkScale == 1){
-    mkNat = mk;
-  }else if(mkScale == 2){
-    mkNat = log(mk);
-  }else if(mkScale == 3){
-    mkNat = 1.0/(1.0 + exp(-mk)) * 2.0 - 1.0;
-  }
+  // Type mkaNat = Type(0.0);
+  // if(mkaScale == 1){
+  //   mkaNat = mka;
+  // }else if(mkaScale == 1){
+  //   mkaNat = exp(mka);
+  // }else if(mkaScale == 2){
+  //   mkaNat = (ilogit(mka) + 1) / 2;
+  // }
 
   // Initialise vectors
   vector<Type> P(ns-1);
@@ -367,6 +367,7 @@ Type objective_function<Type>::operator() ()
   Type isdc2 = 1.0/sdc2;
   Type beta = sdc/sdf(0);
   Type logbeta = log(beta);
+  Type lognfac = log(pow(n,n/(n - 1.0)));
 
 
   int ntv;
@@ -467,20 +468,10 @@ Type objective_function<Type>::operator() ()
       REPORT(trueKre);
     }
 
-  }else if(tvmPlusK == 1){
-
-    for (int i=0; i<ns; i++){
-      logKre(i) = mkNat + logmre(i);
-    }
-    SIMULATE{
-      REPORT(logKre);
-    }
-
   }
-
-  if(tvKPlusm == 1){
+  if(tvKConsR == 1){
     for (int i=0; i<ns; i++){
-      logmre(i) = mkNat + logKre(i);
+      logmre(i) = logKre(i);
     }
     SIMULATE{
       REPORT(logmre);
@@ -488,18 +479,33 @@ Type objective_function<Type>::operator() ()
   }
 
 
-
-  // Reference points
-  vector<Type> mvec(ns);
+  // NEW:
+  // Time-variant parameters
+  vector<Type> logmvec(ns), mvec(ns), logKvec(ns), Kvec(ns), logrvec(ns);
   for(int i=0; i < ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
-    mvec(i) = exp(logmc(i) + logmre(i));
+    logmvec(i) = logmc(i) + logmre(i);
+    mvec(i) = exp(logmvec(i));
   }
-  vector<Type> Kvec(ns);
-  for(int i=0; i < ns; i++){
-    Kvec(i) = exp(logKc(i) + logKre(i));
+  if(tvPropChange == 1 || tvNonPropChange == 1){
+    for (int i=0; i<ns; i++){
+      logKvec(i) = (logKc(i) + mkb * (logmvec(i) + lognfac)) / (1 + mkb);
+      Kvec(i) = exp(logKvec(i));
+      logKre(i) = logKvec(i) - logKc(i);
+    }
+    SIMULATE{
+      REPORT(logKre);
+    }
+  }else{
+    for(int i=0; i < ns; i++){
+      logKvec(i) = logKc(i) + logKre(i);
+      Kvec(i) = exp(logKvec(i));
+    }
   }
+  logrvec = logmvec - logKvec + lognfac;
 
+
+  // Reference points
   Type p = n - 1.0;
   vector<Type> Bmsyd(ntv);
   vector<Type> Fmsyd(ntv);
@@ -1392,9 +1398,7 @@ Type objective_function<Type>::operator() ()
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
 
-  //
-  vector<Type> logmvec = log(mvec);
-  vector<Type> logKvec = log(Kvec);
+  // NEW:
   vector<Type> logqvec = logq(0) + logqre;  // HERE: only works for 1 index
 
   // ADREPORTS
@@ -1484,24 +1488,26 @@ Type objective_function<Type>::operator() ()
       // E
       ADREPORT(logEpred);
       // Time varying growth and carrying capacity
-      if ((((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))) || (tvmPlusK == 1) || (tvKPlusm == 1)){
+      ADREPORT(logmvec);
+      ADREPORT(logKvec);
+      ADREPORT(logrvec);
+      if ((((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))) || (tvKConsR == 1) || (tvPropChange == 1) || (tvNonPropChange == 1)){
         ADREPORT(logKre);
+        ADREPORT(logmre);
         ADREPORT(logrre);
         ADREPORT(logFmsyvec);
         ADREPORT(logBmsyvec);
         ADREPORT(logMSYvec);
-        ADREPORT(logKvec);
-        ADREPORT(logmvec);
       }else if ((timevaryinggrowth == 1) || (logmcovflag == 1)){
         ADREPORT(logrre); // r random effect
         ADREPORT(logFmsyvec);
+        ADREPORT(logBmsyvec);
         ADREPORT(logMSYvec);
-        ADREPORT(logmvec);
       }else if ((timevaryingK == 1) || (logKcovflag == 1)){
         ADREPORT(logKre); // K random effect
         ADREPORT(logFmsyvec);
         ADREPORT(logBmsyvec);
-        ADREPORT(logKvec);
+        ADREPORT(logMSYvec);
       }
       if(timevaryingq == 1){
         ADREPORT(logqvec);
