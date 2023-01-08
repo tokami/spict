@@ -967,7 +967,7 @@ Type objective_function<Type>::operator() ()
       logFs(i) = logobsC(i) - logB(i); // Calculate fishing mortality
     }
     likval = dnorm(logBpred(i+1), logB(i+1), sqrt(dt(i))*sdb, 1);
-    residB(i) = (logB(i+1) - logBpred(i+1)) / sqrt(dt(i))*sdb;
+    residB(i) = (logB(i+1) - logBpred(i+1)) / (sqrt(dt(i))*sdb);
     SIMULATE{
       if(simRandomEffects == 1){
         logB(i+1) = rnorm(logBpred(i+1), sqrt(dt(i)) * sdb);
