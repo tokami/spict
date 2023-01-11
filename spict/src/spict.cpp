@@ -131,6 +131,10 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(iuse);
   DATA_INTEGER(residFlag);
 
+  DATA_INTEGER(ny);
+  DATA_VECTOR(icAll);
+  DATA_VECTOR(ncAll);
+
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
   DATA_VECTOR(priorngamma);    // Prior vector for logn, gamma distribution [shape, rate, useflag ]
@@ -281,9 +285,14 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i < nobsCp; i++){
     Cpred(i) = 0.0;
   }
+  vector<Type> CpredAll(ny);
+  for(int i=0; i < ny; i++){
+    CpredAll(i) = 0.0;
+  }
   vector<Type> logIpred(nobsI);
   vector<Type> logCpred(nobsCp);
   vector<Type> logEpred(nobsE);
+  vector<Type> logCpredAll(ny);
 
   // Covariate for m
   vector<Type> logmc(ns);
@@ -867,10 +876,18 @@ Type objective_function<Type>::operator() ()
         std::cout << "-- i: " << i << " -  ind: " << ind << "  logCpred(i): " << logCpred(i) << std::endl;
       }
     }
+    for(int i=0; i<ny; i++){
+      for(int j=0; j<ncAll(i); j++){
+        ind = CppAD::Integer(icAll(i)-1) + j;
+        CpredAll(i) += Cpredsub(ind);
+      }
+      logCpredAll(i) = log(CpredAll(i));
+    }
   } else {
     for(int i=0; i<(ns-1); i++){ // ns-1 because logobsC is 1 shorter than ns
       Cpredsub(i) = exp(logobsC(i));
       logCpred(i) = logobsC(i);
+      logCpredAll(i) = logobsC(i);
     }
   }
 
@@ -1248,6 +1265,7 @@ Type objective_function<Type>::operator() ()
       if(reportRel) ADREPORT(logFrel);
       // C
       ADREPORT(logCpred);
+      ADREPORT(logCpredAll);
       // I
       ADREPORT(logIpred);
       // E

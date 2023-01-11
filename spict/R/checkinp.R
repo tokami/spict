@@ -1198,6 +1198,13 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## ADreport of residB and residF
     if(!"residFlag" %in% names(inp)) inp$residFlag <- FALSE
 
+    ## Predict catch for each year
+    years <- unique(round(inp$time[-inp$indpred]))
+    inp$ny <- length(years)
+    inp$icAll <- cut(years, inp$time, right=FALSE, labels=FALSE)
+    inp$ncAll <- rep(1/inp$dteuler, inp$ny) ## always yearly or also seasonal catches?
+    ## for(i in 1:ny) inp$ncAll[i] <- sum(inp$time >= years[i] & inp$time < (years[i] + inp$dtcp[i]))
+
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,

@@ -267,6 +267,9 @@ make.datin <- function(inp, dbg=0){
                   MSYregime=inp$MSYregime,
                   iuse=as.numeric(inp$iuse),
                   residFlag=as.numeric(inp$residFlag),
+                  ny = inp$ny,
+                  icAll = inp$icAll,
+                  ncAll = inp$ncAll,
 
                   priorn=inp$priors$logn,
                   priorngamma=inp$priors$logngamma,
