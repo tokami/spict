@@ -1404,25 +1404,32 @@ Type objective_function<Type>::operator() ()
       // E
       ADREPORT(logEpred);
       // Time varying growth and carrying capacity
-      if (((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))){
-        ADREPORT(logKre);
-        ADREPORT(logrre);
-        ADREPORT(logFmsyvec);
-        ADREPORT(logBmsyvec);
-        ADREPORT(logMSYvec);
-        ADREPORT(logKvec);
-        ADREPORT(logmvec);
-      }else if ((timevaryinggrowth == 1) || (logmcovflag == 1)){
-        ADREPORT(logrre); // r random effect
-        ADREPORT(logFmsyvec);
-        ADREPORT(logMSYvec);
-        ADREPORT(logmvec);
-      }else if ((timevaryingK == 1) || (logKcovflag == 1)){
-        ADREPORT(logKre); // K random effect
-        ADREPORT(logFmsyvec);
-        ADREPORT(logBmsyvec);
-        ADREPORT(logKvec);
-      }
+      // if (((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))){
+      //   ADREPORT(logKre);
+      //   ADREPORT(logrre);
+      //   ADREPORT(logFmsyvec);
+      //   ADREPORT(logBmsyvec);
+      //   ADREPORT(logMSYvec);
+      //   ADREPORT(logKvec);
+      //   ADREPORT(logmvec);
+      // }else if ((timevaryinggrowth == 1) || (logmcovflag == 1)){
+      //   ADREPORT(logrre); // r random effect
+      //   ADREPORT(logFmsyvec);
+      //   ADREPORT(logMSYvec);
+      //   ADREPORT(logmvec);
+      // }else if ((timevaryingK == 1) || (logKcovflag == 1)){
+      //   ADREPORT(logKre); // K random effect
+      //   ADREPORT(logFmsyvec);
+      //   ADREPORT(logBmsyvec);
+      //   ADREPORT(logKvec);
+      // }
+      ADREPORT(logKre);
+      ADREPORT(logrre);
+      ADREPORT(logFmsyvec);
+      ADREPORT(logBmsyvec);
+      ADREPORT(logMSYvec);
+      ADREPORT(logKvec);
+      ADREPORT(logmvec);
       ADREPORT(logFnotS);
       ADREPORT(logFFmsynotS);
     }
