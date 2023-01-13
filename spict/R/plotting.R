@@ -1728,7 +1728,7 @@ plotspict.fb <- function(rep, logax=FALSE, plot.legend=TRUE, man.legend=TRUE, ex
 #' @export
 plotspict.catch <- function(rep, main='Catch', ylim=NULL, qlegend=TRUE, lcol='blue',
                             xlab='Time', ylab=NULL, stamp=get.version(),
-                            verbose=TRUE, CI = 0.95){
+                            verbose=TRUE, CI = 0.95, plot.pred.catch.all.years = FALSE){
     check.rep(rep)
     if (!'sderr' %in% names(rep)){
         manflag <- any(names(rep) == "man")
@@ -1813,6 +1813,13 @@ plotspict.catch <- function(rep, main='Catch', ylim=NULL, qlegend=TRUE, lcol='bl
             clf <- Cpredest[, 1]
             cf <- Cpredest[, 2]/dtc
             cuf <- Cpredest[, 3]
+        }
+        if(plot.pred.catch.all.years){
+            Cpredest <- get.par('logCpredAll', rep, exp=TRUE, CI = CI)
+            c <- Cpredest[,2]
+            clf <- cl <- Cpredest[,1]
+            cuf <- cu <- Cpredest[,3]
+            time <- unique(round(rep$inp$time[-rep$inp$indpred]))
         }
         fininds <- which(apply(cbind(clf, cuf), 1, function(x) all(is.finite(x))))
         if (!ylimflag){
@@ -2282,7 +2289,8 @@ plotspict.btrend <- function(rep, CI = 0.95){
 #' plot(rep)
 #'
 #' @export
-plot.spictcls <- function(x, stamp=get.version(), verbose=TRUE, CI = 0.95, ...){
+plot.spictcls <- function(x, stamp=get.version(), verbose=TRUE, CI = 0.95,
+                          plot.pred.catch.all.years = FALSE, ...){
     check.rep(x)
     rep <- x
     logax <- FALSE # Take log of relevant axes? default: FALSE
@@ -2304,7 +2312,8 @@ plot.spictcls <- function(x, stamp=get.version(), verbose=TRUE, CI = 0.95, ...){
             # F
             plotspict.f(rep, logax=logax, qlegend=FALSE, stamp='',verbose=verbose, CI = CI)
             # Catch
-            plotspict.catch(rep, qlegend=FALSE, stamp='',verbose=verbose, CI = CI)
+            plotspict.catch(rep, qlegend=FALSE, stamp='',verbose=verbose, CI = CI,
+                            plot.pred.catch.all.years = plot.pred.catch.all.years)
             # B/Bmsy
             plotspict.bbmsy(rep, logax=logax, qlegend=FALSE, stamp='',verbose=verbose, CI = CI)
             # F/Fmsy
@@ -3128,7 +3137,8 @@ plotspict.growth <- function(rep, logax=FALSE, main='Time-varying growth', ylim=
 #' plot2(rep)
 #'
 #' @export
-plot2 <- function(rep, stamp=get.version(), verbose=TRUE, CI = 0.95, ...){
+plot2 <- function(rep, stamp=get.version(), verbose=TRUE, CI = 0.95, plot.pred.catch.all.years = FALSE,
+                  ...){
     check.rep(rep)
     logax <- FALSE # Take log of relevant axes? default: FALSE
     inp <- rep$inp
@@ -3140,7 +3150,8 @@ plot2 <- function(rep, stamp=get.version(), verbose=TRUE, CI = 0.95, ...){
         # F/Fmsy
         plotspict.ffmsy(rep, logax=logax, qlegend=FALSE, stamp='',verbose=verbose, CI = CI)
         # Catch
-        plotspict.catch(rep, qlegend=FALSE, stamp='',verbose=verbose, CI = CI)
+        plotspict.catch(rep, qlegend=FALSE, stamp='',verbose=verbose, CI = CI,
+                        plot.pred.catch.all.years = plot.pred.catch.all.years)
         # F versus B
         plotspict.fb(rep, logax=logax, man.legend=FALSE, stamp='', CI = CI)
     }
@@ -3653,7 +3664,11 @@ plotspict.compare.one <- function(rep, ...,
                                                         exp = exp, CI = CI)[indi[[x]],1:3])
         }
         xlim <- range(xlist, na.rm = TRUE)
-        ylim <- range(unlist(ylist), na.rm = TRUE)
+        if(as.integer(plot.unc) == 0){
+            ylim <- range(unlist(lapply(ylist, function(x) x[,2])), na.rm = TRUE)
+        }else{
+            ylim <- range(unlist(ylist), na.rm = TRUE)
+        }
         ## plot
         plot(xlist[[1]], ylist[[1]][,2], ty = "n",
              xlim = xlim, ylim = ylim,
