@@ -1383,17 +1383,25 @@ get.ffac <- function(rep, var = "logBpBmsy", ref = 1,
 #' @return Total Allowable Catch (TAC)
 #'
 #' @export
-calc.tac <- function(rep, inp = NULL, fractileCatch = 0.5, exp = TRUE){
+calc.tac <- function(rep, inp = NULL, fractileCatch = 0.5, exp = TRUE, cpvec = FALSE){
     check.rep(rep, reportmode0 = FALSE)
     if(!is.null(inp)){
         inp$reportmode <- 2
         rept <- retape.spict(rep, inp, verbose=FALSE, mancheck=FALSE)
     }else rept <- rep
     if(fractileCatch == 0.5){
-        tac <- rept$obj$report(rept$obj$env$last.par.best)$Cp
+        if(cpvec){
+            tac <- rept$obj$report(rept$obj$env$last.par.best)$Cpvec
+        }else{
+            tac <- rept$obj$report(rept$obj$env$last.par.best)$Cp
+        }
     }else{
-        logCp <- get.par('logCp', rept)
-        tac <- exp(qnorm(fractileCatch, logCp[2], logCp[4]))
+        if(cpvec){
+            logCp <- get.par('logCpvec', rept)
+        }else{
+            logCp <- get.par('logCp', rept)
+        }
+        tac <- exp(qnorm(fractileCatch, logCp[,2], logCp[,4]))
     }
     if(!exp) tac <- log(tac)
     return(tac)
@@ -1629,6 +1637,7 @@ get.TAC <- function(rep,
                     intermediatePeriodCatchList = NULL,
                     ctol = 0.001,
                     evalBreakpointB = 0,
+                    cpvec = FALSE,
                     verbose = TRUE,
                     dbg = 0,
                     mancheck = TRUE) {
@@ -1712,7 +1721,8 @@ get.TAC <- function(rep,
                          mancheck = FALSE)
 
     ## return tac only
-    tac <- try(calc.tac(rep=rep, inp=inpt, fractileCatch=fList$catch), silent=TRUE)
+    tac <- try(calc.tac(rep=rep, inp=inpt, fractileCatch=fList$catch, cpvec = cpvec),
+               silent=TRUE)
     if(is(tac,"try-error")) stop("TAC could not be estimated.")
     return(tac)
 }

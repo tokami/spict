@@ -1196,6 +1196,18 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## index of reference biomass for relative biomass trend rule (Bref)
     if(!"indBref" %in% names(inp)) inp$indBref <- match.times(inp$manstart, inp$time)
 
+    if(!"indCpvec" %in% names(inp)){
+        inp$indCpvec <- NULL
+        i <- 0
+        while(length(inp$indCpvec) < inp$dtpredcnsteps){
+            inp$indCpvec <- c(inp$indCpvec, i)
+            if(length(inp$indCpvec) %% (1/inp$dteuler) == 0) i <- i + 1
+        }
+    }
+
+    if(!"nCpvec" %in% names(inp)) inp$nCpvec <- ceiling(inp$dtpredcnsteps * inp$dteuler)
+
+
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
                         mu=inp$ini$mu,

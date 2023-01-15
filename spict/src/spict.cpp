@@ -129,6 +129,8 @@ Type objective_function<Type>::operator() ()
   //DATA_SCALAR(effortflag);   // If effortflag == 1 use effort data, else use index data
   DATA_FACTOR(MSYregime);      // factor mapping each time step to an m-regime
   DATA_VECTOR(indBref);        // time index for Bref
+  DATA_VECTOR(indCpvec);        // index for Cp vector
+  DATA_INTEGER(nCpvec);        // index for Cp vector
 
   // Priors
   DATA_VECTOR(priorn);         // Prior vector for n, [log(mean), stdev in log, useflag]
@@ -194,7 +196,7 @@ Type objective_function<Type>::operator() ()
     std::cout << "==== DATA read, now calculating derived quantities ====" << std::endl;
   }
 
-  int ind = 0;
+  int ind, ind2, ind3 = 0;
   // Distribute sorted observations into logobsC and logobsI vectors
   //int nobsC = isc.size();
   vector<Type> logobsC(nobsC);
@@ -656,7 +658,6 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<ns; i++) logS(i) = 0.0; // Initialise
     if(seasontype == 1 || seasontype == 3 ){
       // Spline
-      int ind2, ind3;
       for(int i=0; i<ns; i++){
         ind2 = CppAD::Integer(seasonindex(i));
         ind3 = CppAD::Integer(seasonindex2(i));
@@ -909,6 +910,16 @@ Type objective_function<Type>::operator() ()
   }
   Type logCp = log(Cp);
 
+  // Catch prediction by year
+  vector<Type> Cpvec(nCpvec); // TODO: this will fail if maninterval is e.g. 2.5 years
+  for(int i=0; i < (nCpvec); i++) Cpvec(i) = 0.0;
+  for(int i=0; i<dtpredcnsteps; i++){
+    ind = CppAD::Integer(dtpredcinds(i)-1);
+    ind2 = CppAD::Integer(indCpvec(i));
+    Cpvec(ind2) += Cpredsub(ind);
+  }
+  vector<Type> logCpvec = log(Cpvec);
+
   if(dbg > 0){
     std::cout << "--- DEBUG: ONE-STEP-AHEAD EFFORT PREDICTIONS --- ans: " << ans << std::endl;
     std::cout << "-- dtpredensteps: " << dtpredensteps << "  dtpredeinds.size(): " << dtpredeinds.size() <<std::endl;
@@ -1075,8 +1086,10 @@ Type objective_function<Type>::operator() ()
     ADREPORT(seasonsplinefine);
     // PREDICTIONS
     ADREPORT(Cp);
+    ADREPORT(Cpvec);
     ADREPORT(logIp);
     ADREPORT(logCp);
+    ADREPORT(logCpvec);
     ADREPORT(logEp);
     // PARAMETERS
     ADREPORT(r);
@@ -1161,15 +1174,18 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFmFmsynotS);
     ADREPORT(logBmBmsy);
     ADREPORT(logCp);
+    ADREPORT(logCpvec);
     ADREPORT(logFnotS);
     ADREPORT(logB);
     ADREPORT(logBBmsy);
     ADREPORT(logFFmsynotS);
   }else if(reportmode == 2){
     ADREPORT(logCp);
+    ADREPORT(logCpvec);
   }else if(reportmode == 3){
     ADREPORT(logCpred);
     ADREPORT(logCp);
+    ADREPORT(logCpvec);
     ADREPORT(logBref);
     ADREPORT(logBBref);
     ADREPORT(logBpBref);
@@ -1180,6 +1196,7 @@ Type objective_function<Type>::operator() ()
 
   // REPORTS (these don't require sdreport to be output)
   REPORT(Cp);
+  REPORT(Cpvec);
   REPORT(Ep);
   REPORT(logIp);
   REPORT(MSY);

@@ -265,6 +265,9 @@ make.datin <- function(inp, dbg=0){
                   stochmsy=ifelse(inp$msytype=='s', 1, 0),
                   stabilise=inp$stabilise,
                   MSYregime=inp$MSYregime,
+                  indCpvec = inp$indCpvec,
+                  nCpvec = inp$nCpvec,
+
                   priorn=inp$priors$logn,
                   priorngamma=inp$priors$logngamma,
                   priorr=inp$priors$logr,
