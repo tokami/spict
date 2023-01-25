@@ -2560,6 +2560,7 @@ cols <- function() {
 #' @param CI Confidence intervals to be calculated, e.g. 0.9 for the 90%
 #'     confidence intervals. By default (CI = 0.95), the 95% confidence
 #'     intervals are estimated.
+#' @param npeels Optional; select less peels than the ones in the fitted object
 #'
 #' @return Ivisible \code{NULL}. If \code{add.mohn} is \code{TRUE},
 #'     \code{plotspict.retro} returns the Mohn's rho for B/Bmsy and F/Fmsy.
@@ -2569,15 +2570,19 @@ cols <- function() {
 #'     such a case.
 #'
 #' @export
-plotspict.retro <- function(rep, stamp=get.version(), add.mohn = TRUE, CI = 0.95) {
+plotspict.retro <- function(rep, stamp=get.version(), add.mohn = TRUE, CI = 0.95, npeels = NULL) {
     opar <- par(mfrow=c(2, 2), mar=c(2.5, 3.3, 4, 0.8))
     on.exit(par(opar))
     if (!"spictcls" %in% class(rep)) stop("This function only works with a fitted spict object (class 'spictcls'). Please run `fit.spict` first.")
     if (!"retro" %in% names(rep)) stop("No results of the retro function found. Please run the retrospective analysis using the `retro` function.")
     if (add.mohn) {
-        mr <- suppressMessages(mohns_rho(rep, what = c("FFmsy", "BBmsy")))
+        mr <- suppressMessages(mohns_rho(rep, what = c("FFmsy", "BBmsy"), npeels = npeels))
         mrr <- round(mr, 3)
     }
+    if(is.null(npeels) || is.na(npeels)){
+        npeels <- length(rep$retro) - 1
+    }
+    rep$retro <- rep$retro[1:(npeels+1)]
     nruns <- length(rep$retro)
     bs <- bbs <- fs <- ffs <- time <- conv <- list()
     for (i in 1:nruns) {

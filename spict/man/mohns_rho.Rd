@@ -4,7 +4,7 @@
 \alias{mohns_rho}
 \title{Calculate Mohn's rho for different estimates}
 \usage{
-mohns_rho(rep, what = c("FFmsy", "BBmsy"), annualfunc = mean)
+mohns_rho(rep, what = c("FFmsy", "BBmsy"), annualfunc = mean, npeels = NULL)
 }
 \arguments{
 \item{rep}{A valid result from fit.spict}
@@ -12,6 +12,8 @@ mohns_rho(rep, what = c("FFmsy", "BBmsy"), annualfunc = mean)
 \item{what}{character vector specifying the quantities}
 
 \item{annualfunc}{function used to convert subannual data into annual}
+
+\item{npeels}{Optional; select less peels than the ones in the fitted object}
 }
 \value{
 A named vector with the Monh's rho value for each quantity.

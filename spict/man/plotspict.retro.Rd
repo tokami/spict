@@ -5,7 +5,13 @@
 \alias{plotspict.retro.fixed}
 \title{Plot results of retrospective analysis}
 \usage{
-plotspict.retro(rep, stamp = get.version(), add.mohn = TRUE, CI = 0.95)
+plotspict.retro(
+  rep,
+  stamp = get.version(),
+  add.mohn = TRUE,
+  CI = 0.95,
+  npeels = NULL
+)
 
 plotspict.retro.fixed(rep, CI = 0.95)
 }
@@ -19,6 +25,8 @@ plotspict.retro.fixed(rep, CI = 0.95)
 \item{CI}{Confidence intervals to be calculated, e.g. 0.9 for the 90%
 confidence intervals. By default (CI = 0.95), the 95% confidence
 intervals are estimated.}
+
+\item{npeels}{Optional; select less peels than the ones in the fitted object}
 }
 \value{
 Ivisible \code{NULL}. If \code{add.mohn} is \code{TRUE},

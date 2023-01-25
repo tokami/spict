@@ -96,6 +96,7 @@ retro <- function(rep, nretroyear=5, reduce_output_size = TRUE, mc.cores = 1){
 #' @param rep A valid result from fit.spict
 #' @param what character vector specifying the quantities
 #' @param annualfunc function used to convert subannual data into annual
+#' @param npeels Optional; select less peels than the ones in the fitted object
 #' @return A named vector with the Monh's rho value for each quantity.
 #' @examples
 #' data(pol)
@@ -104,7 +105,7 @@ retro <- function(rep, nretroyear=5, reduce_output_size = TRUE, mc.cores = 1){
 #' rep <- retro(rep, nretroyear = 4)
 #' mohns_rho(rep)
 #' @export
-mohns_rho <- function(rep, what = c("FFmsy", "BBmsy"), annualfunc = mean) {
+mohns_rho <- function(rep, what = c("FFmsy", "BBmsy"), annualfunc = mean, npeels = NULL) {
   if (!"spictcls" %in% class(rep)) stop("This function only works with a fitted spict object (class 'spictcls'). Please run `fit.spict` first.")
   if (!"retro" %in% names(rep)) stop("No results of the retro function found. Please run the retrospective analysis using the `retro` function.")
   if ("Ipred" %in% what && rep$inp$nindex > 1) warning("Mohn's rho will be calculated only for index 1.")
@@ -137,6 +138,10 @@ mohns_rho <- function(rep, what = c("FFmsy", "BBmsy"), annualfunc = mean) {
     setNames(do.call(cbind.data.frame, res), what)
   }
   ## Exclude not converged runs
+  if(is.null(npeels) || is.na(npeels)){
+      npeels <- length(rep$retro) - 1
+  }
+  rep$retro <- rep$retro[1:(npeels+1)]
   conv <- sapply(rep$retro, function(x) x$opt$convergence == 0)
   nnotconv <- sum(!conv)
   if (nnotconv > 0) {
