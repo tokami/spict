@@ -14,6 +14,7 @@ plotspict.compare(
   col = c("dodgerblue2", "darkorange1", "forestgreen", "goldenrod1", "purple2",
     "firebrick3", "skyblue4", "darkgreen", "salmon3", "brown2"),
   asp = 2,
+  plot.pred.catch.all.years = TRUE,
   stamp = get.version()
 )
 }
@@ -46,6 +47,9 @@ polygons. Default: \code{TRUE}.}
 
 \item{asp}{Positive number deining the target aspect ratio (columns / rows)
 of the plot arrangement.}
+
+\item{plot.pred.catch.all.years}{Plot the predicted catch for years where no
+catch observations are available (Default: TRUE).}
 
 \item{stamp}{Stamp plot with this character string.}
 }

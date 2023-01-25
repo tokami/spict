@@ -17,6 +17,7 @@ plotspict.compare.one(
   ylab = NULL,
   main = NULL,
   plot.legend = TRUE,
+  plot.pred.catch.all.years = TRUE,
   stamp = get.version()
 )
 }
@@ -58,6 +59,9 @@ variable (\code{varname}).}
 
 \item{plot.legend}{Logical; Indicating whether to include a legend. Default:
 \code{TRUE}.}
+
+\item{plot.pred.catch.all.years}{Plot the predicted catch for years where no
+catch observations are available (Default: TRUE).}
 
 \item{stamp}{Stamp plot with this character string.}
 }
