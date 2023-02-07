@@ -276,7 +276,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
             inp2 <- check.index(inp)
             if(length(inp2$timeI) != length(inp2$ini[['logq']])){
                 if(length(inp2$ini[['logq']]) == 1){
-                    writeLines(paste0("The index time vector (inp$timeI) indicates ", length(inp2$timeI),
+                    if(verbose) writeLines(paste0("The index time vector (inp$timeI) indicates ", length(inp2$timeI),
                                       " index/indices, but only one catchability coefficient ",
                                       " (inp$ini$logq) is provided. ",
                                       "Assuming the same catchability for all indices."))
@@ -284,7 +284,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
                         inp$ini$logq <- rep(inp$ini[['logq']], length(inp2$timeI))
                     }
                 }else{
-                    writeLines(paste0("The index time vector (inp$timeI) indicates ", length(inp2$timeI),
+                    if(verbose) writeLines(paste0("The index time vector (inp$timeI) indicates ", length(inp2$timeI),
                                 " index/indices, but the catchability coefficient (inp$ini$logq) indicates ",
                                 length(inp2$ini$logq),
                                 " index/indices. Recycling/Subsetting the coefficients to match the ",
@@ -342,7 +342,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
 
     ## Note if stabilise option used
     if(inp$stabilise == 1){
-        writeLines(paste0("The stabilise option was used for fitting / ",
+        if(verbose) writeLines(paste0("The stabilise option was used for fitting / ",
                           "is specified in the input list (inp$stabilise). ",
                           "This activates six very vague priors. ",
                           "Acknowledging these priors when simulating is not yet implemented. "))
@@ -351,7 +351,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
     activePriors <- names(inp$priors)[which(inp$priorsuseflags == 1)]
     ## Note if any other prior used other than logn, logbeta or logalpha
     if(length(activePriors) > 0){
-        writeLines(paste0("Additional priors were used for fitting / are specified in the input list (inp$priors): ",
+        if(verbose) writeLines(paste0("Additional priors were used for fitting / are specified in the input list (inp$priors): ",
                           paste0(activePriors, collapse=", "),
                           ". Acknowledging these priors when simulating is not yet implemented. "))
     }
@@ -576,11 +576,41 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
                 logFbase <- numeric(nt)
                 logFbase[1] <- log(F0)
                 e.f <- rnorm(nt-1, 0, sdf*sqrt(dt))
-                for (t in 2:nt){
-                    logFbase[t] <- predict.logf(logFbase[t-1], dt, sdf, inp$efforttype) + e.f[t-1]
+                if(inp$sim$Fpattern == 0){
+                    for (t in 2:nt){
+                        logFbase[t] <- predict.logf(logFbase[t-1], dt, sdf, inp$efforttype) + e.f[t-1]
+                    }
+                    ##ef <- arima.sim(inp$armalistF, nt-1) * sdf*sqrt(dt) ## Used to simulate other than white noise in F
+                    ##logFbase <- c(log(F0), log(F0) + cumsum(ef)) ## Fishing mortality
+                }else if(inp$sim$Fpattern %in% c(1,2)){
+                    logFbase <- rep(log(F0), nt)
+                    if(inp$sim$Fpattern == 2) logFbase[2:nt] <- logFbase[2:nt] + e.f
+                }else if(inp$sim$Fpattern == 3){ ## roller coaster spanning whole time series
+                    rawF <- c(seq(F0,inp$sim$Fmax,length.out = floor(nt/2.5)),           ## increasing
+                              rep(inp$sim$Fmax,(nt-(floor(nt/2.5)+floor(nt/3)))),  ## stable
+                              seq(inp$sim$Fmax,F0+0.1,length.out=floor(nt/3)))          ## decreasing
+                    logFbase <- log(rawF)
+                    logFbase[2:nt] <- logFbase[2:nt] + e.f
+                }else if(inp$sim$Fpattern == 4){  ## rollercoaser only in first years
+                    rawF <- c(seq(0.01,inp$sim$Fmax,length.out=32),
+                              rep(inp$sim$Fmax,16),  ## stable
+                              seq(inp$sim$Fmax,0.01,length.out=32),
+                              rep(0.01,32),  ## stable
+                              seq(0.01,F0,length.out=48),
+                              rep(F0,nt-160))          ## decreasing
+                    logFbase <- log(rawF)
+                    logFbase[2:nt] <- logFbase[2:nt] + e.f
+                }else if(inp$sim$Fpattern == 5){  ## rollercoaser constantly repeating
+                    ## oneCycle = length = 240 (incl. dteuler 1/16)
+                    repF <- ceiling(inp$ns/240)
+                    oneCycle <- c(seq(0.01,inp$sim$Fmax,length.out=80),
+                                  rep(inp$sim$Fmax,32),  ## stable
+                                  seq(inp$sim$Fmax,0.01,length.out=96),
+                                  rep(0.01,32))  ## stable
+                    rawF <- rep(oneCycle, repF)
+                    logFbase <- log(rawF[1:nt])
+                    logFbase[2:nt] <- logFbase[2:nt] + e.f
                 }
-                ##ef <- arima.sim(inp$armalistF, nt-1) * sdf*sqrt(dt) ## Used to simulate other than white noise in F
-                ##logFbase <- c(log(F0), log(F0) + cumsum(ef)) ## Fishing mortality
             }else{
                 ## non-seasonal F
                 ind <- which(names(sim.pars) == "logF")

@@ -1198,6 +1198,11 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## ADreport of residB and residF
     if(!"residFlag" %in% names(inp)) inp$residFlag <- FALSE
 
+    ## NEW: more info for simulation
+    if(!'sim' %in% names(inp)) inp$sim <- list()
+    if(!'Fpattern' %in% names(inp$sim)) inp$sim$Fpattern <- 0
+    if(!'Fmax' %in% names(inp$sim)) inp$sim$Fmax <- 0.5
+
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,
