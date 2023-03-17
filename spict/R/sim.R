@@ -592,7 +592,7 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
                     logFbase <- log(rawF)
                     logFbase[2:nt] <- logFbase[2:nt] + e.f
                 }else if(inp$sim$Fpattern == 4){  ## rollercoaser only in first years
-                    rawF <- c(seq(0.01,inp$sim$Fmax,length.out=32),
+                    rawF <- c(seq(F0,inp$sim$Fmax,length.out=32),
                               rep(inp$sim$Fmax,16),  ## stable
                               seq(inp$sim$Fmax,0.01,length.out=32),
                               rep(0.01,32),  ## stable
@@ -601,13 +601,66 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
                     logFbase <- log(rawF)
                     logFbase[2:nt] <- logFbase[2:nt] + e.f
                 }else if(inp$sim$Fpattern == 5){  ## rollercoaser constantly repeating
+
+                    Fmid <- 1/4 * inp$sim$Fmax
+
+                    ## F increase
+                    t1 <- ceiling(2.5/inp$dteuler)
+                    ## constant high
+                    t2 <- ceiling(0.5/inp$dteuler)
+                    ## F decrease
+                    t3 <- ceiling(3.5/inp$dteuler)
+                    ## constant low
+                    t4 <- ceiling(0.5/inp$dteuler)
+                    ## F increase
+                    t5 <- ceiling(2/inp$dteuler)
+                    ## Fmid cons
+                    t6 <- ceiling(1/inp$dteuler)
+
+                    oneCycle <- c(seq(Fmid,inp$sim$Fmax,length.out=t1),
+                                  rep(inp$sim$Fmax,t2),  ## stable
+                                  seq(inp$sim$Fmax,F0,length.out=t3),
+                                  rep(F0,t4),
+                                  seq(F0,Fmid,length.out=t5),
+                                  rep(Fmid,t6)  ## stable
+                                  )  ## stable
+                    rawF <- rep(oneCycle, 100)
+                    logFbase <- log(rawF[1:nt])
+                    logFbase[2:nt] <- logFbase[2:nt] + e.f
+                }else if(inp$sim$Fpattern == 6){  ## rollercoaser in 5 years, then cons
                     ## oneCycle = length = 240 (incl. dteuler 1/16)
-                    repF <- ceiling(inp$ns/240)
-                    oneCycle <- c(seq(0.01,inp$sim$Fmax,length.out=80),
-                                  rep(inp$sim$Fmax,32),  ## stable
-                                  seq(inp$sim$Fmax,0.01,length.out=96),
-                                  rep(0.01,32))  ## stable
-                    rawF <- rep(oneCycle, repF)
+
+                    ## 3 years F increase
+                    t1 <- ceiling(5/inp$dteuler)
+                    ## 0.75 years F stable (high)
+                    t2 <- ceiling(1/inp$dteuler)
+                    ## 1.25 years F decrease
+                    t3 <- ceiling(2/inp$dteuler)
+
+                    rawF <- c(seq(0.01, inp$sim$Fmax,
+                                      length.out = t1),
+                                  rep(inp$sim$Fmax, t2),
+                                  seq(inp$sim$Fmax, 2/3*inp$sim$Fmax,
+                                      length.out = t3),
+                                  rep(2/3*inp$sim$Fmax, nt - t1 - t2 - t3))
+                    logFbase <- log(rawF[1:nt])
+                    logFbase[2:nt] <- logFbase[2:nt] + e.f
+                }else if(inp$sim$Fpattern == 7){  ## rollercoaser constantly repeating (opposite: high - low - high)
+                    ## one cycle = 12 years (min)
+                    ## F increase
+                    t1 <- ceiling(5/inp$dteuler)
+                    ## constant high
+                    t2 <- ceiling(1/inp$dteuler)
+                    ## F decrease
+                    t3 <- ceiling(5/inp$dteuler)
+                    ## constant low
+                    t4 <- ceiling(1/inp$dteuler)
+
+                    oneCycle <- c(seq(inp$sim$Fmax, F0,length.out=t1),
+                                  rep(F0,t2),  ## stable
+                                  seq(F0,inp$sim$Fmax,length.out=t3),
+                                  rep(inp$sim$Fmax,t4))  ## stable
+                    rawF <- rep(oneCycle, 100)
                     logFbase <- log(rawF[1:nt])
                     logFbase[2:nt] <- logFbase[2:nt] + e.f
                 }
