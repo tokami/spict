@@ -1202,6 +1202,8 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if(!'sim' %in% names(inp)) inp$sim <- list()
     if(!'Fpattern' %in% names(inp$sim)) inp$sim$Fpattern <- 0
     if(!'Fmax' %in% names(inp$sim)) inp$sim$Fmax <- 0.5
+    if(!'Fmid' %in% names(inp$sim)) inp$sim$Fmid <- 0.25
+    if(!'yhist' %in% names(inp$sim)) inp$sim$yhist <- 0
 
 
     # Reorder parameter list

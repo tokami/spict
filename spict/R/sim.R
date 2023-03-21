@@ -602,13 +602,14 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
                     logFbase[2:nt] <- logFbase[2:nt] + e.f
                 }else if(inp$sim$Fpattern == 5){  ## rollercoaser constantly repeating
 
-                    Fmid <- 1/4 * inp$sim$Fmax
+                    Fmid <- inp$sim$Fmid ## 1/4 * inp$sim$Fmax
 
                     ## F increase
                     t1 <- ceiling(2.5/inp$dteuler)
                     ## constant high
                     t2 <- ceiling(0.5/inp$dteuler)
                     ## F decrease
+
                     t3 <- ceiling(3.5/inp$dteuler)
                     ## constant low
                     t4 <- ceiling(0.5/inp$dteuler)
@@ -661,6 +662,48 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
                                   seq(F0,inp$sim$Fmax,length.out=t3),
                                   rep(inp$sim$Fmax,t4))  ## stable
                     rawF <- rep(oneCycle, 100)
+                    logFbase <- log(rawF[1:nt])
+                    logFbase[2:nt] <- logFbase[2:nt] + e.f
+                }else if(inp$sim$Fpattern == 8){  ## single rollercoaster with additional cons F period (for scenarios with high or low historical catches)
+
+                    Fmid <- inp$sim$Fmid ## 1/4 * inp$sim$Fmax
+
+                    ## constant F (F0)
+                    t0 <- ceiling((inp$sim$yhist/3)/inp$dteuler)
+                    t1 <- ceiling((inp$sim$yhist * 2/3)/inp$dteuler)
+                    nt2 <- nt - t0 - t1
+                    ##
+                    t2 <- floor(nt2 / 3)
+                    t3 <- floor(nt2 / 2)
+                    t4 <- nt2 - t2 - t3
+
+                    rawF <- c(rep(F0, t0),
+                              seq(F0, Fmid, length.out = t1),
+                              rep(Fmid, t2),
+                              seq(Fmid, inp$sim$Fmax, length.out = t3),
+                              rep(inp$sim$Fmax, t4))
+                    logFbase <- log(rawF[1:nt])
+                    logFbase[2:nt] <- logFbase[2:nt] + e.f
+                }else if(inp$sim$Fpattern == 9){  ## single up or downward
+
+                    rawF <- c(seq(F0, inp$sim$Fmax, length.out = nt))
+                    logFbase <- log(rawF[1:nt])
+                    logFbase[2:nt] <- logFbase[2:nt] + e.f
+
+                }else if(inp$sim$Fpattern == 10){  ## single up or downward
+
+                    Fmid <- inp$sim$Fmid ## 1/4 * inp$sim$Fmax
+
+                    t1 <- floor(nt / 2.5)
+                    t2 <- floor(nt / 5)
+                    t3 <- floor(nt / 3)
+                    t4 <- nt - t1 - t2 - t3
+
+                    rawF <- c(seq(F0, inp$sim$Fmax, length.out = t1),
+                              rep(inp$sim$Fmax, t2),
+                              seq(inp$sim$Fmax, Fmid, length.out = t3),
+                              rep(Fmid, t4))
+
                     logFbase <- log(rawF[1:nt])
                     logFbase[2:nt] <- logFbase[2:nt] + e.f
                 }
