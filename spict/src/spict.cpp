@@ -1166,6 +1166,12 @@ Type objective_function<Type>::operator() ()
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
   Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
 
+  // Report C/MSY
+  vector<Type> logCpredMSY(logCpred.size());
+  for(int i=0; i<logCpred.size(); i++){
+    logCpredMSY(i) = logCpred(i) - logMSY(0); // TODO: not implemented for multiple regimes
+  }
+
   // ADREPORTS
   if(reportmode == 0){
     ADREPORT(Bmsy);
@@ -1260,6 +1266,7 @@ Type objective_function<Type>::operator() ()
       }
       ADREPORT(logFnotS);
       ADREPORT(logFFmsynotS);
+      ADREPORT(logCpredMSY);
     }
     ADREPORT( logBmsyPluslogFmsy ) ;
 
