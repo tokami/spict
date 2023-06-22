@@ -1396,7 +1396,18 @@ Type objective_function<Type>::operator() ()
   Type logFmFmsynotS = logFmnotS - logFmsyvec(mind);
 
   // Report the sum of reference points -- can be used to calculate their covariance without using ADreport with covariance.
-  Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
+  // Type logBmsyPluslogFmsy = logBmsy(logBmsy.size()-1) + logFmsy(logFmsy.size()-1);
+
+  Type bbi=0;
+  Type ffi=0;
+  int ndt = CppAD::Integer(1/dt(0));
+  for(int i=0; i<ndt; i++){
+    bbi += logBmsyvec(mind-i);
+    ffi += logFmsyvec(mind-i);
+  }
+  bbi = bbi / ndt;
+  ffi = ffi / ndt;
+  Type logBmsyPluslogFmsy = bbi + ffi;
 
   // NEW:
   vector<Type> logqvec = logq(0) + logqre;  // HERE: only works for 1 index
