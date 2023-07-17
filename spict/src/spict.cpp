@@ -596,7 +596,7 @@ Type objective_function<Type>::operator() ()
     logMSY = logMSYd;
     for(int i=0; i<ns; i++){
       ind = CppAD::Integer(ir(i)-1); // minus 1 because R starts at 1 and c++ at 0
-      logFmsyvec(i) = log(mvec(i) / Kvec(i) * pow(1.0/n, 1.0/(n-1.0)));
+      logFmsyvec(i) = log(mvec(i) / (Kvec(i) * pow(1.0/n, 1.0/(n-1.0))));
       logBmsyvec(i) = log(Kvec(i) * pow(1.0/n, 1.0/(n-1.0)));
       logMSYvec(i) = log(mvec(i));
     }
