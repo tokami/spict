@@ -936,13 +936,22 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## NEW:
     ## Time varying m and K
     if(!"tvKConsR" %in% names(inp)) inp$tvKConsR <- FALSE
-    if(inp$tvKConsR) inp$timevaryingK <- TRUE
+    if(inp$tvKConsR){
+        inp$timevaryinggrowth <- FALSE
+        inp$timevaryingK <- TRUE
+    }
 
     if(!"tvPropChange" %in% names(inp)) inp$tvPropChange <- FALSE
-    if(inp$tvPropChange) inp$timevaryinggrowth <- TRUE
+    if(inp$tvPropChange){
+        inp$timevaryinggrowth <- TRUE
+        inp$timevaryingK <- FALSE
+    }
 
     if(!"tvNonPropChange" %in% names(inp)) inp$tvNonPropChange <- FALSE
-    if(inp$tvNonPropChange) inp$timevaryinggrowth <- TRUE
+    if(inp$tvNonPropChange){
+        inp$timevaryinggrowth <- TRUE
+        inp$timevaryingK <- FALSE
+    }
 
 
     # -- MODEL PARAMETERS --
@@ -1308,14 +1317,15 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if(!"residFlag" %in% names(inp)) inp$residFlag <- FALSE
 
 
-    ## NEW:
+    ## NEW: NEW:
     ## Inital values
-    if(!"mkb" %in% names(inp$ini)) inp$ini$mkb <- 1
-    if(inp$tvKConsR){
-        inp$ini$mkb <- 1
-    }
+    if(!"mkb" %in% names(inp$ini)) inp$ini$mkb <- 0.5
+    ## NEW:
+    ## if(inp$tvKConsR){
+    ##     inp$ini$mkb <- 1
+    ## }
     if(inp$tvPropChange){
-        inp$ini$mkb <- 1
+        inp$ini$mkb <- 0.5
     }
 
 

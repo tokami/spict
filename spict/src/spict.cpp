@@ -369,7 +369,6 @@ Type objective_function<Type>::operator() ()
   Type logbeta = log(beta);
   Type lognfac = log(pow(n,n/(n - 1.0)));
 
-
   int ntv;
   if(nm > nK){
     ntv = nm;
@@ -489,18 +488,17 @@ Type objective_function<Type>::operator() ()
   }
   if(tvPropChange == 1 || tvNonPropChange == 1){
     for (int i=0; i<ns; i++){
-      logKvec(i) = (logKc(i) + mkb * (logmvec(i) + lognfac)) / (1 + mkb);
-      Kvec(i) = exp(logKvec(i));
-      logKre(i) = logKvec(i) - logKc(i);
+      // Kre = mkb * sqrt(mre)
+      logKre(i) = mkb * logmre(i);
+      // logKvec(i) = (logKc(i) + mkb * (logmvec(i) + lognfac)) / (1 + mkb);
     }
     SIMULATE{
       REPORT(logKre);
     }
-  }else{
-    for(int i=0; i < ns; i++){
-      logKvec(i) = logKc(i) + logKre(i);
-      Kvec(i) = exp(logKvec(i));
-    }
+  }
+  for(int i=0; i < ns; i++){
+    logKvec(i) = logKc(i) + logKre(i);
+    Kvec(i) = exp(logKvec(i));
   }
   logrvec = logmvec - logKvec + lognfac;
 
@@ -645,7 +643,9 @@ Type objective_function<Type>::operator() ()
     //std::cout << " -- n: " << n << " -- gamma: " << gamma << n << " -- m(i): " << m(i)<< n << " -- K: " << K << " -- r(i): " << r(i) << " -- logr(i): " << logr(i) << std::endl;
   }
   for(int i=0; i<ns; i++){
-    logrre(i) = log(mvec(i)/Kvec(i) * pow(n,(n/(n-1.0))));
+    // NEW:
+    // logrre(i) = log(mvec(i)/Kvec(i) * pow(n,(n/(n-1.0))));
+    logrre(i) = logmre(i) - logKre(i);
   }
   Type BmsyB0 = pow(Type(1)/n,Type(1)/(n-Type(1)) );
 
