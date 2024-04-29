@@ -1204,6 +1204,9 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     ## ADreport of residB and residF
     if(!"residFlag" %in% names(inp)) inp$residFlag <- FALSE
 
+    ## For multiyear TAC
+    inp$dtpredcindsy <- as.integer(factor(floor(inp$time[inp$dtpredcinds])))
+
 
     # Reorder parameter list
     inp$parlist <- list(logm=inp$ini$logm,

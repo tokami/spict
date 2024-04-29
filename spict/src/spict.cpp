@@ -163,6 +163,7 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(dbg);            // Debug flag, if == 1 then print stuff.
   DATA_INTEGER(reportmode);    // If 1-5 only specific quantities are ADreported (increases speed, relevant for fitting within MSE)
   DATA_INTEGER(simRandomEffects); // flag turning simulation of random effects on/off
+  DATA_VECTOR(dtpredcindsy);    // Indices of predictions in F state vector
 
   // PARAMETERS
   PARAMETER_VECTOR(logm);      // m following the Fletcher formulation (see Prager 2002)
@@ -199,7 +200,7 @@ Type objective_function<Type>::operator() ()
     std::cout << "==== DATA read, now calculating derived quantities ====" << std::endl;
   }
 
-  int ind = 0;
+  int ind = 0, ind2 = 0, ind3 = 0;
   // Distribute sorted observations into logobsC and logobsI vectors
   //int nobsC = isc.size();
   vector<Type> logobsC(nobsC);
@@ -692,7 +693,6 @@ Type objective_function<Type>::operator() ()
     for(int i=0; i<ns; i++) logSpred(i) = 0.0; // Initialise
     if(seasontype == 1 || seasontype == 3 ){
       // Spline
-      int ind2, ind3;
       for(int i=0; i<ns; i++){
         ind2 = CppAD::Integer(seasonindex(i));
         ind3 = CppAD::Integer(seasonindex2(i));
@@ -870,7 +870,7 @@ Type objective_function<Type>::operator() ()
 	 }
        }
   }
-  
+
   // CATCH PREDICTIONS
   vector<Type> Cpredsub(ns);
   if(simple==0){
@@ -1084,6 +1084,16 @@ Type objective_function<Type>::operator() ()
   }
   Type logCp = log(Cp);
 
+  // Catch prediction by year
+  vector<Type> Cpy(CppAD::Integer(dtpredcindsy(dtpredcnsteps-1)));
+  Cpy.setZero();
+  for(int i=0; i<dtpredcnsteps; i++){
+    ind = CppAD::Integer(dtpredcinds(i)-1);
+    ind2 = CppAD::Integer(dtpredcindsy(i)-1);
+    Cpy(ind2) += Cpredsub(ind);
+  }
+  vector<Type> logCpy = log(Cpy);
+
   if(dbg > 0){
     std::cout << "--- DEBUG: ONE-STEP-AHEAD EFFORT PREDICTIONS --- ans: " << ans << std::endl;
     std::cout << "-- dtpredensteps: " << dtpredensteps << "  dtpredeinds.size(): " << dtpredeinds.size() <<std::endl;
@@ -1230,6 +1240,7 @@ Type objective_function<Type>::operator() ()
     ADREPORT(Cp);
     ADREPORT(logIp);
     ADREPORT(logCp);
+    ADREPORT(logCpy);
     ADREPORT(logEp);
     // PARAMETERS
     ADREPORT(r);
