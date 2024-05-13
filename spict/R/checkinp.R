@@ -943,14 +943,26 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
 
     if(!"tvPropChange" %in% names(inp)) inp$tvPropChange <- FALSE
     if(inp$tvPropChange){
-        inp$timevaryinggrowth <- TRUE
-        inp$timevaryingK <- FALSE
+        inp$timevaryinggrowth <- FALSE
+        inp$timevaryingK <- TRUE
     }
 
     if(!"tvNonPropChange" %in% names(inp)) inp$tvNonPropChange <- FALSE
     if(inp$tvNonPropChange){
-        inp$timevaryinggrowth <- TRUE
-        inp$timevaryingK <- FALSE
+        inp$timevaryinggrowth <- FALSE
+        inp$timevaryingK <- TRUE
+    }
+
+    if(!"tvPropChange2" %in% names(inp)) inp$tvPropChange2 <- FALSE
+    if(inp$tvPropChange2){
+        inp$timevaryinggrowth <- FALSE
+        inp$timevaryingK <- TRUE
+    }
+
+    if(!"tvNonPropChange2" %in% names(inp)) inp$tvNonPropChange2 <- FALSE
+    if(inp$tvNonPropChange2){
+        inp$timevaryinggrowth <- FALSE
+        inp$timevaryingK <- TRUE
     }
 
 
@@ -1319,13 +1331,13 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
 
     ## NEW: NEW:
     ## Inital values
-    if(!"mkb" %in% names(inp$ini)) inp$ini$mkb <- 0.5
+    if(!"mkb" %in% names(inp$ini)) inp$ini$mkb <- 1  ## 0.5
     ## NEW:
     ## if(inp$tvKConsR){
     ##     inp$ini$mkb <- 1
     ## }
-    if(inp$tvPropChange){
-        inp$ini$mkb <- 0.5
+    if(inp$tvPropChange || inp$tvPropChange2){
+        inp$ini$mkb <- 1
     }
 
 
@@ -1585,7 +1597,7 @@ check.inp <- function(inp, verbose = TRUE, mancheck = TRUE){
     if (!inp$timevaryingK){
         forcefixpars <- c('logKre', 'logsdK', 'logpsiK', forcefixpars)
     }
-    if (!inp$tvNonPropChange || inp$tvKConsR || inp$tvPropChange){
+    if (!inp$tvNonPropChange || inp$tvKConsR || inp$tvPropChange || inp$tvPropChange2){
         ## forcefixpars <- c('logitmk', forcefixpars)
         forcefixpars <- c('mkb', forcefixpars)
     }

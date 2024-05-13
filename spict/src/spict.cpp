@@ -161,6 +161,9 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(tvPropChange);
   DATA_INTEGER(tvNonPropChange);
 
+  DATA_INTEGER(tvPropChangeTwo);
+  DATA_INTEGER(tvNonPropChangeTwo);
+
   DATA_INTEGER(timevaryingq);
 
 
@@ -478,23 +481,56 @@ Type objective_function<Type>::operator() ()
   }
 
 
-  // NEW:
+  // // NEW: BEFORE:
+  // // Time-variant parameters
+  // vector<Type> logmvec(ns), mvec(ns), logKvec(ns), Kvec(ns), logrvec(ns);
+  // if(tvPropChangeTwo == 1 || tvNonPropChangeTwo == 1){
+  //   for (int i=0; i<ns; i++){
+  //     // Kre = mkb * sqrt(mre)
+  //     logmre(i) = logKre(i) / mkb;
+  //     // logKvec(i) = (logKc(i) + mkb * (logmvec(i) + lognfac)) / (1 + mkb);
+  //   }
+  //   SIMULATE{
+  //     REPORT(logmre);
+  //   }
+  // }
+  // for(int i=0; i < ns; i++){
+  //   //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
+  //   logmvec(i) = logmc(i) + logmre(i);
+  //   mvec(i) = exp(logmvec(i));
+  // }
+  // if(tvPropChange == 1 || tvNonPropChange == 1){
+  //   for (int i=0; i<ns; i++){
+  //     // Kre = mkb * sqrt(mre)
+  //     logKre(i) = mkb * logmre(i);
+  //     // logKvec(i) = (logKc(i) + mkb * (logmvec(i) + lognfac)) / (1 + mkb);
+  //   }
+  //   SIMULATE{
+  //     REPORT(logKre);
+  //   }
+  // }
+  // for(int i=0; i < ns; i++){
+  //   logKvec(i) = logKc(i) + logKre(i);
+  //   Kvec(i) = exp(logKvec(i));
+  // }
+  // logrvec = logmvec - logKvec + lognfac;
+
+  // NEW: NEW:
   // Time-variant parameters
   vector<Type> logmvec(ns), mvec(ns), logKvec(ns), Kvec(ns), logrvec(ns);
+  if(tvPropChange == 1 || tvNonPropChange == 1){
+    for (int i=0; i<ns; i++){
+      logmre(i) = logKre(i) + logKre(i) * mkb;
+      // logKvec(i) = (logKc(i) + mkb * (logmvec(i) + lognfac)) / (1 + mkb);
+    }
+    SIMULATE{
+      REPORT(logmre);
+    }
+  }
   for(int i=0; i < ns; i++){
     //mvec(i) = exp(logm(0) + mu*logmcov(i) + logmre(i));
     logmvec(i) = logmc(i) + logmre(i);
     mvec(i) = exp(logmvec(i));
-  }
-  if(tvPropChange == 1 || tvNonPropChange == 1){
-    for (int i=0; i<ns; i++){
-      // Kre = mkb * sqrt(mre)
-      logKre(i) = mkb * logmre(i);
-      // logKvec(i) = (logKc(i) + mkb * (logmvec(i) + lognfac)) / (1 + mkb);
-    }
-    SIMULATE{
-      REPORT(logKre);
-    }
   }
   for(int i=0; i < ns; i++){
     logKvec(i) = logKc(i) + logKre(i);
@@ -1502,23 +1538,26 @@ Type objective_function<Type>::operator() ()
       ADREPORT(logmvec);
       ADREPORT(logKvec);
       ADREPORT(logrvec);
-      if ((((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))) || (tvKConsR == 1) || (tvPropChange == 1) || (tvNonPropChange == 1)){
+      ADREPORT(logFmsyvec);
+      ADREPORT(logBmsyvec);
+      ADREPORT(logMSYvec);
+      if ((((timevaryinggrowth == 1) || (logmcovflag == 1)) && ((timevaryingK == 1) || (logKcovflag == 1))) || (tvKConsR == 1) || (tvPropChange == 1) || (tvNonPropChange == 1) || (tvPropChangeTwo == 1) || (tvNonPropChangeTwo == 1)){
         ADREPORT(logKre);
         ADREPORT(logmre);
         ADREPORT(logrre);
-        ADREPORT(logFmsyvec);
-        ADREPORT(logBmsyvec);
-        ADREPORT(logMSYvec);
+        // ADREPORT(logFmsyvec);
+        // ADREPORT(logBmsyvec);
+        // ADREPORT(logMSYvec);
       }else if ((timevaryinggrowth == 1) || (logmcovflag == 1)){
         ADREPORT(logrre); // r random effect
-        ADREPORT(logFmsyvec);
-        ADREPORT(logBmsyvec);
-        ADREPORT(logMSYvec);
+        // ADREPORT(logFmsyvec);
+        // ADREPORT(logBmsyvec);
+        // ADREPORT(logMSYvec);
       }else if ((timevaryingK == 1) || (logKcovflag == 1)){
         ADREPORT(logKre); // K random effect
-        ADREPORT(logFmsyvec);
-        ADREPORT(logBmsyvec);
-        ADREPORT(logMSYvec);
+        // ADREPORT(logFmsyvec);
+        // ADREPORT(logBmsyvec);
+        // ADREPORT(logMSYvec);
       }
       if(timevaryingq == 1){
         ADREPORT(logqvec);

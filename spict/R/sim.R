@@ -246,6 +246,19 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
             } else {
                 pl$logF[1] <- log(0.2*exp(inp$ini$logr))
             }
+            if ('logmre0' %in% names(inp$ini)){
+                pl$logmre[1] <- inp$ini$logmre0
+            } else {
+                ## r <- exp(inp$ini$logr)
+                ## K <- exp(inp$ini$logK)
+                ## n <- exp(inp$ini$logn)
+                pl$logmre[1] <- log(1) ## log(r * K / (n^(n/(n-1))))
+            }
+            if ('logKre0' %in% names(inp$ini)){
+                pl$logKre[1] <- inp$ini$logKre0
+            } else {
+                pl$logKre[1] <- log(1)
+            }
         }
         ## Account for sim.random.effects (require retape)
         obj <- make.obj(make.datin(inp), pl, inp, phase=1)
@@ -407,6 +420,78 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
 
     ## Use TMB for simulation
     if(use.tmb){
+
+        ## browser()
+
+        ## dati <- make.datin(inp)
+        ## names(dati)
+        ## dati$simRandomEffects
+        ## dati$timevaryinggrowth
+
+        ## inp$timevaryinggrowth <- TRUE
+        ## inp$ini$logsdm <- log(1)
+        ## inp$ini$logpsi <- log(1)
+        ## inp <- check.inp(inp)
+        ## pl <- inp$parlist
+        ## if(inp$sim.random.effects){
+        ##     if ('logbkfrac' %in% names(inp$ini)){
+        ##         pl$logB[1] <- log(exp(inp$ini$logbkfrac)*exp(pl$logK[1]))
+        ##     } else {
+        ##         pl$logB[1] <- log(0.5*exp(pl$logK[1]))
+        ##     }
+        ##     if ('logF0' %in% names(inp$ini)){
+        ##         pl$logF[1] <- inp$ini$logF0
+        ##     } else {
+        ##         pl$logF[1] <- log(0.2*exp(inp$ini$logr))
+        ##     }
+        ##     if ('logmre0' %in% names(inp$ini)){
+        ##         pl$logmre[1] <- inp$ini$logmre0
+        ##     } else {
+        ##         ## r <- exp(inp$ini$logr)
+        ##         ## K <- exp(inp$ini$logK)
+        ##         ## n <- exp(inp$ini$logn)
+        ##         pl$logmre[1] <- log(1) ## log(r * K / (n^(n/(n-1))))
+        ##     }
+        ##     if ('logKre0' %in% names(inp$ini)){
+        ##         pl$logKre[1] <- inp$ini$logKre0
+        ##     } else {
+        ##         pl$logKre[1] <- log(1)
+        ##     }
+        ## }
+
+        ## pl
+
+
+        ## obj <- make.obj(datin = make.datin(inp), pl = pl, inp = inp)
+        ## sim.pars <- obj$env$par
+
+        ## simdat <- obj$simulate(par = sim.pars, complete = TRUE)
+        ## simdat$logmre
+
+        ## plot(simdat$trueF / simdat$Fmsy)
+        ## plot(simdat$trueB / simdat$Bmsy)
+        ## simdat$logF
+        ## names(simdat)
+
+        ## pl$logpsi
+
+        ## head(simdat$truemre)
+        ## head(simdat$logmre)
+
+        ## plot(simdat$truemre,ty='l')
+        ## lines(simdat$logmre,col=2)
+
+        ## plot(sim.pars[names(sim.pars) == "logmre"])
+        ## lines(get.par("logmre",input)[,2])
+
+        ## names(simdat)
+        ## dati <- make.datin(inp)
+        ## names(dati)
+        ## dati$simRandomEffects
+
+        ## inp$sim.random.effects <- FALSE
+        ## obj <- make.obj(make.datin(inp), pl, inp, phase=1)
+        ## obj$retape()
 
         ## simulate
         simdat <- obj$simulate(par = sim.pars, complete = TRUE)
@@ -576,7 +661,12 @@ sim.spict <- function(input, nobs=100, use.tmb = FALSE, verbose = TRUE){
         inp$true$Kvec <- simdat$Kvec
 
         ## TODO: include all these new variables in the R simulation code!
-
+        if("logmre" %in% names(simdat)){
+            inp$true$logmre <- simdat$logmre
+        }
+        if("logKre" %in% names(simdat)){
+            inp$true$logKre <- simdat$logKre
+        }
 
         sim <- inp
 

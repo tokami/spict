@@ -260,6 +260,8 @@ make.datin <- function(inp, dbg=0){
                   tvKConsR=as.integer(inp$tvKConsR),
                   tvPropChange=as.integer(inp$tvPropChange),
                   tvNonPropChange=as.integer(inp$tvNonPropChange),
+                  tvPropChangeTwo=as.integer(inp$tvPropChange2),
+                  tvNonPropChangeTwo=as.integer(inp$tvNonPropChange2),
                   timevaryingq=as.integer(inp$timevaryingq),
                   logmcovflag=as.numeric(inp$logmcovflag),
                   logKcovflag=as.numeric(inp$logKcovflag),
@@ -304,7 +306,7 @@ make.datin <- function(inp, dbg=0){
 
                   simple=inp$simple,
                   reportmode=inp$reportmode,
-                  simRandomEffects=inp$sim.random.effects,
+                  simRandomEffects=as.integer(inp$sim.random.effects),
                   dbg=dbg)
     return(datin)
 }
