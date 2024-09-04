@@ -874,6 +874,8 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                              intermediatePeriodCatchSDFac = 1,
                              intermediatePeriodCatchList = NULL,
                              ctol = 0.001,
+                             log.ffac.cabs.lower = NULL,
+                             log.ffac.cabs.upper = NULL,
                              evalBreakpointB = 0,
                              verbose = TRUE,
                              dbg = 0,
@@ -959,6 +961,8 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                          intermediatePeriodCatchSDFac = intermediatePeriodCatchSDFac,
                          intermediatePeriodCatchList = intermediatePeriodCatchList,
                          ctol = ctol,
+                         log.ffac.cabs.lower = log.ffac.cabs.lower,
+                         log.ffac.cabs.upper = log.ffac.cabs.upper,
                          evalBreakpointB = evalBreakpointB,
                          verbose = verbose,
                          dbg = dbg,
@@ -984,6 +988,8 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                              intermediatePeriodCatchSDFac = intermediatePeriodCatchSDFac,
                              intermediatePeriodCatchList = intermediatePeriodCatchList,
                              ctol = ctol,
+                             log.ffac.cabs.lower = log.ffac.cabs.lower,
+                             log.ffac.cabs.upper = log.ffac.cabs.upper,
                              verbose = verbose,
                              dbg = dbg,
                              mancheck = FALSE)
@@ -1351,6 +1357,8 @@ get.TAC <- function(rep,
                     intermediatePeriodCatchSDFac = 1,
                     intermediatePeriodCatchList = NULL,
                     ctol = 0.001,
+                    log.ffac.cabs.lower = NULL,
+                    log.ffac.cabs.upper = NULL,
                     evalBreakpointB = 0,
                     verbose = TRUE,
                     dbg = 0,
@@ -1428,6 +1436,8 @@ get.TAC <- function(rep,
                          intermediatePeriodCatchSDFac = intermediatePeriodCatchSDFac,
                          intermediatePeriodCatchList = intermediatePeriodCatchList,
                          ctol = ctol,
+                         log.ffac.cabs.lower = log.ffac.cabs.lower,
+                         log.ffac.cabs.upper = log.ffac.cabs.upper,
                          evalBreakpointB = evalBreakpointB,
                          verbose = verbose,
                          dbg = dbg,
@@ -1454,6 +1464,8 @@ make.man.inp <- function(rep, scenarioTitle = "",
                          intermediatePeriodCatchSDFac = 1,
                          intermediatePeriodCatchList = NULL,
                          ctol = 0.001,
+                         log.ffac.cabs.lower = NULL,
+                         log.ffac.cabs.upper = NULL,
                          evalBreakpointB = 0,
                          verbose = TRUE,
                          dbg = 0,
@@ -1643,10 +1655,22 @@ make.man.inp <- function(rep, scenarioTitle = "",
         realisedTAC <<- get.TAC(rep, ffac = exp(x))
         (realisedTAC - cabs)^2
       }
-      opt <- nlminb(log(relTargetC), minme,
-                    lower = log(relTargetC/3),
-                    upper = log(relTargetC*3),
-                    control = list(rel.tol = ctol))
+        ffacLow <- ifelse(is.null(log.ffac.cabs.lower), log(relTargetC/3),
+                          log.ffac.cabs.lower)
+        ffacUp <- ifelse(is.null(log.ffac.cabs.upper), log(relTargetC*3),
+                         log.ffac.cabs.upper)
+        ffacs <- NULL
+        if(is.finite(ffacLow)) ffacs <- c(ffacs, ffacLow)
+        if(is.finite(ffacUp)) ffacs <- c(ffacs, ffacUp)
+        if(is.null(ffacs)){
+            ffacIni <- log(relTargetC)
+        }else{
+            ffacIni <- mean(ffacs)
+        }
+        opt <- nlminb(ffacIni, minme,
+                      lower = ffacLow,
+                      upper = ffacUp,
+                      control = list(rel.tol = ctol))
       if(opt$convergence != 0) stop("The specified catch could not be approximated (mode not converged)!")
       ffac <- exp(opt$par)
       signifround <- function(x) if (x >= 1) round(x) else signif(x, 2)
