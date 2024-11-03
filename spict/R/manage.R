@@ -1643,11 +1643,11 @@ make.man.inp <- function(rep, scenarioTitle = "",
         realisedTAC <<- get.TAC(rep, ffac = exp(x))
         (realisedTAC - cabs)^2
       }
-      opt <- nlminb(log(relTargetC), minme,
+      opt <- try(nlminb(log(relTargetC), minme,
                     lower = log(relTargetC/3),
                     upper = log(relTargetC*3),
-                    control = list(rel.tol = ctol))
-      if(opt$convergence != 0) stop("The specified catch could not be approximated (mode not converged)!")
+                    control = list(rel.tol = ctol)), silent = TRUE)
+      if(inherits(opt, "try-error") || opt$convergence != 0) stop("The specified catch could not be approximated (mode not converged)!")
       ffac <- exp(opt$par)
       signifround <- function(x) if (x >= 1) round(x) else signif(x, 2)
       if (verbose && abs((cabs - realisedTAC) / cabs) > 0.01) {
