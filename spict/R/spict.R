@@ -315,8 +315,9 @@ make.datin <- function(inp, dbg=0){
 #' @export
 #' @import TMB
 make.obj <- function(datin, pl, inp, phase=1){
-    obj <- TMB::MakeADFun(data=datin, parameters=pl, random=inp$RE, DLL=inp$scriptname,
-                          hessian=TRUE, map=inp$map[[phase]])
+    obj <- try(TMB::MakeADFun(data=datin, parameters=pl, random=inp$RE, DLL=inp$scriptname,
+                              hessian=TRUE, map=inp$map[[phase]]))
+    if(inherits(obj, "try-error")) stop("Error in MakeADFun!")
     TMB:::config(trace.optimize=0, DLL=inp$scriptname)
     verbose <- FALSE
     obj$env$tracemgc <- verbose
