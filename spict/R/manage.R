@@ -1020,7 +1020,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
         }
     }
     ## check consistency in intermediate period
-    mancheck <- check.man(repout, maninterval=maninterval, verbose=FALSE)
+    mancheck <- check.man(repout, maninterval=maninterval, verbose=FALSE, reportmode0 = FALSE)
     if(!mancheck$inter && verbose && mancheck$mantime)
         cat("The assumptions about the intermediate period differ between scenarios, e.g. continuing the F process vs. constant catch during the intermediate period.\n")
     return(repout)

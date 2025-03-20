@@ -870,7 +870,7 @@ Type objective_function<Type>::operator() ()
 	 }
        }
   }
-  
+
   // CATCH PREDICTIONS
   vector<Type> Cpredsub(ns);
   if(simple==0){
@@ -1305,9 +1305,12 @@ Type objective_function<Type>::operator() ()
     ADREPORT(logFmFmsynotS);
     ADREPORT(logBmBmsy);
     ADREPORT(logCp);
+    ADREPORT(logCpred);
+    ADREPORT(logBBmsy);
   }else if(reportmode == 2){
     ADREPORT(logCp);
   }
+
 
   // REPORTS (these don't require sdreport to be output)
   REPORT(Cp);
