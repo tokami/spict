@@ -975,11 +975,13 @@ add.man.scenario <- function(rep, scenarioTitle = "",
 
     ## account for catch fractile
     if(fList$catch != 0.5){
+        cabii <- calc.tac(repman, fractileCatch = fList$catch)
+        if(is.na(cabii) || is.infinite(cabii) || cabii < 0) stop(paste0("error with cabii, which is ",cabii))
         inpc <- make.man.inp(rep=repman,
                              scenarioTitle = scenarioTitle,
                              maninterval = maninterval,
                              maneval = maneval,
-                             cabs = calc.tac(repman, fractileCatch = fList$catch),
+                             cabs = cabii,
                              intermediatePeriodCatch = intermediatePeriodCatch,
                              intermediatePeriodCatchSDFac = intermediatePeriodCatchSDFac,
                              intermediatePeriodCatchList = intermediatePeriodCatchList,
@@ -1639,16 +1641,30 @@ make.man.inp <- function(rep, scenarioTitle = "",
       take <- sum(cumsum(rev(rep$inp$dtc)) < diff(rep$inp$maninterval)) + 1
       relTargetC <- cabs / (sum(tail(rep$inp$obsC, take)) )
       realisedTAC <- NULL
-      minme <- function(x) {
-        realisedTAC <<- get.TAC(rep, ffac = exp(x))
-        (realisedTAC - cabs)^2
-      }
-      opt <- try(nlminb(log(relTargetC), minme,
+        minme <- function(x, do.log = TRUE) {
+            if(do.log) ffaci <- exp(x) else ffaci <- x
+            realisedTAC <<- get.TAC(rep, ffac = ffaci)
+            (realisedTAC - cabs)^2
+        }
+        opt <- try(nlminb(log(relTargetC), minme,
+                          do.log = TRUE,
                     lower = log(relTargetC/3),
                     upper = log(relTargetC*3),
                     control = list(rel.tol = ctol)), silent = TRUE)
-      if(inherits(opt, "try-error") || opt$convergence != 0) stop("The specified catch could not be approximated (mode not converged)!")
-      ffac <- exp(opt$par)
+        ffac.res <- exp(opt$par)
+        ## if(inherits(opt, "try-error") || opt$convergence != 0) stop("The specified catch could not be approximated (model not converged)!")
+        if(inherits(opt, "try-error") || opt$convergence != 0){
+            writeLines("cabs model on log not converged, trying natural scale.")
+            opt <- try(nlminb(relTargetC, minme,
+                               do.log = FALSE,
+                               lower = relTargetC/3,
+                               upper = relTargetC*3,
+                               control = list(rel.tol = ctol)), silent = TRUE)
+            if(inherits(opt, "try-error") || opt$convergence != 0) stop("The specified catch could not be approximated (model not converged)!")
+            ffac.res <- opt$par
+        }
+        ffac <- ffac.res
+
       signifround <- function(x) if (x >= 1) round(x) else signif(x, 2)
       if (verbose && abs((cabs - realisedTAC) / cabs) > 0.01) {
         writeLines(paste0("Provided target catch: ", signifround(cabs),
