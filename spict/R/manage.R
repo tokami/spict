@@ -1462,7 +1462,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
                          mancheck = TRUE){
 
   ## check rep class
-  check.rep(rep, reportmode0 = FALSE)
+    check.rep(rep, reportmode0 = FALSE)
 
   ## check if management time within model time
   reqRep <- (!is.numeric(cfac) || is.na(cfac)) && (!is.numeric(ffac) || is.na(ffac))
@@ -1519,7 +1519,8 @@ make.man.inp <- function(rep, scenarioTitle = "",
   ## fixed catch in INTERMEDIATE YEAR
   inttime <- inp$dtpredcinds[1] - min(inp$indCpred)
   if(inttime > 0 && ((!is.null(intermediatePeriodCatch) &&
-                      !is.na(intermediatePeriodCatch) && is.numeric(intermediatePeriodCatch)) ||
+                      !is.na(intermediatePeriodCatch) &&
+                      is.numeric(intermediatePeriodCatch)) ||
                      !is.null(intermediatePeriodCatchList))){
     inpt <- inp
     dtcint <- (inp$dtpredcinds[1] - min(inp$indCpred)) * inp$dteuler
@@ -1559,14 +1560,15 @@ make.man.inp <- function(rep, scenarioTitle = "",
   ## ---------------
   if((!is.numeric(cfac) || is.na(cfac)) && (!is.numeric(cabs) || is.na(cabs))){
     if((!is.numeric(ffac) || is.na(ffac)) && (!is.numeric(fabs) || is.na(fabs))){
-      ## Quantities
+        ## Quantities
       fmanstart <- get.par('logFm', rep, exp=TRUE)[2]
       fmsy <- get.par('logFmsy', rep, exp=TRUE)[2]
       bmsy <- get.par('logBmsy', rep, exp=TRUE)[2]
       logFpFmsy <- get.par("logFpFmsynotS", rep)
       logBpBmsy <- get.par("logBpBmsy", rep)
       logFmFmsy <- get.par("logFmFmsynotS", rep)
-      logBmBmsy <- get.par("logBmBmsy", rep)
+        logBmBmsy <- get.par("logBmBmsy", rep)
+        if(anyNA(c(logFpFmsy,logBpBmsy,logFmFmsy,logBmBmsy))) stop("NA in required quantities, did retaping lead to problems? (e.g. because intermediate catch not possible to achieve)")
       ## FFmsy component
       fi <- 1 - fList$ffmsy
       fmfmsyi <- exp(qnorm(fi, logFmFmsy[2], logFmFmsy[4]))
