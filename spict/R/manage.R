@@ -965,7 +965,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                          mancheck = FALSE)
 
     ## retape spict
-    repman <- retape.spict(rep, inpt, verbose = FALSE, mancheck=FALSE)
+    repman <- robust.retape.spict(rep, inpt, verbose = FALSE, mancheck=FALSE)
     ## save fractile and Co info in inp
     repman$inp$manFractiles <- fList
     repman$inp$manBreakpointB <- breakpointB
@@ -976,7 +976,8 @@ add.man.scenario <- function(rep, scenarioTitle = "",
     ## account for catch fractile
     if(fList$catch != 0.5){
         cabii <- calc.tac(repman, fractileCatch = fList$catch)
-        if(is.na(cabii) || is.infinite(cabii) || cabii < 0) stop(paste0("error with cabii, which is ",cabii))
+        if(is.na(cabii) || is.infinite(cabii) || cabii < 0)
+            stop(paste0("error with cabii, which is ", cabii))
         inpc <- make.man.inp(rep=repman,
                              scenarioTitle = scenarioTitle,
                              maninterval = maninterval,
@@ -989,7 +990,7 @@ add.man.scenario <- function(rep, scenarioTitle = "",
                              verbose = verbose,
                              dbg = dbg,
                              mancheck = FALSE)
-        repman <- retape.spict(repman, inpc, verbose = FALSE, mancheck=FALSE)
+        repman <- robust.retape.spict(repman, inpc, verbose = FALSE, mancheck=FALSE)
     }
 
     ## check if man already in repout
@@ -1548,7 +1549,7 @@ make.man.inp <- function(rep, scenarioTitle = "",
     inpt$lastCatchObs <- inp$lastCatchObs
     inpt$timerangeObs <- inp$timerangeObs
     if(reqRep){
-      repout <- reppa <- rep <- retape.spict(rep, inpt, verbose = FALSE, mancheck=FALSE)
+        repout <- reppa <- rep <- robust.retape.spict(rep, inpt, verbose = FALSE, mancheck=FALSE)
     }else{
       rep$inp <- inpt
       repout <- reppa <- rep

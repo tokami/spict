@@ -952,6 +952,36 @@ retape.spict <- function(rep, inp, verbose = FALSE, dbg = 0, mancheck=TRUE){
 }
 
 
+## NEW:
+robust.retape.spict <- function(rep, inp, verbose = FALSE, dbg = 0, mancheck=TRUE){
+
+    rep <- retape.spict(rep, inp, verbose = FALSE, mancheck=FALSE)
+
+
+    ## Set sdf wider if retaping with jumpy intermediate catch leads to NA in parameters
+    sumi <- sumspict.parest(rep)
+    counti <- 0
+    logsdfs <- get.par("logsdf", rep)[,2] + c(0.2,0.5,1,2)
+    while(anyNA(sumi[rownames(sumi) %in%
+                     c("m","K","q","n","sdb","sdf","sdi","sdc"),]) &&
+          counti < 3){
+              counti <- counti + 1
+
+              rep$opt$par[names(rep$opt$par) == "logsdf"] <- logsdfs[counti]
+              rep <- retape.spict(rep, inp, verbose = FALSE, mancheck=FALSE)
+              sumi <- sumspict.parest(rep)
+          }
+    if(anyNA(sumi[rownames(sumi) %in%
+                  c("m","K","q","n","sdb","sdf","sdi","sdc"),])){
+        if(verbose) writeLines(paste0("NA in model parameters after retaping with intermediate catch. Even setting sdf to ", exp(logsdfs[counti]), " did not allow to accomodate jumps in catch observations. This will likely lead to problems. Investigate!"))
+    }else{
+        if(verbose) writeLines(paste0("NA in model parameters after retaping with intermediate catch. Setting sdf to ", exp(logsdfs[counti]), " allow for jumps in catch observations."))
+    }
+
+    return(rep)
+}
+
+
 ##' @name prune.baserun
 ##' @title Prune a fitted spict object to the core elements
 ##' @param rep Result of fit.spict().
