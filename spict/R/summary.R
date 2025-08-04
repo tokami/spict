@@ -503,7 +503,7 @@ sumspict.fixedpars <- function(rep, ndigits=8){
     if (!rep$inp$tvKConsR && !rep$inp$tvPropChange && !rep$inp$tvNonPropChange){
         nms <- nms[-match(c('mkb'),  nms)]
     }
-    if (!rep$inp$timevaryingq){
+    if (!rep$inp$timevaryingq[1]){
         nms <- nms[-match(c('logsdq', 'logpsiq'),  nms)]
     }
     nnms <- length(nms)

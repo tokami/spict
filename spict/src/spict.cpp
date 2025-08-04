@@ -164,7 +164,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(tvPropChangeTwo);
   DATA_INTEGER(tvNonPropChangeTwo);
 
-  DATA_INTEGER(timevaryingq);
+  DATA_VECTOR(timevaryingq);
 
 
   // Priors
@@ -1216,31 +1216,32 @@ Type objective_function<Type>::operator() ()
 
   // Catchability // TODO: assumes same catchability changes for every index! implement for multiple indices
   vector<Type> logqrepred(ns);
-  if (timevaryingq == 1){
-    // Compare initial value with stationary distribution of OU
-    likval = dnorm(logqre(0), Type(0.0), sdq/sqrt(2.0*psiq), 1);
-    SIMULATE{
-      if(simRandomEffects == 1){
-        logqre(0) = rnorm(Type(0.0), sdq / sqrt(2.0 * psiq));
-      }
-    }
-    ans -= likval;
-    for (int i=1; i < ns; i++){
-      logqrepred(i) = predictq(logmre(i-1), dt(i-1), sdq2, psiq);
-      likval = dnorm(logqre(i), logqrepred(i), sqrt(dt(i-1))*sdq, 1);
-      SIMULATE{
-        if(simRandomEffects == 1){
-          logqre(i) = rnorm(logqrepred(i), sqrt(dt(i-1)) * sdq);
-        }
-      }
-      ans -= likval;
-    }
-    SIMULATE{
-      REPORT(logqre);
-      vector<Type> trueqre = exp(logqrepred);
-      REPORT(trueqre);
-    }
-  }
+  logqrepred.setZero();
+  // if (timevaryingq == 1){  // TODO can have length > 1
+  //   // Compare initial value with stationary distribution of OU
+  //   likval = dnorm(logqre(0), Type(0.0), sdq/sqrt(2.0*psiq), 1);
+  //   SIMULATE{
+    //     if(simRandomEffects == 1){
+    //       logqre(0) = rnorm(Type(0.0), sdq / sqrt(2.0 * psiq));
+    //     }
+    //   }
+    //   ans -= likval;
+    //   for (int i=1; i < ns; i++){
+    //     logqrepred(i) = predictq(logmre(i-1), dt(i-1), sdq2, psiq);
+    //     likval = dnorm(logqre(i), logqrepred(i), sqrt(dt(i-1))*sdq, 1);
+    //     SIMULATE{
+    //       if(simRandomEffects == 1){
+    //         logqre(i) = rnorm(logqrepred(i), sqrt(dt(i-1)) * sdq);
+    //       }
+    //     }
+    //     ans -= likval;
+    //   }
+    //   SIMULATE{
+    //     REPORT(logqre);
+  //     vector<Type> trueqre = exp(logqrepred);
+  //     REPORT(trueqre);
+  //   }
+  // }
 
   // BIOMASS INDEX
   if(dbg>0){
@@ -1559,9 +1560,9 @@ Type objective_function<Type>::operator() ()
         // ADREPORT(logBmsyvec);
         // ADREPORT(logMSYvec);
       }
-      if(timevaryingq == 1){
-        ADREPORT(logqvec);
-      }
+      // if(timevaryingq == 1){ // TODO can have length > 1
+      //   ADREPORT(logqvec);
+      // }
       ADREPORT(logFnotS);
       ADREPORT(logFFmsynotS);
     }
