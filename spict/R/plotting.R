@@ -1819,7 +1819,7 @@ plotspict.catch <- function(rep, main='Catch', ylim=NULL, qlegend=TRUE, lcol='bl
             repmax <- rep
         }
 
-        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag || rep$inp$tvPropChange || rep$inp$tvNonPropChange
+        tvgflag <- rep$inp$timevaryinggrowth || rep$inp$logmcovflag || rep$inp$tvPropChange || rep$inp$tvNonPropChange || inp$tvKConsR
         if (tvgflag){
             MSY <- get.par('logMSYvec', repmax, exp=TRUE, CI = CI)
             MSYvec <- as.data.frame(MSY)
