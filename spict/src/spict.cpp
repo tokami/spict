@@ -616,8 +616,8 @@ Type objective_function<Type>::operator() ()
       Type Bmsydveci = Kvec(i) * pow(1.0/n, 1.0/(n-1.0));
       Type Fmsydveci = mvec(i) / Bmsydveci;
       logFmsyvec(i) = log(Fmsydveci - (p*(1.0-Fmsydveci)*sdb2) / pow(2.0-Fmsydveci, 2.0));
-      logBmsyvec(i) = log(Bmsydveci) * (1.0 - (1.0 + Fmsydveci*(p-1.0)/2.0)*sdb2 /
-                                        (Fmsydveci*pow(2.0-Fmsydveci, 2.0)));
+      logBmsyvec(i) = log(Bmsydveci * (1.0 - (1.0 + Fmsydveci*(p-1.0)/2.0)*sdb2 /
+                                       (Fmsydveci*pow(2.0-Fmsydveci, 2.0))));
       logMSYvec(i) = log(mvec(i) * (1.0 - ((p+1.0)/2.0*sdb2) / (1.0 - pow(1.0-Fmsydveci, 2.0))));
     }
   } else {
